@@ -1,7 +1,6 @@
 import numpy as np
-from scipy.stats import poisson, skellam
+from scipy.stats import poisson
 from typing import Dict, Any, Tuple
-import math
 
 class AdvancedPredictionEngine:
     """Advanced Football Prediction Engine with Balanced Calculations"""
@@ -13,12 +12,12 @@ class AdvancedPredictionEngine:
     def _initialize_league_contexts(self) -> Dict[str, Dict]:
         """Initialize league-specific parameters for better calibration"""
         return {
-            'premier_league': {'avg_goals': 2.8, 'avg_corners': 10.5, 'home_advantage': 1.1},
-            'la_liga': {'avg_goals': 2.6, 'avg_corners': 9.8, 'home_advantage': 1.15},
-            'serie_a': {'avg_goals': 2.7, 'avg_corners': 10.2, 'home_advantage': 1.08},
-            'bundesliga': {'avg_goals': 3.1, 'avg_corners': 9.5, 'home_advantage': 1.12},
-            'ligue_1': {'avg_goals': 2.5, 'avg_corners': 9.2, 'home_advantage': 1.1},
-            'default': {'avg_goals': 2.7, 'avg_corners': 10.0, 'home_advantage': 1.1}
+            'premier_league': {'avg_goals': 2.8, 'avg_corners': 10.5, 'home_advantage': 1.15},
+            'la_liga': {'avg_goals': 2.6, 'avg_corners': 9.8, 'home_advantage': 1.18},
+            'serie_a': {'avg_goals': 2.7, 'avg_corners': 10.2, 'home_advantage': 1.12},
+            'bundesliga': {'avg_goals': 3.1, 'avg_corners': 9.5, 'home_advantage': 1.16},
+            'ligue_1': {'avg_goals': 2.5, 'avg_corners': 9.2, 'home_advantage': 1.14},
+            'default': {'avg_goals': 2.7, 'avg_corners': 10.0, 'home_advantage': 1.15}
         }
     
     def generate_advanced_predictions(self) -> Dict[str, Any]:
@@ -35,40 +34,40 @@ class AdvancedPredictionEngine:
         home_conceded = self.data.get('home_conceded', 0)
         away_conceded = self.data.get('away_conceded', 0)
         
-        # Advanced inputs
+        # Advanced inputs with defaults
         home_goals_home = self.data.get('home_goals_home', home_goals)
         away_goals_away = self.data.get('away_goals_away', away_goals)
-        home_form = self.data.get('home_form', [])  # Last 5 results as points: [3, 1, 0, 3, 3]
+        home_form = self.data.get('home_form', [])
         away_form = self.data.get('away_form', [])
         h2h_data = self.data.get('h2h_data', {})
         injuries = self.data.get('injuries', {'home': 0, 'away': 0})
         motivation = self.data.get('motivation', {'home': 1.0, 'away': 1.0})
         
-        # Calculate precise expected goals
-        home_xg, away_xg = self._calculate_precise_xg(
+        # Calculate precise expected goals with Bayesian priors
+        home_xg, away_xg = self._calculate_balanced_xg(
             home_goals, away_goals, home_conceded, away_conceded,
             home_goals_home, away_goals_away, home_form, away_form,
             injuries, motivation, league
         )
         
         # Apply H2H adjustments if available
-        if h2h_data:
+        if h2h_data and h2h_data.get('matches', 0) >= 2:
             home_xg, away_xg = self._apply_h2h_adjustment(home_xg, away_xg, h2h_data)
         
-        # Calculate all probabilities with high precision
-        probabilities = self._calculate_all_probabilities(home_xg, away_xg, league)
+        # Calculate all probabilities with proper calibration
+        probabilities = self._calculate_calibrated_probabilities(home_xg, away_xg, league)
         
-        # Generate corner predictions
-        corner_predictions = self._calculate_corner_predictions(home_xg, away_xg, league)
+        # Generate realistic corner predictions
+        corner_predictions = self._calculate_realistic_corners(home_xg, away_xg, league)
         
         # Generate timing predictions
         timing_predictions = self._calculate_timing_predictions(home_xg, away_xg)
         
         # Generate betting recommendations
-        betting_recommendations = self._generate_betting_recommendations(probabilities)
+        betting_recommendations = self._generate_balanced_betting_recommendations(probabilities)
         
         # Calculate overall confidence
-        confidence_score = self._calculate_advanced_confidence(
+        confidence_score = self._calculate_improved_confidence(
             home_goals, away_goals, home_form, away_form, h2h_data
         )
         
@@ -81,72 +80,81 @@ class AdvancedPredictionEngine:
             'betting_recommendations': betting_recommendations,
             'summary': self._generate_detailed_summary(home_team, away_team, probabilities, home_xg, away_xg),
             'confidence_score': confidence_score,
-            'risk_assessment': self._assess_prediction_risk(probabilities, confidence_score)
+            'risk_assessment': self._assess_balanced_risk(probabilities, confidence_score)
         }
     
-    def _calculate_precise_xg(self, home_goals: int, away_goals: int, home_conceded: int, 
-                            away_conceded: int, home_goals_home: int, away_goals_away: int,
-                            home_form: list, away_form: list, injuries: Dict, 
-                            motivation: Dict, league: str) -> Tuple[float, float]:
-        """Calculate precise expected goals with multiple factors"""
+    def _calculate_balanced_xg(self, home_goals: int, away_goals: int, home_conceded: int, 
+                             away_conceded: int, home_goals_home: int, away_goals_away: int,
+                             home_form: list, away_form: list, injuries: Dict, 
+                             motivation: Dict, league: str) -> Tuple[float, float]:
+        """Calculate balanced expected goals with Bayesian regression"""
         
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
-        # Base attack/defense strength (per game)
-        home_attack = max(0.3, home_goals / 6.0)
-        away_attack = max(0.2, away_goals / 6.0)
-        home_defense = max(0.3, home_conceded / 6.0)
-        away_defense = max(0.4, away_conceded / 6.0)
+        # Calculate base rates with regression to league mean
+        home_attack_base = max(0.3, home_goals / 6.0)
+        away_attack_base = max(0.2, away_goals / 6.0)
+        home_defense_base = max(0.3, home_conceded / 6.0)
+        away_defense_base = max(0.4, away_conceded / 6.0)
         
-        # Home/away specific adjustments
-        home_attack_home = max(0.3, home_goals_home / 3.0) if home_goals_home > 0 else home_attack
-        away_attack_away = max(0.2, away_goals_away / 3.0) if away_goals_away > 0 else away_attack
+        # Apply Bayesian regression - blend with league averages
+        # More regression for smaller sample sizes and extreme values
+        home_attack = self._apply_bayesian_regression(home_attack_base, league_params['avg_goals'] / 2, 6)
+        away_attack = self._apply_bayesian_regression(away_attack_base, league_params['avg_goals'] / 2, 6)
+        home_defense = self._apply_bayesian_regression(home_defense_base, league_params['avg_goals'] / 2, 6)
+        away_defense = self._apply_bayesian_regression(away_defense_base, league_params['avg_goals'] / 2, 6)
         
-        # Form adjustments (weighted average of recent form)
-        home_form_factor = self._calculate_form_factor(home_form)
-        away_form_factor = self._calculate_form_factor(away_form)
+        # Home/away specific adjustments with caps
+        home_attack_home = min(2.5, max(0.3, home_goals_home / 3.0)) if home_goals_home > 0 else home_attack
+        away_attack_away = min(2.0, max(0.2, away_goals_away / 3.0)) if away_goals_away > 0 else away_attack
         
-        # Injury adjustments
-        home_injury_factor = max(0.7, 1.0 - (injuries.get('home', 0) * 0.1))
-        away_injury_factor = max(0.7, 1.0 - (injuries.get('away', 0) * 0.1))
+        # Form adjustments (moderate impact)
+        home_form_factor = self._calculate_conservative_form_factor(home_form)
+        away_form_factor = self._calculate_conservative_form_factor(away_form)
         
-        # Motivation adjustments
+        # Injury adjustments (capped)
+        home_injury_factor = max(0.8, 1.0 - (injuries.get('home', 0) * 0.08))
+        away_injury_factor = max(0.8, 1.0 - (injuries.get('away', 0) * 0.08))
+        
+        # Motivation adjustments (moderate)
         home_motivation = motivation.get('home', 1.0)
         away_motivation = motivation.get('away', 1.0)
         
-        # Calculate base xG with league normalization
+        # Calculate final xG with caps and realistic bounds
         base_home_xg = (home_attack_home * away_defense * league_params['home_advantage'] * 
                        home_form_factor * home_injury_factor * home_motivation)
         base_away_xg = (away_attack_away * home_defense * 
                        away_form_factor * away_injury_factor * away_motivation)
         
-        # Apply regression to league mean to reduce extremes
-        home_xg = (base_home_xg + league_params['avg_goals'] * 0.3) / 1.3
-        away_xg = (base_away_xg + league_params['avg_goals'] * 0.3) / 1.3
+        # Apply additional regression and ensure realistic values
+        home_xg = min(3.0, max(0.2, (base_home_xg * 0.7 + league_params['avg_goals'] * 0.5 * 0.3)))
+        away_xg = min(2.5, max(0.1, (base_away_xg * 0.7 + league_params['avg_goals'] * 0.5 * 0.3)))
         
-        # Ensure reasonable bounds
-        home_xg = max(0.1, min(4.0, home_xg))
-        away_xg = max(0.1, min(3.5, away_xg))
-        
-        return round(home_xg, 3), round(away_xg, 3)
+        return round(home_xg, 2), round(away_xg, 2)
     
-    def _calculate_form_factor(self, form: list) -> float:
-        """Calculate form factor from recent results"""
+    def _apply_bayesian_regression(self, observed: float, prior: float, sample_size: int) -> float:
+        """Apply Bayesian regression to observed data"""
+        # More regression for extreme values and small samples
+        weight = min(0.7, sample_size / (sample_size + 10))
+        return (observed * weight) + (prior * (1 - weight))
+    
+    def _calculate_conservative_form_factor(self, form: list) -> float:
+        """Calculate conservative form factor with reduced impact"""
         if not form or len(form) == 0:
             return 1.0
         
-        # Recent matches weighted more heavily
-        weights = [1.2, 1.1, 1.0, 0.9, 0.8][:len(form)]
+        # Conservative weights - recent matches matter less
+        weights = [1.0, 0.8, 0.6, 0.4, 0.2][:len(form)]
         total_points = sum(score * weight for score, weight in zip(form, weights))
         max_possible = sum(3 * weight for weight in weights)
         
         form_ratio = total_points / max_possible if max_possible > 0 else 0.5
         
-        # Convert to multiplier (0.8 to 1.2 range)
-        return 0.8 + (form_ratio * 0.4)
+        # Reduced impact range (0.9 to 1.1 instead of 0.8 to 1.2)
+        return 0.9 + (form_ratio * 0.2)
     
     def _apply_h2h_adjustment(self, home_xg: float, away_xg: float, h2h_data: Dict) -> Tuple[float, float]:
-        """Apply head-to-head historical adjustments"""
+        """Apply moderate H2H historical adjustments"""
         matches = h2h_data.get('matches', 0)
         home_wins = h2h_data.get('home_wins', 0)
         away_wins = h2h_data.get('away_wins', 0)
@@ -154,58 +162,70 @@ class AdvancedPredictionEngine:
         home_goals = h2h_data.get('home_goals', 0)
         away_goals = h2h_data.get('away_goals', 0)
         
-        if matches < 3:  # Not enough H2H data
+        if matches < 2:
             return home_xg, away_xg
         
-        # Calculate H2H dominance factor
+        # Calculate H2H dominance with moderate impact
         home_dominance = (home_wins + draws * 0.5) / matches
         h2h_home_avg = home_goals / matches if matches > 0 else home_xg
         h2h_away_avg = away_goals / matches if matches > 0 else away_xg
         
-        # Blend current form with H2H history (70/30 weight)
-        adjusted_home_xg = (home_xg * 0.7) + (h2h_home_avg * 0.3)
-        adjusted_away_xg = (away_xg * 0.7) + (h2h_away_avg * 0.3)
+        # Blend current form with H2H history (80/20 weight - reduced H2H impact)
+        adjusted_home_xg = (home_xg * 0.8) + (h2h_home_avg * 0.2)
+        adjusted_away_xg = (away_xg * 0.8) + (h2h_away_avg * 0.2)
         
-        # Apply dominance adjustment
-        if home_dominance > 0.6:  # Strong home dominance
-            adjusted_home_xg *= 1.1
-            adjusted_away_xg *= 0.9
-        elif home_dominance < 0.4:  # Weak home performance
-            adjusted_home_xg *= 0.9
-            adjusted_away_xg *= 1.1
+        # Apply moderate dominance adjustment
+        dominance_factor = 1.05  # Reduced from 1.1
+        if home_dominance > 0.7:  # Strong home dominance
+            adjusted_home_xg *= dominance_factor
+            adjusted_away_xg /= dominance_factor
+        elif home_dominance < 0.3:  # Weak home performance
+            adjusted_home_xg /= dominance_factor
+            adjusted_away_xg *= dominance_factor
         
-        return adjusted_home_xg, adjusted_away_xg
+        return min(3.0, adjusted_home_xg), min(2.5, adjusted_away_xg)
     
-    def _calculate_all_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
-        """Calculate all match probabilities with high precision"""
+    def _calculate_calibrated_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
+        """Calculate calibrated probabilities with proper damping"""
         
         # Match outcome probabilities using Poisson distribution
         home_win_prob, draw_prob, away_win_prob = self._calculate_match_outcomes(home_xg, away_xg)
         
-        # Goal timing probabilities
-        first_half_prob = self._calculate_goal_timing_probability(home_xg, away_xg, 'first_half')
-        second_half_prob = self._calculate_goal_timing_probability(home_xg, away_xg, 'second_half')
+        # Apply probability calibration - reduce overconfidence
+        home_win_prob = self._calibrate_probability(home_win_prob)
+        away_win_prob = self._calibrate_probability(away_win_prob)
+        draw_prob = self._calibrate_probability(draw_prob)
+        
+        # Normalize after calibration
+        total = home_win_prob + draw_prob + away_win_prob
+        home_win_prob /= total
+        draw_prob /= total
+        away_win_prob /= total
+        
+        # Goal timing probabilities with realistic caps
+        first_half_prob = min(0.85, self._calculate_goal_timing_probability(home_xg, away_xg, 'first_half'))
+        second_half_prob = min(0.90, self._calculate_goal_timing_probability(home_xg, away_xg, 'second_half'))
         
         # Both teams to score probability
-        btts_prob = self._calculate_btts_probability(home_xg, away_xg)
+        btts_prob = self._calibrate_probability(self._calculate_btts_probability(home_xg, away_xg))
         
-        # Over/under probabilities
-        over_15_prob = 1 - (poisson.pmf(0, home_xg) * poisson.pmf(0, away_xg) + 
+        # Over/under probabilities with calibration
+        over_15_prob = self._calibrate_probability(1 - (poisson.pmf(0, home_xg) * poisson.pmf(0, away_xg) + 
                            poisson.pmf(1, home_xg) * poisson.pmf(0, away_xg) + 
-                           poisson.pmf(0, home_xg) * poisson.pmf(1, away_xg))
+                           poisson.pmf(0, home_xg) * poisson.pmf(1, away_xg)))
         
-        over_25_prob = 1 - sum(poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg) 
-                              for i in range(3) for j in range(3 - i))
+        over_25_prob = self._calibrate_probability(1 - sum(poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg) 
+                              for i in range(3) for j in range(3 - i)))
         
-        over_35_prob = 1 - sum(poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg) 
-                              for i in range(4) for j in range(4 - i))
+        over_35_prob = self._calibrate_probability(1 - sum(poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg) 
+                              for i in range(4) for j in range(4 - i)))
         
         # Exact score probabilities for most likely outcomes
         exact_scores = {}
-        for i in range(4):  # Home goals
-            for j in range(4):  # Away goals
+        for i in range(5):  # Home goals
+            for j in range(5):  # Away goals
                 prob = poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg)
-                if prob > 0.01:  # Only include probabilities > 1%
+                if prob > 0.02:  # Only include probabilities > 2%
                     exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
         
         return {
@@ -227,9 +247,17 @@ class AdvancedPredictionEngine:
             'exact_scores': dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:6])
         }
     
+    def _calibrate_probability(self, prob: float) -> float:
+        """Calibrate probability to reduce overconfidence"""
+        # Apply sigmoid-like calibration to pull extremes toward middle
+        if prob > 0.5:
+            return 0.5 + (prob - 0.5) * 0.8  # Reduce high probabilities
+        else:
+            return prob * 1.1  # Slightly increase low probabilities
+    
     def _calculate_match_outcomes(self, home_xg: float, away_xg: float) -> Tuple[float, float, float]:
         """Calculate precise match outcome probabilities using Poisson distribution"""
-        max_goals = 8  # Increased for better accuracy
+        max_goals = 8
         
         home_probs = [poisson.pmf(i, home_xg) for i in range(max_goals)]
         away_probs = [poisson.pmf(i, away_xg) for i in range(max_goals)]
@@ -255,7 +283,6 @@ class AdvancedPredictionEngine:
     def _calculate_goal_timing_probability(self, home_xg: float, away_xg: float, half: str) -> float:
         """Calculate probability of goals in specific half"""
         if half == 'first_half':
-            # Goals are typically 45% in first half, 55% in second half
             first_half_xg_home = home_xg * 0.45
             first_half_xg_away = away_xg * 0.45
             prob_no_goals = poisson.pmf(0, first_half_xg_home) * poisson.pmf(0, first_half_xg_away)
@@ -272,25 +299,31 @@ class AdvancedPredictionEngine:
         prob_away_scores = 1 - poisson.pmf(0, away_xg)
         return prob_home_scores * prob_away_scores
     
-    def _calculate_corner_predictions(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
-        """Calculate realistic corner predictions"""
+    def _calculate_realistic_corners(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
+        """Calculate realistic corner predictions with proper bounds"""
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
-        # Corner prediction based on expected goals and attacking play
+        # Corner prediction based on expected goals with realistic bounds
         base_corners = league_params['avg_corners']
-        attacking_bonus = (home_xg + away_xg - league_params['avg_goals']) * 1.5
+        attacking_bonus = (home_xg + away_xg - league_params['avg_goals']) * 1.2
         
         total_corners = base_corners + attacking_bonus
-        total_corners = max(4, min(16, total_corners))  # Realistic bounds
+        # Realistic bounds for corners (4-13 range)
+        total_corners = max(4, min(13, total_corners))
         
         # Home teams typically get more corners
         home_corners = total_corners * 0.55
         away_corners = total_corners * 0.45
         
+        # Round to nearest integer for ranges
+        total_int = int(round(total_corners))
+        home_int = int(round(home_corners))
+        away_int = int(round(away_corners))
+        
         return {
-            'total': f"{int(total_corners)}-{int(total_corners + 1)}",
-            'home': f"{int(home_corners)}-{int(home_corners + 0.5)}",
-            'away': f"{int(away_corners)}-{int(away_corners + 0.5)}",
+            'total': f"{total_int}-{total_int + 1}",
+            'home': f"{home_int}-{home_int + 1}",
+            'away': f"{away_int}-{away_int + 1}",
             'over_9.5': 'YES' if total_corners > 9.5 else 'NO'
         }
     
@@ -314,8 +347,8 @@ class AdvancedPredictionEngine:
             'most_action': "Last 20 minutes of each half" if total_xg > 2.0 else "Scattered throughout"
         }
     
-    def _generate_betting_recommendations(self, probabilities: Dict) -> Dict[str, Any]:
-        """Generate precise betting recommendations"""
+    def _generate_balanced_betting_recommendations(self, probabilities: Dict) -> Dict[str, Any]:
+        """Generate balanced betting recommendations with proper confidence"""
         recs = []
         confidence_levels = []
         
@@ -323,44 +356,44 @@ class AdvancedPredictionEngine:
         btts = probabilities['both_teams_score']
         over_under = probabilities['over_under']
         
-        # Match outcome recommendations
-        if outcomes['home_win'] > 55:
+        # Match outcome recommendations with higher thresholds
+        if outcomes['home_win'] > 52:
             recs.append(f"HOME WIN ({outcomes['home_win']}%)")
-            confidence_levels.append(min(95, outcomes['home_win']))
-        elif outcomes['away_win'] > 55:
+            confidence_levels.append(min(80, outcomes['home_win']))
+        elif outcomes['away_win'] > 52:
             recs.append(f"AWAY WIN ({outcomes['away_win']}%)")
-            confidence_levels.append(min(95, outcomes['away_win']))
-        elif outcomes['draw'] > 35:
+            confidence_levels.append(min(80, outcomes['away_win']))
+        elif outcomes['draw'] > 38:
             recs.append(f"DRAW ({outcomes['draw']}%)")
-            confidence_levels.append(min(80, outcomes['draw']))
+            confidence_levels.append(min(75, outcomes['draw']))
         
-        # BTTS recommendations
-        if btts > 65:
+        # BTTS recommendations with balanced thresholds
+        if btts > 62:
             recs.append(f"BOTH TEAMS SCORE: YES ({btts}%)")
-            confidence_levels.append(min(90, btts))
-        elif btts < 35:
+            confidence_levels.append(min(85, btts))
+        elif btts < 38:
             recs.append(f"BOTH TEAMS SCORE: NO ({100-btts}%)")
-            confidence_levels.append(min(90, 100-btts))
+            confidence_levels.append(min(85, 100-btts))
         
         # Over/under recommendations
-        if over_under['over_2.5'] > 60:
+        if over_under['over_2.5'] > 65:
             recs.append(f"OVER 2.5 GOALS ({over_under['over_2.5']}%)")
-            confidence_levels.append(min(85, over_under['over_2.5']))
-        elif over_under['over_2.5'] < 40:
+            confidence_levels.append(min(80, over_under['over_2.5']))
+        elif over_under['over_2.5'] < 35:
             recs.append(f"UNDER 2.5 GOALS ({100-over_under['over_2.5']}%)")
-            confidence_levels.append(min(85, 100-over_under['over_2.5']))
+            confidence_levels.append(min(80, 100-over_under['over_2.5']))
         
-        # Always include corners based on analysis
+        # Corners recommendation with moderate confidence
         recs.append("OVER 9.5 TOTAL CORNERS")
-        confidence_levels.append(65)
+        confidence_levels.append(60)
         
-        # Top confidence bet
+        # Top confidence bet - require good confidence
         if confidence_levels:
             top_confidence = max(confidence_levels)
             top_index = confidence_levels.index(top_confidence)
             top_bet = recs[top_index]
         else:
-            top_confidence = 60
+            top_confidence = 55
             top_bet = "OVER 1.5 GOALS"
         
         return {
@@ -369,9 +402,9 @@ class AdvancedPredictionEngine:
             'confidence_scores': confidence_levels
         }
     
-    def _calculate_advanced_confidence(self, home_goals: int, away_goals: int, 
+    def _calculate_improved_confidence(self, home_goals: int, away_goals: int, 
                                     home_form: list, away_form: list, h2h_data: Dict) -> int:
-        """Calculate advanced confidence score considering multiple factors"""
+        """Calculate improved confidence score"""
         confidence = 0
         
         # Data completeness (max 40 points)
@@ -388,29 +421,33 @@ class AdvancedPredictionEngine:
         
         # Form consistency (max 30 points)
         if home_form and len(home_form) >= 3:
-            form_std = np.std(home_form)
-            if form_std < 1.0: confidence += 15
+            form_std = np.std(home_form) if len(home_form) > 1 else 0
+            if form_std < 1.2: confidence += 15
         
         if away_form and len(away_form) >= 3:
-            form_std = np.std(away_form)
-            if form_std < 1.0: confidence += 15
+            form_std = np.std(away_form) if len(away_form) > 1 else 0
+            if form_std < 1.2: confidence += 15
         
-        return min(95, confidence)  # Never 100% in sports
+        return min(90, confidence)  # Never 100% in sports
     
-    def _assess_prediction_risk(self, probabilities: Dict, confidence: int) -> Dict[str, str]:
-        """Assess the risk level of predictions"""
+    def _assess_balanced_risk(self, probabilities: Dict, confidence: int) -> Dict[str, str]:
+        """Assess balanced risk level based on probability distributions"""
         outcomes = probabilities['match_outcomes']
         highest_prob = max(outcomes.values())
         
-        if highest_prob > 70 and confidence > 80:
+        # Improved risk assessment logic
+        if highest_prob > 65 and confidence > 70:
             risk_level = "LOW"
-            explanation = "Strong favorite with good data support"
-        elif highest_prob > 55 and confidence > 65:
+            explanation = "Clear favorite with good data support"
+        elif highest_prob > 55 and confidence > 60:
             risk_level = "MEDIUM"
             explanation = "Moderate favorite with reasonable data"
+        elif highest_prob > 45:
+            risk_level = "MEDIUM-HIGH"
+            explanation = "Uncertain outcome, slight favorite"
         else:
             risk_level = "HIGH"
-            explanation = "Uncertain outcome or limited data"
+            explanation = "Highly uncertain outcome or limited data"
         
         return {
             'risk_level': risk_level,
@@ -420,13 +457,13 @@ class AdvancedPredictionEngine:
     
     def _get_confidence_label(self, confidence: float) -> str:
         """Convert confidence percentage to label"""
-        if confidence >= 85:
+        if confidence >= 80:
             return "Very High"
-        elif confidence >= 75:
+        elif confidence >= 70:
             return "High"
-        elif confidence >= 65:
+        elif confidence >= 60:
             return "Good"
-        elif confidence >= 55:
+        elif confidence >= 50:
             return "Moderate"
         else:
             return "Low"
@@ -438,9 +475,9 @@ class AdvancedPredictionEngine:
         
         if outcomes['home_win'] > 60:
             return f"{home_team} are strong favorites to win this match. Expect controlled possession and multiple scoring opportunities against {away_team}."
-        elif outcomes['home_win'] > 45:
+        elif outcomes['home_win'] > 50:
             return f"{home_team} have a slight advantage playing at home. This could be a close match with {away_team} posing a threat on the counter-attack."
-        elif outcomes['away_win'] > 45:
+        elif outcomes['away_win'] > 50:
             return f"{away_team} might cause an upset here. {home_team} will need to be careful defensively while pushing for goals at home."
         else:
             return f"This match appears evenly balanced with a draw being a distinct possibility. Both teams will fancy their chances in what should be a competitive encounter."

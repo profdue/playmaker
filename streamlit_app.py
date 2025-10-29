@@ -39,6 +39,7 @@ st.markdown("""
     }
     .risk-low { border-left-color: #4CAF50 !important; }
     .risk-medium { border-left-color: #FF9800 !important; }
+    .risk-medium-high { border-left-color: #FF5722 !important; }
     .risk-high { border-left-color: #f44336 !important; }
     
     .confidence-badge {
@@ -175,7 +176,7 @@ def create_advanced_input_form():
             away_form_points = [form_map[result] for result in home_form]  # Default same for demo
             
             # Convert motivation to multipliers
-            motivation_map = {"Low": 0.8, "Normal": 1.0, "High": 1.15, "Very High": 1.3}
+            motivation_map = {"Low": 0.9, "Normal": 1.0, "High": 1.1, "Very High": 1.15}
             
             match_data = {
                 'home_team': home_team,
@@ -225,7 +226,7 @@ def display_advanced_predictions(predictions):
         st.metric("✈️ Expected Goals (Away)", f"{xg['away']}")
     with col3:
         risk = predictions['risk_assessment']
-        risk_class = f"risk-{risk['risk_level'].lower()}"
+        risk_class = f"risk-{risk['risk_level'].lower().replace('-', '_')}"
         st.markdown(f'<div class="prediction-card {risk_class}"><h3>📊 Risk Assessment</h3><strong>{risk["risk_level"]} RISK</strong><br>{risk["explanation"]}<br>Certainty: {risk["certainty"]}</div>', unsafe_allow_html=True)
     
     # Match Outcomes
@@ -305,7 +306,7 @@ def display_advanced_predictions(predictions):
     # Other Recommendations
     for i, recommendation in enumerate(bets['recommendations']):
         if recommendation not in bets['top_bet']:
-            confidence = bets['confidence_scores'][i] if i < len(bets['confidence_scores']) else 65
+            confidence = bets['confidence_scores'][i] if i < len(bets['confidence_scores']) else 60
             confidence_class = "confidence-high" if confidence > 75 else "confidence-medium" if confidence > 60 else "confidence-low"
             
             st.markdown(f'''
@@ -342,7 +343,7 @@ def display_probability_bar(label: str, probability: float, color: str):
 
 def display_probability_card(label: str, probability: float):
     """Display a probability in a card format"""
-    confidence_class = "confidence-high" if probability > 70 else "confidence-medium" if probability > 55 else "confidence-low"
+    confidence_class = "confidence-high" if probability > 75 else "confidence-medium" if probability > 60 else "confidence-low"
     
     st.markdown(f'''
     <div class="prediction-card">
@@ -369,7 +370,6 @@ def main():
         
         with col2:
             if st.button("📊 Download Analysis", use_container_width=True):
-                # In a real app, this would generate a PDF report
                 st.success("Analysis download feature would be implemented here")
         
         return

@@ -144,8 +144,6 @@ if 'predictions' not in st.session_state:
     st.session_state.predictions = None
 if 'calibration_data' not in st.session_state:
     st.session_state.calibration_data = {}
-if 'mc_iterations' not in st.session_state:
-    st.session_state.mc_iterations = 10000
 
 def create_advanced_input_form():
     """Create comprehensive input form with all advanced options"""
@@ -416,9 +414,10 @@ def create_advanced_input_form():
             }
         }
         
+        # Store in session state without mc_iterations
         st.session_state.match_data = match_data
         st.session_state.calibration_data = calibration_data
-        st.session_state.mc_iterations = mc_iterations
+        
         return match_data, calibration_data, mc_iterations
     
     return None, None, None

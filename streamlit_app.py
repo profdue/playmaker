@@ -144,8 +144,6 @@ if 'predictions' not in st.session_state:
     st.session_state.predictions = None
 if 'calibration_data' not in st.session_state:
     st.session_state.calibration_data = {}
-if 'mc_iterations' not in st.session_state:
-    st.session_state.mc_iterations = 10000  # Default value
 
 def create_advanced_input_form():
     """Create comprehensive input form with all advanced options"""
@@ -305,16 +303,14 @@ def create_advanced_input_form():
                 key="away_motivation"
             )
             
-            # Monte Carlo Settings - Fixed: Initialize in session state first
+            # Monte Carlo Settings
             st.write("**Simulation Settings**")
             mc_iterations = st.select_slider(
                 "Monte Carlo Iterations",
                 options=[1000, 5000, 10000, 25000],
-                value=st.session_state.mc_iterations,
+                value=10000,
                 key="mc_iterations"
             )
-            # Update session state safely
-            st.session_state.mc_iterations = mc_iterations
         
         # Calibration toggle
         use_calibration = st.checkbox("Use Advanced Calibration", value=True, 
@@ -379,8 +375,7 @@ def create_advanced_input_form():
                 'h2h_weight': 0.25,
                 'injury_impact': 0.08,
                 'motivation_impact': 0.12,
-                'regression_strength': 0.2,
-                'bivariate_lambda3_alpha': 0.12
+                'regression_strength': 0.2
             }
         
         match_data = {
@@ -421,6 +416,7 @@ def create_advanced_input_form():
         
         st.session_state.match_data = match_data
         st.session_state.calibration_data = calibration_data
+        st.session_state.mc_iterations = mc_iterations
         return match_data, calibration_data
     
     return None, None
@@ -794,20 +790,6 @@ def display_model_metrics(predictions):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Bivariate parameters
-    bivariate_params = predictions.get('bivariate_parameters', {})
-    if bivariate_params:
-        st.markdown('<div class="section-title">🎲 Bivariate Poisson Parameters</div>', unsafe_allow_html=True)
-        
-        param_col1, param_col2, param_col3 = st.columns(3)
-        
-        with param_col1:
-            st.metric("λ₁ (Home Attack)", f"{bivariate_params.get('lambda1', 0)}")
-        with param_col2:
-            st.metric("λ₂ (Away Attack)", f"{bivariate_params.get('lambda2', 0)}")
-        with param_col3:
-            st.metric("λ₃ (Shared)", f"{bivariate_params.get('lambda3', 0)}")
-    
     # Model configuration
     st.markdown('<div class="section-title">⚙️ Model Configuration</div>', unsafe_allow_html=True)
     
@@ -816,8 +798,8 @@ def display_model_metrics(predictions):
     with config_col1:
         st.write("**Prediction Engine**")
         st.write("• Bayesian xG Calculation")
-        st.write("• Bivariate Poisson Distribution")
         st.write("• Monte Carlo Simulation")
+        st.write("• Skellam Distribution")
         st.write("• Market Integration")
     
     with config_col2:
@@ -879,8 +861,7 @@ def main():
                     'key_probabilities': predictions['probabilities']['match_outcomes'],
                     'betting_signals': predictions.get('betting_signals', []),
                     'confidence_score': predictions['confidence_score'],
-                    'risk_assessment': predictions['risk_assessment'],
-                    'bivariate_parameters': predictions.get('bivariate_parameters', {})
+                    'risk_assessment': predictions['risk_assessment']
                 }
                 
                 st.download_button(
@@ -901,13 +882,14 @@ def main():
     match_data, calibration_data = create_advanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Performing advanced match analysis with Bivariate Poisson..."):
+        with st.spinner("🔍 Performing advanced match analysis with Monte Carlo simulation..."):
             try:
                 # Initialize engine with calibration data
                 engine = AdvancedPredictionEngine(match_data, calibration_data)
                 
-                # Set Monte Carlo iterations from session state
-                engine.monte_carlo_iterations = st.session_state.mc_iterations
+                # Set Monte Carlo iterations if specified
+                if hasattr(st.session_state, 'mc_iterations'):
+                    engine.monte_carlo_iterations = st.session_state.mc_iterations
                 
                 # Generate predictions
                 predictions = engine.generate_advanced_predictions()

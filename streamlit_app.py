@@ -322,7 +322,7 @@ def create_advanced_input_form():
     if submitted:
         if not home_team or not away_team:
             st.error("❌ Please enter both team names")
-            return None, None
+            return None
         
         # Convert form selections to points
         form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
@@ -496,16 +496,13 @@ def display_prediction_overview(predictions):
         over_25 = predictions['probabilities']['over_under']['over_2.5']
         display_probability_card("Over 2.5 Goals", over_25)
     
-    # Exact Score Probabilities - FIXED SECTION
+    # Exact Score Probabilities
     st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
     exact_scores = predictions['probabilities']['exact_scores']
-    
-    # Take only the top 6 scores to fit our 6 columns
-    top_scores = dict(list(exact_scores.items())[:6])
     score_cols = st.columns(6)
-
-    for idx, (score, prob) in enumerate(top_scores.items()):
+    
+    for idx, (score, prob) in enumerate(exact_scores.items()):
         with score_cols[idx]:
             st.metric(f"{score}", f"{prob}%")
     

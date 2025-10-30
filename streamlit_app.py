@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from prediction_engine import ProductionPredictionEngine
+from prediction_engine import AdvancedPredictionEngine
 
 # Page configuration
 st.set_page_config(
-    page_title="Professional Football Predictor ⚽",
+    page_title="Advanced Football Predictor ⚽",
     page_icon="⚽",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Professional CSS styling
+# Advanced CSS styling
 st.markdown("""
 <style>
     .main-header { 
@@ -38,9 +38,7 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .risk-low { border-left-color: #4CAF50 !important; }
-    .risk-medium-low { border-left-color: #8BC34A !important; }
     .risk-medium { border-left-color: #FF9800 !important; }
-    .risk-medium-high { border-left-color: #FF5722 !important; }
     .risk-high { border-left-color: #f44336 !important; }
     
     .confidence-badge {
@@ -62,6 +60,7 @@ st.markdown("""
     }
     .probability-fill {
         height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #45a049);
         border-radius: 4px;
     }
     
@@ -82,22 +81,6 @@ st.markdown("""
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #f0f2f6;
     }
-    
-    .success-metric {
-        background: linear-gradient(135deg, #4CAF50, #45a049);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-    }
-    
-    .warning-metric {
-        background: linear-gradient(135deg, #FF9800, #F57C00);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,13 +90,13 @@ if 'match_data' not in st.session_state:
 if 'predictions' not in st.session_state:
     st.session_state.predictions = None
 
-def create_professional_input_form():
-    """Create professional input form"""
+def create_advanced_input_form():
+    """Create comprehensive input form with advanced options"""
     
-    st.markdown('<p class="main-header">⚽ Professional Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Production-ready match analysis with professional probability calibration</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional match analysis with precise probability calculations</p>', unsafe_allow_html=True)
     
-    with st.form("professional_match_form"):
+    with st.form("advanced_match_form"):
         # Basic team information
         col1, col2 = st.columns(2)
         
@@ -132,7 +115,7 @@ def create_professional_input_form():
             away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=2, key="away_goals_away")
         
         # Advanced options in expander
-        with st.expander("⚙️ Professional Match Parameters"):
+        with st.expander("⚙️ Advanced Match Parameters"):
             adv_col1, adv_col2, adv_col3 = st.columns(3)
             
             with adv_col1:
@@ -150,32 +133,27 @@ def create_professional_input_form():
                 
             with adv_col2:
                 st.write("**Injuries & Suspensions**")
-                home_injuries = st.slider("Home Key Absences", 0, 5, 0, 
-                                         help="Number of key players missing")
-                away_injuries = st.slider("Away Key Absences", 0, 5, 1,
-                                         help="Number of key players missing")
+                home_injuries = st.slider("Home Key Absences", 0, 5, 0)
+                away_injuries = st.slider("Away Key Absences", 0, 5, 1)
                 
             with adv_col3:
                 st.write("**Match Motivation**")
                 home_motivation = st.select_slider(
                     "Home Team Motivation",
                     options=["Low", "Normal", "High", "Very High"],
-                    value="High",
-                    help="Team motivation level for this match"
+                    value="High"
                 )
                 away_motivation = st.select_slider(
                     "Away Team Motivation", 
                     options=["Low", "Normal", "High", "Very High"],
-                    value="Normal",
-                    help="Team motivation level for this match"
+                    value="Normal"
                 )
         
         # Head-to-head section
         with st.expander("📊 Head-to-Head History (Optional)"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4,
-                                             help="Total historical matches between teams")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4)
                 h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3)
             with h2h_col2:
                 h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0)
@@ -184,7 +162,7 @@ def create_professional_input_form():
                 h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8)
                 h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2)
         
-        submitted = st.form_submit_button("🎯 GENERATE PROFESSIONAL PREDICTION", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("🎯 GENERATE ADVANCED PREDICTION", type="primary", use_container_width=True)
         
         if submitted:
             if not home_team or not away_team:
@@ -197,7 +175,7 @@ def create_professional_input_form():
             away_form_points = [form_map[result] for result in home_form]  # Default same for demo
             
             # Convert motivation to multipliers
-            motivation_map = {"Low": 0.9, "Normal": 1.0, "High": 1.05, "Very High": 1.08}
+            motivation_map = {"Low": 0.8, "Normal": 1.0, "High": 1.15, "Very High": 1.3}
             
             match_data = {
                 'home_team': home_team,
@@ -231,10 +209,10 @@ def create_professional_input_form():
     
     return None
 
-def display_professional_predictions(predictions):
-    """Display professional predictions with detailed analysis"""
+def display_advanced_predictions(predictions):
+    """Display comprehensive predictions with detailed analysis"""
     
-    st.markdown('<p class="main-header">🎯 Professional Match Prediction</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">🎯 Advanced Match Prediction</p>', unsafe_allow_html=True)
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
     
     # Expected Goals and Risk Assessment
@@ -247,7 +225,7 @@ def display_professional_predictions(predictions):
         st.metric("✈️ Expected Goals (Away)", f"{xg['away']}")
     with col3:
         risk = predictions['risk_assessment']
-        risk_class = f"risk-{risk['risk_level'].lower().replace('-', '_')}"
+        risk_class = f"risk-{risk['risk_level'].lower()}"
         st.markdown(f'<div class="prediction-card {risk_class}"><h3>📊 Risk Assessment</h3><strong>{risk["risk_level"]} RISK</strong><br>{risk["explanation"]}<br>Certainty: {risk["certainty"]}</div>', unsafe_allow_html=True)
     
     # Match Outcomes
@@ -284,14 +262,11 @@ def display_professional_predictions(predictions):
     st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
     exact_scores = predictions['probabilities']['exact_scores']
-    if exact_scores:
-        score_cols = st.columns(min(6, len(exact_scores)))
-        for idx, (score, prob) in enumerate(exact_scores.items()):
-            if idx < 6:
-                with score_cols[idx]:
-                    st.metric(f"{score}", f"{prob}%")
-    else:
-        st.info("No specific scorelines with significant probability")
+    score_cols = st.columns(6)
+    
+    for idx, (score, prob) in enumerate(exact_scores.items()):
+        with score_cols[idx]:
+            st.metric(f"{score}", f"{prob}%")
     
     # Corner Predictions
     st.markdown('<div class="section-title">📊 Corner Predictions</div>', unsafe_allow_html=True)
@@ -330,7 +305,7 @@ def display_professional_predictions(predictions):
     # Other Recommendations
     for i, recommendation in enumerate(bets['recommendations']):
         if recommendation not in bets['top_bet']:
-            confidence = bets['confidence_scores'][i] if i < len(bets['confidence_scores']) else 60
+            confidence = bets['confidence_scores'][i] if i < len(bets['confidence_scores']) else 65
             confidence_class = "confidence-high" if confidence > 75 else "confidence-medium" if confidence > 60 else "confidence-low"
             
             st.markdown(f'''
@@ -349,13 +324,7 @@ def display_professional_predictions(predictions):
         st.info(predictions['summary'])
     
     with col2:
-        confidence = predictions['confidence_score']
-        if confidence >= 70:
-            st.markdown(f'<div class="success-metric"><h3>Confidence Score</h3><span style="font-size: 2rem;">{confidence}%</span></div>', unsafe_allow_html=True)
-        elif confidence >= 50:
-            st.markdown(f'<div class="warning-metric"><h3>Confidence Score</h3><span style="font-size: 2rem;">{confidence}%</span></div>', unsafe_allow_html=True)
-        else:
-            st.metric("Confidence Score", f"{confidence}%")
+        st.metric("Overall Confidence Score", f"{predictions['confidence_score']}%")
 
 def display_probability_bar(label: str, probability: float, color: str):
     """Display a probability with a visual bar"""
@@ -373,7 +342,7 @@ def display_probability_bar(label: str, probability: float, color: str):
 
 def display_probability_card(label: str, probability: float):
     """Display a probability in a card format"""
-    confidence_class = "confidence-high" if probability > 75 else "confidence-medium" if probability > 60 else "confidence-low"
+    confidence_class = "confidence-high" if probability > 70 else "confidence-medium" if probability > 55 else "confidence-low"
     
     st.markdown(f'''
     <div class="prediction-card">
@@ -387,7 +356,7 @@ def main():
     
     # Show predictions if available
     if st.session_state.predictions:
-        display_professional_predictions(st.session_state.predictions)
+        display_advanced_predictions(st.session_state.predictions)
         
         st.markdown("---")
         col1, col2 = st.columns([1, 1])
@@ -400,25 +369,26 @@ def main():
         
         with col2:
             if st.button("📊 Download Analysis", use_container_width=True):
-                st.success("📊 Professional analysis report would be generated here")
+                # In a real app, this would generate a PDF report
+                st.success("Analysis download feature would be implemented here")
         
         return
     
     # Input form
-    match_data = create_professional_input_form()
+    match_data = create_advanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Performing professional match analysis..."):
+        with st.spinner("🔍 Performing advanced match analysis..."):
             try:
-                engine = ProductionPredictionEngine(match_data)
-                predictions = engine.generate_predictions()
+                engine = AdvancedPredictionEngine(match_data)
+                predictions = engine.generate_advanced_predictions()
                 
                 st.session_state.predictions = predictions
                 st.rerun()
                 
             except Exception as e:
                 st.error(f"❌ Error generating predictions: {str(e)}")
-                st.info("💡 Try adjusting the input parameters for more balanced results")
+                st.info("💡 Try adjusting the input parameters or check for invalid values")
 
 if __name__ == "__main__":
     main()

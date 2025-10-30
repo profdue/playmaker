@@ -36,7 +36,7 @@ class MonteCarloResults:
     probability_volatility: Dict[str, float]
 
 class AdvancedPredictionEngine:
-    """Enhanced Football Prediction Engine with Monte Carlo, Bayesian Updates, and Market Integration"""
+    """Enhanced Football Prediction Engine with Bivariate Poisson & Monte Carlo Simulation"""
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.data = match_data
@@ -51,38 +51,44 @@ class AdvancedPredictionEngine:
             'premier_league': {
                 'avg_goals': 2.8, 'avg_corners': 10.5, 'home_advantage': 1.12,
                 'goal_timing_first_half': 0.47, 'goal_timing_second_half': 0.53,
-                'attack_weight': 1.05, 'defense_weight': 0.95
+                'attack_weight': 1.05, 'defense_weight': 0.95,
+                'bivariate_correlation': 0.15  # Higher correlation in open leagues
             },
             'la_liga': {
                 'avg_goals': 2.6, 'avg_corners': 9.8, 'home_advantage': 1.15,
                 'goal_timing_first_half': 0.45, 'goal_timing_second_half': 0.55,
-                'attack_weight': 1.02, 'defense_weight': 0.98
+                'attack_weight': 1.02, 'defense_weight': 0.98,
+                'bivariate_correlation': 0.12
             },
             'serie_a': {
                 'avg_goals': 2.7, 'avg_corners': 10.2, 'home_advantage': 1.08,
                 'goal_timing_first_half': 0.46, 'goal_timing_second_half': 0.54,
-                'attack_weight': 1.03, 'defense_weight': 0.97
+                'attack_weight': 1.03, 'defense_weight': 0.97,
+                'bivariate_correlation': 0.10  # Lower correlation in tactical leagues
             },
             'bundesliga': {
                 'avg_goals': 3.1, 'avg_corners': 9.5, 'home_advantage': 1.12,
                 'goal_timing_first_half': 0.48, 'goal_timing_second_half': 0.52,
-                'attack_weight': 1.08, 'defense_weight': 0.92
+                'attack_weight': 1.08, 'defense_weight': 0.92,
+                'bivariate_correlation': 0.18  # Higher correlation in high-scoring leagues
             },
             'ligue_1': {
                 'avg_goals': 2.5, 'avg_corners': 9.2, 'home_advantage': 1.1,
                 'goal_timing_first_half': 0.44, 'goal_timing_second_half': 0.56,
-                'attack_weight': 1.01, 'defense_weight': 0.99
+                'attack_weight': 1.01, 'defense_weight': 0.99,
+                'bivariate_correlation': 0.11
             },
             'default': {
                 'avg_goals': 2.7, 'avg_corners': 10.0, 'home_advantage': 1.1,
                 'goal_timing_first_half': 0.46, 'goal_timing_second_half': 0.54,
-                'attack_weight': 1.04, 'defense_weight': 0.96
+                'attack_weight': 1.04, 'defense_weight': 0.96,
+                'bivariate_correlation': 0.12
             }
         }
     
     def _setup_calibration_parameters(self):
         """Setup calibration parameters from historical data"""
-        # Default calibration values (would be loaded from historical fitting)
+        # Default calibration values
         self.calibration_params = {
             'home_attack_weight': 1.05,
             'away_attack_weight': 0.95,
@@ -91,15 +97,100 @@ class AdvancedPredictionEngine:
             'h2h_weight': 0.3,
             'injury_impact': 0.08,
             'motivation_impact': 0.12,
-            'regression_strength': 0.25
+            'regression_strength': 0.25,
+            'bivariate_lambda3_alpha': 0.12  # Heuristic for shared component
         }
         
         # Update with provided calibration data
         if self.calibration_data:
             self.calibration_params.update(self.calibration_data)
     
+    def bivariate_poisson_pmf_matrix(self, lambda1: float, lambda2: float, lambda3: float, max_goals: int = 8):
+        """
+        Compute joint PMF matrix for Bivariate Poisson:
+          X = A + C
+          Y = B + C
+        where A ~ Pois(lambda1), B ~ Pois(lambda2), C ~ Pois(lambda3) independent.
+        Joint PMF:
+          P(X=i, Y=j) = sum_{k=0}^{min(i,j)} e^{-(λ1+λ2+λ3)} * λ1^(i-k)/((i-k)!) * λ2^(j-k)/((j-k)!) * λ3^k/(k!)
+        Returns matrix shape (max_goals+1, max_goals+1)
+        """
+        exp_term = math.exp(-(lambda1 + lambda2 + lambda3))
+        P = np.zeros((max_goals+1, max_goals+1), dtype=float)
+
+        # Precompute factorials for speed
+        fact = [math.factorial(n) for n in range(max_goals+1)]
+
+        for i in range(max_goals+1):
+            for j in range(max_goals+1):
+                s = 0.0
+                k_max = min(i, j)
+                for k in range(k_max + 1):
+                    a = i - k
+                    b = j - k
+                    term = ( (lambda1 ** a) / fact[a] ) * ( (lambda2 ** b) / fact[b] ) * ( (lambda3 ** k) / fact[k] )
+                    s += term
+                P[i, j] = exp_term * s
+        
+        # Normalize (numerical rounding may cause tiny error)
+        P /= P.sum()
+        return P
+    
+    def get_markets_from_joint_pmf(self, P: np.ndarray):
+        """
+        Given joint PMF matrix P (i rows, j cols), compute:
+          - exact score probabilities dict,
+          - match outcome probs,
+          - over/under (1.5,2.5,3.5),
+          - btts
+        """
+        max_goals = P.shape[0] - 1
+        exact_scores = {}
+        
+        # Match outcomes
+        home_win_prob = 0.0
+        draw_prob = 0.0
+        away_win_prob = 0.0
+        
+        for i in range(max_goals+1):
+            for j in range(max_goals+1):
+                prob = P[i, j]
+                if i > j:
+                    home_win_prob += prob
+                elif i == j:
+                    draw_prob += prob
+                else:
+                    away_win_prob += prob
+                
+                # Store exact scores above threshold
+                if prob > 0.001:  # 0.1% threshold
+                    exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
+
+        # Over/under probabilities
+        total_prob = {}
+        total_goals_matrix = np.add.outer(np.arange(max_goals+1), np.arange(max_goals+1))
+        
+        for line in [1.5, 2.5, 3.5]:
+            over_mask = total_goals_matrix > line
+            total_prob[f"over_{str(line).replace('.', '')}"] = round(P[over_mask].sum() * 100, 1)
+
+        # Both teams to score
+        btts_mask = (np.arange(max_goals+1) > 0)[:, None] & (np.arange(max_goals+1) > 0)
+        btts_prob = round(P[btts_mask].sum() * 100, 1)
+
+        return {
+            'match_outcomes': {
+                'home_win': round(home_win_prob * 100, 1),
+                'draw': round(draw_prob * 100, 1),
+                'away_win': round(away_win_prob * 100, 1)
+            },
+            'exact_scores': exact_scores,
+            'over_under': total_prob,
+            'both_teams_score': btts_prob
+        }
+    
     def generate_advanced_predictions(self) -> Dict[str, Any]:
-        """Generate comprehensive predictions with all enhanced features"""
+        """Generate comprehensive predictions with bivariate Poisson"""
         
         # Extract and validate data
         home_team = self.data.get('home_team', 'Home Team')
@@ -112,14 +203,17 @@ class AdvancedPredictionEngine:
         # Calculate Bayesian-enhanced expected goals
         home_xg, away_xg = self._calculate_bayesian_xg()
         
-        # Run Monte Carlo simulation for robust probabilities
-        mc_results = self._run_monte_carlo_simulation(home_xg, away_xg)
+        # Calculate bivariate Poisson probabilities
+        bivariate_results = self._calculate_bivariate_probabilities(home_xg, away_xg, league)
+        
+        # Run Monte Carlo simulation for robust probabilities (using bivariate structure)
+        mc_results = self._run_bivariate_monte_carlo_simulation(home_xg, away_xg, league)
         
         # Calculate Skellam-based handicap probabilities
         handicap_probs = self._calculate_handicap_probabilities(home_xg, away_xg)
         
-        # Generate all probabilities with uncertainty quantification
-        probabilities = self._calculate_enhanced_probabilities(home_xg, away_xg, mc_results)
+        # Use bivariate results for main probabilities
+        probabilities = bivariate_results
         
         # Generate betting signals with value detection
         betting_signals = self._generate_betting_signals(probabilities, market_odds, mc_results)
@@ -147,8 +241,143 @@ class AdvancedPredictionEngine:
             'summary': self._generate_quantitative_summary(home_team, away_team, probabilities, home_xg, away_xg),
             'confidence_score': confidence_score,
             'risk_assessment': risk_assessment,
-            'model_metrics': self._calculate_model_metrics(probabilities, mc_results)
+            'model_metrics': self._calculate_model_metrics(probabilities, mc_results),
+            'bivariate_parameters': {
+                'lambda1': round(home_xg - (0.12 * min(home_xg, away_xg)), 3),
+                'lambda2': round(away_xg - (0.12 * min(home_xg, away_xg)), 3),
+                'lambda3': round(0.12 * min(home_xg, away_xg), 3)
+            }
         }
+    
+    def _calculate_bivariate_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
+        """Calculate probabilities using bivariate Poisson distribution"""
+        
+        # Get league-specific correlation parameter
+        league_params = self.league_contexts.get(league, self.league_contexts['default'])
+        lambda3_alpha = self.calibration_params.get('bivariate_lambda3_alpha', 0.12)
+        
+        # Calculate lambda3 using heuristic: λ3 = α * min(λ1+λ3, λ2+λ3)
+        lambda3 = lambda3_alpha * min(home_xg, away_xg)
+        
+        # Ensure non-negative lambdas
+        lambda1 = max(0.1, home_xg - lambda3)
+        lambda2 = max(0.1, away_xg - lambda3)
+        
+        # Compute joint PMF matrix
+        P = self.bivariate_poisson_pmf_matrix(lambda1, lambda2, lambda3, max_goals=8)
+        
+        # Extract market probabilities
+        markets = self.get_markets_from_joint_pmf(P)
+        
+        # Add goal timing probabilities (keep existing method for now)
+        markets['goal_timing'] = self._calculate_goal_timing_probabilities(home_xg, away_xg, league)
+        
+        return markets
+    
+    def _calculate_goal_timing_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, float]:
+        """Calculate goal timing probabilities"""
+        league_params = self.league_contexts.get(league, self.league_contexts['default'])
+        
+        first_half_xg_home = home_xg * league_params['goal_timing_first_half']
+        first_half_xg_away = away_xg * league_params['goal_timing_first_half']
+        prob_no_goals_first = poisson.pmf(0, first_half_xg_home) * poisson.pmf(0, first_half_xg_away)
+        
+        second_half_xg_home = home_xg * league_params['goal_timing_second_half']
+        second_half_xg_away = away_xg * league_params['goal_timing_second_half']
+        prob_no_goals_second = poisson.pmf(0, second_half_xg_home) * poisson.pmf(0, second_half_xg_away)
+        
+        return {
+            'first_half': round((1 - prob_no_goals_first) * 100, 1),
+            'second_half': round((1 - prob_no_goals_second) * 100, 1)
+        }
+    
+    def _run_bivariate_monte_carlo_simulation(self, home_xg: float, away_xg: float, league: str) -> MonteCarloResults:
+        """Run Monte Carlo simulation using bivariate Poisson structure"""
+        np.random.seed(42)  # For reproducible results
+        
+        # Get correlation parameter
+        lambda3_alpha = self.calibration_params.get('bivariate_lambda3_alpha', 0.12)
+        lambda3 = lambda3_alpha * min(home_xg, away_xg)
+        lambda1 = max(0.1, home_xg - lambda3)
+        lambda2 = max(0.1, away_xg - lambda3)
+        
+        # Sample from bivariate Poisson structure
+        C = np.random.poisson(lambda3, self.monte_carlo_iterations)  # Shared component
+        A = np.random.poisson(lambda1, self.monte_carlo_iterations)  # Home-specific
+        B = np.random.poisson(lambda2, self.monte_carlo_iterations)  # Away-specific
+        
+        home_goals_sim = A + C
+        away_goals_sim = B + C
+        
+        # Calculate outcome probabilities
+        home_wins = np.sum(home_goals_sim > away_goals_sim) / self.monte_carlo_iterations
+        draws = np.sum(home_goals_sim == away_goals_sim) / self.monte_carlo_iterations
+        away_wins = np.sum(home_goals_sim < away_goals_sim) / self.monte_carlo_iterations
+        
+        # Calculate market probabilities
+        total_goals = home_goals_sim + away_goals_sim
+        over_25 = np.sum(total_goals > 2.5) / self.monte_carlo_iterations
+        btts = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / self.monte_carlo_iterations
+        
+        # Exact score probabilities (from simulation)
+        exact_scores = {}
+        for i in range(5):  # Home goals
+            for j in range(5):  # Away goals
+                count = np.sum((home_goals_sim == i) & (away_goals_sim == j))
+                prob = count / self.monte_carlo_iterations
+                if prob > 0.01:  # Only include probabilities > 1%
+                    exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
+        
+        # Calculate confidence intervals (95%)
+        def calculate_ci(probs, alpha=0.95):
+            se = np.sqrt(probs * (1 - probs) / self.monte_carlo_iterations)
+            z_score = 1.96  # for 95% CI
+            return (probs - z_score * se, probs + z_score * se)
+        
+        confidence_intervals = {
+            'home_win': calculate_ci(home_wins),
+            'draw': calculate_ci(draws),
+            'away_win': calculate_ci(away_wins),
+            'over_2.5': calculate_ci(over_25)
+        }
+        
+        # Calculate probability volatility
+        batch_size = 1000
+        num_batches = self.monte_carlo_iterations // batch_size
+        
+        batch_probs = {
+            'home_win': [], 'draw': [], 'away_win': [], 'over_2.5': []
+        }
+        
+        for i in range(num_batches):
+            start_idx = i * batch_size
+            end_idx = start_idx + batch_size
+            
+            batch_home_wins = np.sum(home_goals_sim[start_idx:end_idx] > away_goals_sim[start_idx:end_idx]) / batch_size
+            batch_draws = np.sum(home_goals_sim[start_idx:end_idx] == away_goals_sim[start_idx:end_idx]) / batch_size
+            batch_away_wins = np.sum(home_goals_sim[start_idx:end_idx] < away_goals_sim[start_idx:end_idx]) / batch_size
+            batch_over_25 = np.sum((home_goals_sim[start_idx:end_idx] + away_goals_sim[start_idx:end_idx]) > 2.5) / batch_size
+            
+            batch_probs['home_win'].append(batch_home_wins)
+            batch_probs['draw'].append(batch_draws)
+            batch_probs['away_win'].append(batch_away_wins)
+            batch_probs['over_2.5'].append(batch_over_25)
+        
+        probability_volatility = {
+            market: float(np.std(probs))
+            for market, probs in batch_probs.items()
+        }
+        
+        return MonteCarloResults(
+            home_win_prob=home_wins,
+            draw_prob=draws,
+            away_win_prob=away_wins,
+            over_25_prob=over_25,
+            btts_prob=btts,
+            exact_scores=exact_scores,
+            confidence_intervals=confidence_intervals,
+            probability_volatility=probability_volatility
+        )
     
     def _calculate_bayesian_xg(self) -> Tuple[float, float]:
         """Calculate Bayesian-enhanced expected goals"""
@@ -276,84 +505,6 @@ class AdvancedPredictionEngine:
         
         return adjusted_home_xg, adjusted_away_xg
     
-    def _run_monte_carlo_simulation(self, home_xg: float, away_xg: float) -> MonteCarloResults:
-        """Run Monte Carlo simulation for robust probability estimation"""
-        np.random.seed(42)  # For reproducible results
-        
-        home_goals_sim = np.random.poisson(home_xg, self.monte_carlo_iterations)
-        away_goals_sim = np.random.poisson(away_xg, self.monte_carlo_iterations)
-        
-        # Calculate outcome probabilities
-        home_wins = np.sum(home_goals_sim > away_goals_sim) / self.monte_carlo_iterations
-        draws = np.sum(home_goals_sim == away_goals_sim) / self.monte_carlo_iterations
-        away_wins = np.sum(home_goals_sim < away_goals_sim) / self.monte_carlo_iterations
-        
-        # Calculate market probabilities
-        total_goals = home_goals_sim + away_goals_sim
-        over_25 = np.sum(total_goals > 2.5) / self.monte_carlo_iterations
-        btts = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / self.monte_carlo_iterations
-        
-        # Exact score probabilities
-        exact_scores = {}
-        for i in range(5):  # Home goals
-            for j in range(5):  # Away goals
-                count = np.sum((home_goals_sim == i) & (away_goals_sim == j))
-                prob = count / self.monte_carlo_iterations
-                if prob > 0.01:  # Only include probabilities > 1%
-                    exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
-        
-        # Calculate confidence intervals (95%)
-        def calculate_ci(probs, alpha=0.95):
-            se = np.sqrt(probs * (1 - probs) / self.monte_carlo_iterations)
-            z_score = 1.96  # for 95% CI
-            return (probs - z_score * se, probs + z_score * se)
-        
-        confidence_intervals = {
-            'home_win': calculate_ci(home_wins),
-            'draw': calculate_ci(draws),
-            'away_win': calculate_ci(away_wins),
-            'over_2.5': calculate_ci(over_25)
-        }
-        
-        # Calculate probability volatility (standard deviation across simulation runs)
-        # Using batch means method
-        batch_size = 1000
-        num_batches = self.monte_carlo_iterations // batch_size
-        
-        batch_probs = {
-            'home_win': [], 'draw': [], 'away_win': [], 'over_2.5': []
-        }
-        
-        for i in range(num_batches):
-            start_idx = i * batch_size
-            end_idx = start_idx + batch_size
-            
-            batch_home_wins = np.sum(home_goals_sim[start_idx:end_idx] > away_goals_sim[start_idx:end_idx]) / batch_size
-            batch_draws = np.sum(home_goals_sim[start_idx:end_idx] == away_goals_sim[start_idx:end_idx]) / batch_size
-            batch_away_wins = np.sum(home_goals_sim[start_idx:end_idx] < away_goals_sim[start_idx:end_idx]) / batch_size
-            batch_over_25 = np.sum((home_goals_sim[start_idx:end_idx] + away_goals_sim[start_idx:end_idx]) > 2.5) / batch_size
-            
-            batch_probs['home_win'].append(batch_home_wins)
-            batch_probs['draw'].append(batch_draws)
-            batch_probs['away_win'].append(batch_away_wins)
-            batch_probs['over_2.5'].append(batch_over_25)
-        
-        probability_volatility = {
-            market: float(np.std(probs))
-            for market, probs in batch_probs.items()
-        }
-        
-        return MonteCarloResults(
-            home_win_prob=home_wins,
-            draw_prob=draws,
-            away_win_prob=away_wins,
-            over_25_prob=over_25,
-            btts_prob=btts,
-            exact_scores=exact_scores,
-            confidence_intervals=confidence_intervals,
-            probability_volatility=probability_volatility
-        )
-    
     def _calculate_handicap_probabilities(self, home_xg: float, away_xg: float) -> Dict[str, float]:
         """Calculate Asian Handicap probabilities using Skellam distribution"""
         # Skellam distribution for goal difference
@@ -378,50 +529,6 @@ class AdvancedPredictionEngine:
             handicap_probs[f"handicap_{handicap}"] = round(prob * 100, 1)
         
         return handicap_probs
-    
-    def _calculate_enhanced_probabilities(self, home_xg: float, away_xg: float, 
-                                        mc_results: MonteCarloResults) -> Dict[str, Any]:
-        """Calculate all enhanced probabilities with uncertainty quantification"""
-        
-        # Use Monte Carlo results for main outcomes
-        outcomes = {
-            'home_win': round(mc_results.home_win_prob * 100, 1),
-            'draw': round(mc_results.draw_prob * 100, 1),
-            'away_win': round(mc_results.away_win_prob * 100, 1)
-        }
-        
-        # Goal timing probabilities (enhanced with league data)
-        league = self.data.get('league', 'default')
-        league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        
-        first_half_xg_home = home_xg * league_params['goal_timing_first_half']
-        first_half_xg_away = away_xg * league_params['goal_timing_first_half']
-        prob_no_goals_first = poisson.pmf(0, first_half_xg_home) * poisson.pmf(0, first_half_xg_away)
-        
-        second_half_xg_home = home_xg * league_params['goal_timing_second_half']
-        second_half_xg_away = away_xg * league_params['goal_timing_second_half']
-        prob_no_goals_second = poisson.pmf(0, second_half_xg_home) * poisson.pmf(0, second_half_xg_away)
-        
-        # Over/under probabilities from Monte Carlo
-        over_15_prob = 1 - (poisson.pmf(0, home_xg) * poisson.pmf(0, away_xg) + 
-                           poisson.pmf(1, home_xg) * poisson.pmf(0, away_xg) + 
-                           poisson.pmf(0, home_xg) * poisson.pmf(1, away_xg))
-        
-        return {
-            'match_outcomes': outcomes,
-            'goal_timing': {
-                'first_half': round((1 - prob_no_goals_first) * 100, 1),
-                'second_half': round((1 - prob_no_goals_second) * 100, 1)
-            },
-            'both_teams_score': round(mc_results.btts_prob * 100, 1),
-            'over_under': {
-                'over_1.5': round(over_15_prob * 100, 1),
-                'over_2.5': round(mc_results.over_25_prob * 100, 1),
-                'over_3.5': round(1 - sum(poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg) 
-                                        for i in range(4) for j in range(4 - i)) * 100, 1)
-            },
-            'exact_scores': mc_results.exact_scores
-        }
     
     def _generate_betting_signals(self, probabilities: Dict, market_odds: Dict, 
                                 mc_results: MonteCarloResults) -> List[Dict]:
@@ -653,9 +760,9 @@ class AdvancedPredictionEngine:
         else:
             return f"Competitive match with both teams creating opportunities. Small margins expected to determine outcome in what promises tactical engagement."
 
-# Example usage and calibration data
+# Example usage
 if __name__ == "__main__":
-    # Example calibration data (would come from historical fitting)
+    # Example calibration data
     calibration_data = {
         'home_attack_weight': 1.05,
         'away_attack_weight': 0.95,
@@ -664,7 +771,8 @@ if __name__ == "__main__":
         'h2h_weight': 0.25,
         'injury_impact': 0.08,
         'motivation_impact': 0.12,
-        'regression_strength': 0.2
+        'regression_strength': 0.2,
+        'bivariate_lambda3_alpha': 0.12
     }
     
     # Example match data
@@ -703,5 +811,5 @@ if __name__ == "__main__":
     engine = AdvancedPredictionEngine(match_data, calibration_data)
     predictions = engine.generate_advanced_predictions()
     
-    print("Enhanced Prediction Results:")
+    print("Enhanced Bivariate Poisson Prediction Results:")
     print(json.dumps(predictions, indent=2, default=str))

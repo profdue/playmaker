@@ -113,6 +113,38 @@ st.markdown("""
         border-bottom: 2px solid #f0f2f6;
     }
     
+    .goals-card {
+        background: white;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .recommendation-yes {
+        border-left-color: #4CAF50 !important;
+        background: #f8fff8;
+    }
+    
+    .recommendation-no {
+        border-left-color: #f44336 !important;
+        background: #fff5f5;
+    }
+    
+    .confidence-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+    .confidence-high { background: #4CAF50; }
+    .confidence-medium { background: #FF9800; }
+    .confidence-low { background: #f44336; }
+    
     .architecture-diagram {
         background: #f8f9fa;
         padding: 1.5rem;
@@ -366,6 +398,118 @@ def display_separated_analysis(predictions):
     with tab4:
         display_system_health(predictions)
 
+def display_goals_analysis(predictions):
+    """Display goals analysis with CORRECT recommendations"""
+    st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
+    
+    # Get probabilities
+    btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes', default=0)
+    btts_no = safe_get(predictions, 'probabilities', 'both_teams_score', 'no', default=0)
+    
+    over_25 = safe_get(predictions, 'probabilities', 'over_under', 'over_25', default=0)
+    under_25 = safe_get(predictions, 'probabilities', 'over_under', 'under_25', default=0)
+    
+    first_half = safe_get(predictions, 'probabilities', 'goal_timing', 'first_half', default=0)
+    second_half = safe_get(predictions, 'probabilities', 'goal_timing', 'second_half', default=0)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        # BTTS - Show the HIGHER probability as primary
+        if btts_no > btts_yes:
+            recommendation = "NO"
+            primary_prob = btts_no
+            secondary_prob = btts_yes
+            card_class = "recommendation-no"
+            emoji = "❌"
+        else:
+            recommendation = "YES"
+            primary_prob = btts_yes
+            secondary_prob = btts_no
+            card_class = "recommendation-yes"
+            emoji = "✅"
+        
+        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        
+        st.markdown(f'''
+        <div class="goals-card {card_class}">
+            <h4>{emoji} Both Teams Score</h4>
+            <div style="font-size: 1.8rem; font-weight: bold; color: #333; margin: 0.5rem 0;">
+                {recommendation}: {primary_prob}%
+            </div>
+            <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
+                {('NO' if recommendation == 'YES' else 'YES')}: {secondary_prob}%
+            </div>
+            <span class="confidence-badge confidence-{confidence.lower()}">
+                {confidence} CONFIDENCE
+            </span>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col2:
+        # Over/Under 2.5 - Show the HIGHER probability as primary
+        if under_25 > over_25:
+            recommendation = "UNDER"
+            primary_prob = under_25
+            secondary_prob = over_25
+            card_class = "recommendation-no"
+            emoji = "❌"
+        else:
+            recommendation = "OVER"
+            primary_prob = over_25
+            secondary_prob = under_25
+            card_class = "recommendation-yes"
+            emoji = "✅"
+        
+        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        
+        st.markdown(f'''
+        <div class="goals-card {card_class}">
+            <h4>{emoji} Over/Under 2.5</h4>
+            <div style="font-size: 1.8rem; font-weight: bold; color: #333; margin: 0.5rem 0;">
+                {recommendation}: {primary_prob}%
+            </div>
+            <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
+                {('OVER' if recommendation == 'UNDER' else 'UNDER')}: {secondary_prob}%
+            </div>
+            <span class="confidence-badge confidence-{confidence.lower()}">
+                {confidence} CONFIDENCE
+            </span>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col3:
+        confidence = "HIGH" if first_half > 60 else "MEDIUM" if first_half > 40 else "LOW"
+        emoji = "🟢" if first_half > 60 else "🟡" if first_half > 40 else "🔴"
+        
+        st.markdown(f'''
+        <div class="goals-card">
+            <h4>🎯 First Half Goal</h4>
+            <div style="font-size: 1.8rem; font-weight: bold; color: #667eea; margin: 0.5rem 0;">
+                {first_half}%
+            </div>
+            <span class="confidence-badge confidence-{confidence.lower()}">
+                {emoji} {confidence} CONFIDENCE
+            </span>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col4:
+        confidence = "HIGH" if second_half > 60 else "MEDIUM" if second_half > 40 else "LOW"
+        emoji = "🟢" if second_half > 60 else "🟡" if second_half > 40 else "🔴"
+        
+        st.markdown(f'''
+        <div class="goals-card">
+            <h4>🎯 Second Half Goal</h4>
+            <div style="font-size: 1.8rem; font-weight: bold; color: #667eea; margin: 0.5rem 0;">
+                {second_half}%
+            </div>
+            <span class="confidence-badge confidence-{confidence.lower()}">
+                {emoji} {confidence} CONFIDENCE
+            </span>
+        </div>
+        ''', unsafe_allow_html=True)
+
 def display_pure_predictions(predictions):
     """Display pure football predictions from Signal Engine"""
     
@@ -401,23 +545,8 @@ def display_pure_predictions(predictions):
     with col3:
         display_probability_bar("Away Win", outcomes.get('away_win', 0), "#2196F3")
     
-    # Goals Analysis
-    st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        over_25 = safe_get(predictions, 'probabilities', 'over_under', 'over_25', default=0)
-        st.metric("Over 2.5 Goals", f"{over_25}%")
-    with col2:
-        btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes', default=0)
-        st.metric("BTTS Yes", f"{btts_yes}%")
-    with col3:
-        first_half = safe_get(predictions, 'probabilities', 'goal_timing', 'first_half', default=0)
-        st.metric("First Half Goal", f"{first_half}%")
-    with col4:
-        second_half = safe_get(predictions, 'probabilities', 'goal_timing', 'second_half', default=0)
-        st.metric("Second Half Goal", f"{second_half}%")
+    # Goals Analysis - FIXED: Shows higher probability as primary
+    display_goals_analysis(predictions)
     
     # Exact Scores
     st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)

@@ -134,6 +134,15 @@ st.markdown("""
         margin: 0.5rem 0;
         border-left: 4px solid #667eea;
     }
+    
+    .goals-card {
+        background: white;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -177,13 +186,13 @@ def create_advanced_input_form():
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
                 h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3, key="h2h_home_wins")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=4, key="h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0, key="h2h_away_wins")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="h2h_away_wins")
                 h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8, key="h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2, key="h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=9, key="h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="h2h_away_goals")
     
     with tab2:
         # League Table Context
@@ -191,11 +200,11 @@ def create_advanced_input_form():
             st.subheader("Serie A Italy League Table")
             league_col1, league_col2 = st.columns(2)
             with league_col1:
-                home_position = st.number_input(f"{home_team} Position", min_value=1, value=4, key="home_position")
-                home_points = st.number_input(f"{home_team} Points", min_value=0, value=45, key="home_points")
+                home_position = st.number_input(f"{home_team} Position", min_value=1, value=5, key="home_position")
+                home_points = st.number_input(f"{home_team} Points", min_value=0, value=14, key="home_points")
             with league_col2:
-                away_position = st.number_input(f"{away_team} Position", min_value=1, value=11, key="away_position")
-                away_points = st.number_input(f"{away_team} Points", min_value=0, value=32, key="away_points")
+                away_position = st.number_input(f"{away_team} Position", min_value=1, value=12, key="away_position")
+                away_points = st.number_input(f"{away_team} Points", min_value=0, value=11, key="away_points")
         
         # Recent Form Sections
         with st.expander("📈 Recent Form Analysis"):
@@ -255,20 +264,20 @@ def create_advanced_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.85, step=0.01, key="home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.40, step=0.01, key="draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=4.50, step=0.01, key="away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.75, step=0.01, key="home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.50, step=0.01, key="draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=4.75, step=0.01, key="away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.25, step=0.01, key="over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="over_35_odds")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.40, step=0.01, key="over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.20, step=0.01, key="over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=4.00, step=0.01, key="over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.95, step=0.01, key="btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.80, step=0.01, key="btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.00, step=0.01, key="btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.75, step=0.01, key="btts_no_odds")
             
             st.write("**Asian Handicap**")
             handicap_home_odds = st.number_input("Home -0.5", min_value=1.01, value=1.75, step=0.01, key="handicap_home_odds")
@@ -351,7 +360,7 @@ def create_advanced_input_form():
             'subs_used': away_subs_used
         }
         
-        # Market odds
+        # Market odds - using your template odds
         market_odds = {
             '1x2 Home': home_odds,
             '1x2 Draw': draw_odds,
@@ -450,8 +459,95 @@ def display_advanced_predictions(predictions):
     with tab4:
         display_model_metrics(predictions)
 
+def display_dynamic_goals_analysis(predictions):
+    """Display dynamic goals recommendations"""
+    st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
+    
+    goals_rec = safe_get(predictions, 'goals_recommendations', default={})
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        first_half = safe_get(goals_rec, 'first_half', default={})
+        display_goal_timing_card(
+            "First Half Goal", 
+            first_half.get('probability', 0),
+            first_half.get('confidence', 'LOW'),
+            first_half.get('emoji', '🔴')
+        )
+    
+    with col2:
+        second_half = safe_get(goals_rec, 'second_half', default={})
+        display_goal_timing_card(
+            "Second Half Goal", 
+            second_half.get('probability', 0),
+            second_half.get('confidence', 'LOW'),
+            second_half.get('emoji', '🔴')
+        )
+    
+    with col3:
+        btts = safe_get(goals_rec, 'btts', default={})
+        display_recommendation_card(
+            "Both Teams Score",
+            btts.get('recommendation', 'N/A'),
+            btts.get('confidence', 'LOW'),
+            btts.get('emoji', '🔴'),
+            btts.get('yes_prob', 0),
+            btts.get('no_prob', 0)
+        )
+    
+    with col4:
+        over_under = safe_get(goals_rec, 'over_under', default={})
+        display_recommendation_card(
+            "Over/Under 2.5",
+            over_under.get('recommendation', 'N/A'),
+            over_under.get('confidence', 'LOW'),
+            over_under.get('emoji', '🔴'),
+            over_under.get('over_prob', 0),
+            over_under.get('under_prob', 0)
+        )
+
+def display_goal_timing_card(label: str, probability: float, confidence: str, emoji: str):
+    """Display goal timing probability card"""
+    st.markdown(f'''
+    <div class="goals-card">
+        <h4>🎯 {label}</h4>
+        <div style="font-size: 1.8rem; font-weight: bold; color: #667eea; margin: 0.5rem 0;">
+            {probability}%
+        </div>
+        <span class="confidence-badge confidence-{confidence.lower()}">
+            {emoji} {confidence} CONFIDENCE
+        </span>
+    </div>
+    ''', unsafe_allow_html=True)
+
+def display_recommendation_card(label: str, recommendation: str, confidence: str, emoji: str, prob1: float, prob2: float):
+    """Display recommendation card for Over/Under and BTTS"""
+    # Determine color based on recommendation
+    if "OVER" in recommendation or "YES" in recommendation:
+        color = "#4CAF50"
+    elif "UNDER" in recommendation or "NO" in recommendation:
+        color = "#f44336"
+    else:
+        color = "#FF9800"
+    
+    st.markdown(f'''
+    <div class="goals-card">
+        <h4>🎯 {label}</h4>
+        <div style="font-size: 1.3rem; font-weight: bold; color: {color}; margin: 0.5rem 0;">
+            {recommendation}
+        </div>
+        <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
+            YES: {prob1}% | NO: {prob2}%
+        </div>
+        <span class="confidence-badge confidence-{confidence.lower()}">
+            {emoji} {confidence} CONFIDENCE
+        </span>
+    </div>
+    ''', unsafe_allow_html=True)
+
 def display_prediction_overview(predictions):
-    """Display the main prediction overview with safe key access"""
+    """Display the main prediction overview with dynamic goals recommendations"""
     
     st.markdown('<p class="main-header">🎯 Advanced Match Prediction</p>', unsafe_allow_html=True)
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
@@ -490,24 +586,8 @@ def display_prediction_overview(predictions):
     with col3:
         display_probability_bar("Away Win", outcomes.get('away_win', 0), "#2196F3")
     
-    # Goals Analysis
-    st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        timing = safe_get(predictions, 'probabilities', 'goal_timing', default={'first_half': 0, 'second_half': 0})
-        display_probability_card("First Half Goal", timing.get('first_half', 0))
-    with col2:
-        display_probability_card("Second Half Goal", timing.get('second_half', 0))
-    with col3:
-        btts = safe_get(predictions, 'probabilities', 'both_teams_score', default=0)
-        display_probability_card("Both Teams Score", btts)
-    with col4:
-        # FIXED: Safe access to over_under probabilities
-        over_under = safe_get(predictions, 'probabilities', 'over_under', default={})
-        over_25 = over_under.get('over_25', over_under.get('over_2.5', 0))  # Try both key formats
-        display_probability_card("Over 2.5 Goals", over_25)
+    # Dynamic Goals Analysis - NEW IMPLEMENTATION
+    display_dynamic_goals_analysis(predictions)
     
     # Exact Score Probabilities
     st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
@@ -835,17 +915,6 @@ def display_probability_bar(label: str, probability: float, color: str):
         <div class="probability-bar">
             <div class="probability-fill" style="width: {probability}%; background: {color};"></div>
         </div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-def display_probability_card(label: str, probability: float):
-    """Display a probability in a card format"""
-    confidence_class = "confidence-high" if probability > 70 else "confidence-medium" if probability > 55 else "confidence-low"
-    
-    st.markdown(f'''
-    <div class="prediction-card">
-        <h4>{label}</h4>
-        <span class="confidence-badge {confidence_class}">{probability}% probability</span>
     </div>
     ''', unsafe_allow_html=True)
 

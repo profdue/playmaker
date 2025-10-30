@@ -38,11 +38,11 @@ class MonteCarloResults:
 class AdvancedPredictionEngine:
     """Enhanced Football Prediction Engine with Bivariate Poisson & Monte Carlo Simulation"""
     
-    def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
+    def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None, mc_iterations: int = 10000):
         self.data = match_data
         self.calibration_data = calibration_data or {}
         self.league_contexts = self._initialize_league_contexts()
-        self.monte_carlo_iterations = 10000
+        self.monte_carlo_iterations = mc_iterations
         self._setup_calibration_parameters()
         
     def _initialize_league_contexts(self) -> Dict[str, Dict]:

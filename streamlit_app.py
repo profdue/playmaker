@@ -4,9 +4,15 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-from prediction_engine import AdvancedPredictionEngine, BettingSignal, MonteCarloResults
 import json
 from typing import Dict, Any
+
+# Import the prediction engine
+try:
+    from prediction_engine import AdvancedPredictionEngine, BettingSignal, MonteCarloResults
+except ImportError:
+    st.error("❌ Could not import prediction_engine. Make sure prediction_engine.py is in the same directory.")
+    st.stop()
 
 # Page configuration
 st.set_page_config(

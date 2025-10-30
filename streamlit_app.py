@@ -144,6 +144,8 @@ if 'predictions' not in st.session_state:
     st.session_state.predictions = None
 if 'calibration_data' not in st.session_state:
     st.session_state.calibration_data = {}
+if 'mc_iterations' not in st.session_state:
+    st.session_state.mc_iterations = 10000
 
 def create_advanced_input_form():
     """Create comprehensive input form with all advanced options"""
@@ -322,7 +324,7 @@ def create_advanced_input_form():
     if submitted:
         if not home_team or not away_team:
             st.error("❌ Please enter both team names")
-            return None, None
+            return None, None, None
         
         # Convert form selections to points
         form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
@@ -417,9 +419,9 @@ def create_advanced_input_form():
         st.session_state.match_data = match_data
         st.session_state.calibration_data = calibration_data
         st.session_state.mc_iterations = mc_iterations
-        return match_data, calibration_data
+        return match_data, calibration_data, mc_iterations
     
-    return None, None
+    return None, None, None
 
 def display_advanced_predictions(predictions):
     """Display comprehensive predictions with all enhanced features"""
@@ -879,17 +881,13 @@ def main():
         return
     
     # Input form
-    match_data, calibration_data = create_advanced_input_form()
+    match_data, calibration_data, mc_iterations = create_advanced_input_form()
     
     if match_data:
         with st.spinner("🔍 Performing advanced match analysis with Monte Carlo simulation..."):
             try:
-                # Initialize engine with calibration data
-                engine = AdvancedPredictionEngine(match_data, calibration_data)
-                
-                # Set Monte Carlo iterations if specified
-                if hasattr(st.session_state, 'mc_iterations'):
-                    engine.monte_carlo_iterations = st.session_state.mc_iterations
+                # Initialize engine with calibration data and MC iterations
+                engine = AdvancedPredictionEngine(match_data, calibration_data, mc_iterations)
                 
                 # Generate predictions
                 predictions = engine.generate_advanced_predictions()

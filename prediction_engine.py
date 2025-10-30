@@ -477,7 +477,10 @@ class SignalEngine:
                 'over_under': {
                     'over_15': round((1 - poisson.cdf(1, total_xg)) * 100, 1),
                     'over_25': round(mc_results.over_25_prob * 100, 1),
-                    'over_35': round((1 - poisson.cdf(3, total_xg)) * 100, 1)
+                    'over_35': round((1 - poisson.cdf(3, total_xg)) * 100, 1),
+                    'under_15': round(poisson.cdf(1, total_xg) * 100, 1),
+                    'under_25': round((1 - mc_results.over_25_prob) * 100, 1),
+                    'under_35': round(poisson.cdf(3, total_xg) * 100, 1)
                 },
                 'exact_scores': mc_results.exact_scores,
                 'goal_timing': {
@@ -643,7 +646,9 @@ class ValueDetectionEngine:
             ('probabilities.match_outcomes.draw', '1x2 Draw'),
             ('probabilities.match_outcomes.away_win', '1x2 Away'),
             ('probabilities.over_under.over_25', 'Over 2.5 Goals'),
-            ('probabilities.both_teams_score.yes', 'BTTS Yes')
+            ('probabilities.over_under.under_25', 'Under 2.5 Goals'),
+            ('probabilities.both_teams_score.yes', 'BTTS Yes'),
+            ('probabilities.both_teams_score.no', 'BTTS No')
         ]
         
         for prob_path, market_name in probability_mapping:

@@ -987,10 +987,10 @@ if __name__ == "__main__":
         'home_form': [3, 1, 3, 0, 1, 3],
         'away_form': [0, 1, 1, 3, 0, 1],
         'h2h_data': {
-            'matches': 4,
-            'home_wins': 2,
-            'away_wins': 0, 
-            'draws': 2,
+            'matches': 6,
+            'home_wins': 4,
+            'away_wins': 1, 
+            'draws': 1,
             'home_goals': 5,
             'away_goals': 3
         },

@@ -44,11 +44,15 @@ class AdvancedPredictionEngine:
         injuries = self.data.get('injuries', {'home': 0, 'away': 0})
         motivation = self.data.get('motivation', {'home': 1.0, 'away': 1.0})
         
-        # Calculate precise expected goals
-        home_xg, away_xg = self._calculate_precise_xg(
+        # Get home/away specific statistics
+        home_avg_stats = self.data.get('home_avg_stats', {})
+        away_avg_stats = self.data.get('away_avg_stats', {})
+        
+        # Calculate precise expected goals with enhanced factors
+        home_xg, away_xg = self._calculate_enhanced_xg(
             home_goals, away_goals, home_conceded, away_conceded,
             home_goals_home, away_goals_away, home_form, away_form,
-            injuries, motivation, league
+            injuries, motivation, league, home_avg_stats, away_avg_stats
         )
         
         # Apply H2H adjustments if available
@@ -61,15 +65,15 @@ class AdvancedPredictionEngine:
         # Generate corner predictions
         corner_predictions = self._calculate_corner_predictions(home_xg, away_xg, league)
         
-        # Generate timing predictions
-        timing_predictions = self._calculate_timing_predictions(home_xg, away_xg)
+        # Generate timing predictions with enhanced data
+        timing_predictions = self._calculate_enhanced_timing_predictions(home_xg, away_xg, home_avg_stats, away_avg_stats)
         
         # Generate betting recommendations
         betting_recommendations = self._generate_betting_recommendations(probabilities)
         
-        # Calculate overall confidence
-        confidence_score = self._calculate_advanced_confidence(
-            home_goals, away_goals, home_form, away_form, h2h_data
+        # Calculate overall confidence with enhanced factors
+        confidence_score = self._calculate_enhanced_confidence(
+            home_goals, away_goals, home_form, away_form, h2h_data, home_avg_stats, away_avg_stats
         )
         
         return {
@@ -79,16 +83,16 @@ class AdvancedPredictionEngine:
             'corner_predictions': corner_predictions,
             'timing_predictions': timing_predictions,
             'betting_recommendations': betting_recommendations,
-            'summary': self._generate_detailed_summary(home_team, away_team, probabilities, home_xg, away_xg),
+            'summary': self._generate_enhanced_summary(home_team, away_team, probabilities, home_xg, away_xg, home_avg_stats, away_avg_stats),
             'confidence_score': confidence_score,
             'risk_assessment': self._assess_prediction_risk(probabilities, confidence_score)
         }
     
-    def _calculate_precise_xg(self, home_goals: int, away_goals: int, home_conceded: int, 
-                            away_conceded: int, home_goals_home: int, away_goals_away: int,
-                            home_form: list, away_form: list, injuries: Dict, 
-                            motivation: Dict, league: str) -> Tuple[float, float]:
-        """Calculate precise expected goals with multiple factors"""
+    def _calculate_enhanced_xg(self, home_goals: int, away_goals: int, home_conceded: int, 
+                             away_conceded: int, home_goals_home: int, away_goals_away: int,
+                             home_form: list, away_form: list, injuries: Dict, 
+                             motivation: Dict, league: str, home_avg_stats: Dict, away_avg_stats: Dict) -> Tuple[float, float]:
+        """Calculate enhanced expected goals with home/away specific statistics"""
         
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
@@ -98,9 +102,19 @@ class AdvancedPredictionEngine:
         home_defense = max(0.3, home_conceded / 6.0)
         away_defense = max(0.4, away_conceded / 6.0)
         
-        # Home/away specific adjustments
-        home_attack_home = max(0.3, home_goals_home / 3.0) if home_goals_home > 0 else home_attack
-        away_attack_away = max(0.2, away_goals_away / 3.0) if away_goals_away > 0 else away_attack
+        # Home/away specific adjustments using detailed statistics
+        home_goals_scored_avg = home_avg_stats.get('goals_scored', home_goals_home / 3.0)
+        home_goals_conceded_avg = home_avg_stats.get('goals_conceded', 0)
+        away_goals_scored_avg = away_avg_stats.get('goals_scored', away_goals_away / 3.0)
+        away_goals_conceded_avg = away_avg_stats.get('goals_conceded', 0)
+        
+        # Enhanced home/away attack using average statistics
+        home_attack_home = max(0.3, home_goals_scored_avg)
+        away_attack_away = max(0.2, away_goals_scored_avg)
+        
+        # Enhanced defense using average conceded statistics
+        home_defense_home = max(0.3, 3.0 - home_goals_conceded_avg) if home_goals_conceded_avg > 0 else home_defense
+        away_defense_away = max(0.4, 3.0 - away_goals_conceded_avg) if away_goals_conceded_avg > 0 else away_defense
         
         # Form adjustments (weighted average of recent form)
         home_form_factor = self._calculate_form_factor(home_form)
@@ -114,10 +128,10 @@ class AdvancedPredictionEngine:
         home_motivation = motivation.get('home', 1.0)
         away_motivation = motivation.get('away', 1.0)
         
-        # Calculate base xG with league normalization
-        base_home_xg = (home_attack_home * away_defense * league_params['home_advantage'] * 
+        # Calculate base xG with enhanced home/away statistics
+        base_home_xg = (home_attack_home * away_defense_away * league_params['home_advantage'] * 
                        home_form_factor * home_injury_factor * home_motivation)
-        base_away_xg = (away_attack_away * home_defense * 
+        base_away_xg = (away_attack_away * home_defense_home * 
                        away_form_factor * away_injury_factor * away_motivation)
         
         # Apply regression to league mean to reduce extremes
@@ -294,24 +308,52 @@ class AdvancedPredictionEngine:
             'over_9.5': 'YES' if total_corners > 9.5 else 'NO'
         }
     
-    def _calculate_timing_predictions(self, home_xg: float, away_xg: float) -> Dict[str, Any]:
-        """Calculate goal timing predictions"""
+    def _calculate_enhanced_timing_predictions(self, home_xg: float, away_xg: float, 
+                                             home_avg_stats: Dict, away_avg_stats: Dict) -> Dict[str, Any]:
+        """Calculate enhanced goal timing predictions using home/away statistics"""
         total_xg = home_xg + away_xg
         
-        if total_xg < 1.5:
+        # Use actual timing data if available
+        home_first_goal_time = home_avg_stats.get('time_first_goal_scored', 52)
+        away_first_goal_time = away_avg_stats.get('time_first_goal_scored', 42)
+        home_first_conceded_time = home_avg_stats.get('time_first_goal_conceded', 63)
+        away_first_conceded_time = away_avg_stats.get('time_first_goal_conceded', 26)
+        
+        # Calculate average first goal timing
+        avg_first_goal_time = (home_first_goal_time + away_first_goal_time) / 2
+        avg_first_conceded_time = (home_first_conceded_time + away_first_conceded_time) / 2
+        
+        # Determine first goal prediction based on timing patterns
+        if avg_first_goal_time <= 35:
+            first_goal = "15-30 minutes"
+        elif avg_first_goal_time <= 45:
+            first_goal = "25-40 minutes"
+        else:
             first_goal = "35+ minutes"
+        
+        # Late goals prediction
+        if total_xg < 1.5:
             late_goals = "UNLIKELY"
         elif total_xg < 2.5:
-            first_goal = "25-35 minutes"
             late_goals = "POSSIBLE"
         else:
-            first_goal = "15-30 minutes"
             late_goals = "LIKELY"
+        
+        # Most action prediction based on timing patterns
+        early_action = avg_first_conceded_time <= 30
+        if early_action and total_xg > 2.0:
+            most_action = "First 20 & Last 20 minutes"
+        elif total_xg > 2.5:
+            most_action = "Last 25 minutes of each half"
+        else:
+            most_action = "Scattered throughout"
         
         return {
             'first_goal': first_goal,
             'late_goals': late_goals,
-            'most_action': "Last 20 minutes of each half" if total_xg > 2.0 else "Scattered throughout"
+            'most_action': most_action,
+            'avg_first_goal_time': f"{avg_first_goal_time:.0f}'",
+            'avg_first_conceded_time': f"{avg_first_conceded_time:.0f}'"
         }
     
     def _generate_betting_recommendations(self, probabilities: Dict) -> Dict[str, Any]:
@@ -369,9 +411,10 @@ class AdvancedPredictionEngine:
             'confidence_scores': confidence_levels
         }
     
-    def _calculate_advanced_confidence(self, home_goals: int, away_goals: int, 
-                                    home_form: list, away_form: list, h2h_data: Dict) -> int:
-        """Calculate advanced confidence score considering multiple factors"""
+    def _calculate_enhanced_confidence(self, home_goals: int, away_goals: int, 
+                                    home_form: list, away_form: list, h2h_data: Dict,
+                                    home_avg_stats: Dict, away_avg_stats: Dict) -> int:
+        """Calculate enhanced confidence score considering home/away statistics"""
         confidence = 0
         
         # Data completeness (max 40 points)
@@ -386,14 +429,18 @@ class AdvancedPredictionEngine:
         elif h2h_data and h2h_data.get('matches', 0) > 0:
             confidence += 15
         
-        # Form consistency (max 30 points)
+        # Form consistency (max 20 points)
         if home_form and len(home_form) >= 3:
             form_std = np.std(home_form)
-            if form_std < 1.0: confidence += 15
+            if form_std < 1.0: confidence += 10
         
         if away_form and len(away_form) >= 3:
             form_std = np.std(away_form)
-            if form_std < 1.0: confidence += 15
+            if form_std < 1.0: confidence += 10
+        
+        # Home/Away statistics completeness (max 20 points)
+        if home_avg_stats and len(home_avg_stats) >= 4: confidence += 10
+        if away_avg_stats and len(away_avg_stats) >= 4: confidence += 10
         
         return min(95, confidence)  # Never 100% in sports
     
@@ -404,10 +451,10 @@ class AdvancedPredictionEngine:
         
         if highest_prob > 70 and confidence > 80:
             risk_level = "LOW"
-            explanation = "Strong favorite with good data support"
+            explanation = "Strong favorite with comprehensive data support"
         elif highest_prob > 55 and confidence > 65:
             risk_level = "MEDIUM"
-            explanation = "Moderate favorite with reasonable data"
+            explanation = "Moderate favorite with good data coverage"
         else:
             risk_level = "HIGH"
             explanation = "Uncertain outcome or limited data"
@@ -431,16 +478,25 @@ class AdvancedPredictionEngine:
         else:
             return "Low"
     
-    def _generate_detailed_summary(self, home_team: str, away_team: str, probabilities: Dict, 
-                                 home_xg: float, away_xg: float) -> str:
-        """Generate detailed match summary"""
+    def _generate_enhanced_summary(self, home_team: str, away_team: str, probabilities: Dict, 
+                                 home_xg: float, away_xg: float, home_avg_stats: Dict, away_avg_stats: Dict) -> str:
+        """Generate enhanced match summary using home/away statistics"""
         outcomes = probabilities['match_outcomes']
         
-        if outcomes['home_win'] > 60:
-            return f"{home_team} are strong favorites to win this match. Expect controlled possession and multiple scoring opportunities against {away_team}."
-        elif outcomes['home_win'] > 45:
-            return f"{home_team} have a slight advantage playing at home. This could be a close match with {away_team} posing a threat on the counter-attack."
-        elif outcomes['away_win'] > 45:
-            return f"{away_team} might cause an upset here. {home_team} will need to be careful defensively while pushing for goals at home."
+        # Extract key statistics
+        home_goals_avg = home_avg_stats.get('goals_scored', home_xg)
+        home_conceded_avg = home_avg_stats.get('goals_conceded', 0)
+        away_goals_avg = away_avg_stats.get('goals_scored', away_xg)
+        away_conceded_avg = away_avg_stats.get('goals_conceded', 0)
+        
+        # Enhanced summary based on comprehensive data
+        if outcomes['home_win'] > 60 and home_goals_avg > 2.0 and away_conceded_avg > 2.0:
+            return f"{home_team} are overwhelming favorites at home, boasting strong attacking form ({home_goals_avg} goals/game) against {away_team}'s leaky away defense ({away_conceded_avg} conceded/game). Expect dominant home performance."
+        elif outcomes['home_win'] > 50 and home_goals_avg > 1.5:
+            return f"{home_team} hold a solid home advantage with consistent scoring form. {away_team} will need exceptional defensive discipline to contain the home threat."
+        elif outcomes['away_win'] > 50 and away_goals_avg > home_conceded_avg:
+            return f"{away_team} pose a genuine threat here with their away scoring capability. {home_team}'s home defense will be thoroughly tested."
+        elif home_goals_avg < 1.0 and away_goals_avg < 1.0:
+            return f"A tight, low-scoring affair is anticipated with both teams showing limited attacking prowess recently. Set-pieces could prove decisive."
         else:
-            return f"This match appears evenly balanced with a draw being a distinct possibility. Both teams will fancy their chances in what should be a competitive encounter."
+            return f"This match appears evenly balanced with both teams having opportunities. The outcome may hinge on key individual battles and tactical discipline."

@@ -81,6 +81,23 @@ st.markdown("""
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #f0f2f6;
     }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin: 10px 0;
+    }
+    .stat-item {
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+    .stat-value {
+        font-weight: bold;
+        float: right;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -102,19 +119,94 @@ def create_advanced_input_form():
         
         with col1:
             st.subheader("🏠 Home Team")
-            home_team = st.text_input("Team Name", value="Dinamo Tbilisi", key="home_team")
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=13, key="home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="home_goals_home")
+            home_team = st.text_input("Team Name", value="Bologna", key="home_team")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=12, key="home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=8, key="home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=7, key="home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
-            away_team = st.text_input("Team Name", value="Kolkheti Poti", key="away_team")
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=5, key="away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=12, key="away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=2, key="away_goals_away")
+            away_team = st.text_input("Team Name", value="Torino", key="away_team")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=10, key="away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="away_goals_away")
         
-        # Advanced options in expander
+        # Head-to-head section
+        with st.expander("📊 Head-to-Head History", expanded=True):
+            st.subheader("Head to Head")
+            h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
+            with h2h_col1:
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3, key="h2h_home_wins")
+            with h2h_col2:
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0, key="h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
+            with h2h_col3:
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8, key="h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2, key="h2h_away_goals")
+        
+        # League Table Context
+        with st.expander("🏆 League Table Context"):
+            st.subheader("Serie A Italy League Table")
+            league_col1, league_col2 = st.columns(2)
+            with league_col1:
+                home_position = st.number_input(f"{home_team} Position", min_value=1, value=4, key="home_position")
+                home_points = st.number_input(f"{home_team} Points", min_value=0, value=45, key="home_points")
+            with league_col2:
+                away_position = st.number_input(f"{away_team} Position", min_value=1, value=11, key="away_position")
+                away_points = st.number_input(f"{away_team} Points", min_value=0, value=32, key="away_points")
+        
+        # Recent Form Sections
+        with st.expander("📈 Recent Form Analysis"):
+            st.subheader("Last 6 Matches Form")
+            
+            form_col1, form_col2 = st.columns(2)
+            
+            with form_col1:
+                st.write(f"**{home_team} Last 6 Matches**")
+                home_form = st.multiselect(
+                    f"{home_team} Recent Results",
+                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
+                    default=["Win (3 pts)", "Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)"],
+                    help="Select results from most recent to oldest",
+                    key="home_form"
+                )
+                
+            with form_col2:
+                st.write(f"**{away_team} Last 6 Matches**")
+                away_form = st.multiselect(
+                    f"{away_team} Recent Results",
+                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
+                    default=["Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)"],
+                    help="Select results from most recent to oldest",
+                    key="away_form"
+                )
+        
+        # Home/Away Specific Statistics - THE MAIN ENHANCEMENT
+        with st.expander("🏠✈️ Home/Away Specific Statistics", expanded=True):
+            st.subheader("Team-Specific Performance Metrics")
+            
+            home_away_col1, home_away_col2 = st.columns(2)
+            
+            with home_away_col1:
+                st.write(f"**{home_team} Average Home Statistics**")
+                home_goals_scored = st.number_input("Goals scored", min_value=0.0, value=2.3, key="home_goals_scored")
+                home_goals_conceded = st.number_input("Goals conceded", min_value=0.0, value=0.3, key="home_goals_conceded")
+                home_time_first_goal = st.number_input("Time first goal scored", min_value=1, value=52, key="home_time_first_goal")
+                home_time_first_conceded = st.number_input("Time first goal conceded", min_value=1, value=63, key="home_time_first_conceded")
+                home_yellow_cards = st.number_input("Yellow cards", min_value=0.0, value=1.7, key="home_yellow_cards")
+                home_subs_used = st.number_input("Subs used", min_value=0, value=5, key="home_subs_used")
+            
+            with home_away_col2:
+                st.write(f"**{away_team} Average Away Statistics**")
+                away_goals_scored = st.number_input("Goals scored", min_value=0.0, value=1.3, key="away_goals_scored")
+                away_goals_conceded = st.number_input("Goals conceded", min_value=0.0, value=2.5, key="away_goals_conceded")
+                away_time_first_goal = st.number_input("Time first goal scored", min_value=1, value=42, key="away_time_first_goal")
+                away_time_first_conceded = st.number_input("Time first goal conceded", min_value=1, value=26, key="away_time_first_conceded")
+                away_yellow_cards = st.number_input("Yellow cards", min_value=0.0, value=2.3, key="away_yellow_cards")
+                away_subs_used = st.number_input("Subs used", min_value=0, value=5, key="away_subs_used")
+        
+        # Advanced options
         with st.expander("⚙️ Advanced Match Parameters"):
             adv_col1, adv_col2, adv_col3 = st.columns(3)
             
@@ -122,45 +214,27 @@ def create_advanced_input_form():
                 league = st.selectbox("League", [
                     "premier_league", "la_liga", "serie_a", "bundesliga", 
                     "ligue_1", "default"
-                ], index=5)
-                
-                home_form = st.multiselect(
-                    "Home Team Recent Form (Last 5)",
-                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Win (3 pts)", "Loss (0 pts)"],
-                    help="Select results from most recent to oldest"
-                )
+                ], index=2, key="league")
                 
             with adv_col2:
                 st.write("**Injuries & Suspensions**")
-                home_injuries = st.slider("Home Key Absences", 0, 5, 0)
-                away_injuries = st.slider("Away Key Absences", 0, 5, 1)
+                home_injuries = st.slider("Home Key Absences", 0, 5, 0, key="home_injuries")
+                away_injuries = st.slider("Away Key Absences", 0, 5, 1, key="away_injuries")
                 
             with adv_col3:
                 st.write("**Match Motivation**")
                 home_motivation = st.select_slider(
                     "Home Team Motivation",
                     options=["Low", "Normal", "High", "Very High"],
-                    value="High"
+                    value="High",
+                    key="home_motivation"
                 )
                 away_motivation = st.select_slider(
                     "Away Team Motivation", 
                     options=["Low", "Normal", "High", "Very High"],
-                    value="Normal"
+                    value="Normal",
+                    key="away_motivation"
                 )
-        
-        # Head-to-head section
-        with st.expander("📊 Head-to-Head History (Optional)"):
-            h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
-            with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4)
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3)
-            with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0)
-                h2h_draws = st.number_input("Draws", min_value=0, value=1)
-            with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8)
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2)
         
         submitted = st.form_submit_button("🎯 GENERATE ADVANCED PREDICTION", type="primary", use_container_width=True)
         
@@ -172,10 +246,29 @@ def create_advanced_input_form():
             # Convert form selections to points
             form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
             home_form_points = [form_map[result] for result in home_form]
-            away_form_points = [form_map[result] for result in home_form]  # Default same for demo
+            away_form_points = [form_map[result] for result in away_form]
             
             # Convert motivation to multipliers
             motivation_map = {"Low": 0.8, "Normal": 1.0, "High": 1.15, "Very High": 1.3}
+            
+            # Home/Away statistics
+            home_avg_stats = {
+                'goals_scored': home_goals_scored,
+                'goals_conceded': home_goals_conceded,
+                'time_first_goal_scored': home_time_first_goal,
+                'time_first_goal_conceded': home_time_first_conceded,
+                'yellow_cards': home_yellow_cards,
+                'subs_used': home_subs_used
+            }
+            
+            away_avg_stats = {
+                'goals_scored': away_goals_scored,
+                'goals_conceded': away_goals_conceded,
+                'time_first_goal_scored': away_time_first_goal,
+                'time_first_goal_conceded': away_time_first_conceded,
+                'yellow_cards': away_yellow_cards,
+                'subs_used': away_subs_used
+            }
             
             match_data = {
                 'home_team': home_team,
@@ -201,6 +294,14 @@ def create_advanced_input_form():
                 'motivation': {
                     'home': motivation_map[home_motivation],
                     'away': motivation_map[away_motivation]
+                },
+                'home_avg_stats': home_avg_stats,
+                'away_avg_stats': away_avg_stats,
+                'league_context': {
+                    'home_position': home_position,
+                    'away_position': away_position,
+                    'home_points': home_points,
+                    'away_points': away_points
                 }
             }
             
@@ -281,8 +382,8 @@ def display_advanced_predictions(predictions):
     with col3:
         st.markdown(f'<div class="prediction-card"><h3>✈️ Away Corners</h3><span style="font-size: 1.8rem; font-weight: bold;">{corners["away"]}</span></div>', unsafe_allow_html=True)
     
-    # Timing Predictions
-    st.markdown('<div class="section-title">⏰ Match Timing Analysis</div>', unsafe_allow_html=True)
+    # Enhanced Timing Predictions
+    st.markdown('<div class="section-title">⏰ Enhanced Timing Analysis</div>', unsafe_allow_html=True)
     
     timing = predictions['timing_predictions']
     st.markdown(f'''
@@ -290,7 +391,9 @@ def display_advanced_predictions(predictions):
         <h3>⏰ Key Timing Patterns</h3>
         • <strong>First Goal:</strong> {timing['first_goal']}<br>
         • <strong>Late Goals:</strong> {timing['late_goals']}<br>
-        • <strong>Most Action:</strong> {timing['most_action']}
+        • <strong>Most Action:</strong> {timing['most_action']}<br>
+        • <strong>Avg First Goal Time:</strong> {timing.get('avg_first_goal_time', 'N/A')}<br>
+        • <strong>Avg First Conceded:</strong> {timing.get('avg_first_conceded_time', 'N/A')}
     </div>
     ''', unsafe_allow_html=True)
     

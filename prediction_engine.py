@@ -45,7 +45,7 @@ class MonteCarloResults:
     probability_volatility: Dict[str, float]
 
 class AdvancedPredictionEngine:
-    """Enhanced Football Prediction Engine with Context-Aware Bivariate Poisson"""
+    """Enhanced Football Prediction Engine with Proper Mathematical Normalization"""
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None, mc_iterations: int = 10000):
         self.data = self._validate_and_clean_data(match_data)
@@ -58,7 +58,7 @@ class AdvancedPredictionEngine:
         
     def _validate_and_clean_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
         """Comprehensive data validation and cleaning - FIXED to be less aggressive"""
-        required_fields = ['home_team', 'away_team', 'league']
+        required_fields = ['home_team', 'away_team']
         
         for field in required_fields:
             if field not in match_data:
@@ -74,10 +74,6 @@ class AdvancedPredictionEngine:
             'away_conceded': (0, 20, None),
             'home_goals_home': (0, 15, None),
             'away_goals_away': (0, 15, None),
-            'home_xg': (0, 5, None),
-            'away_xg': (0, 5, None),
-            'home_xg_against': (0, 5, None),
-            'away_xg_against': (0, 5, None)
         }
         
         for field, (min_val, max_val, default) in numeric_fields.items():
@@ -88,12 +84,10 @@ class AdvancedPredictionEngine:
                     if value < min_val or value > max_val:
                         logger.warning(f"Field {field} value {value} outside expected range, capping")
                         cleaned_data[field] = max(min_val, min(value, max_val))
-                    else:
-                        cleaned_data[field] = value
                 except (TypeError, ValueError):
                     logger.warning(f"Invalid value for {field}, using reasonable default")
                     # Use reasonable defaults instead of minimums
-                    if 'goals' in field:
+                    if 'goals' in field and 'conceded' not in field:
                         cleaned_data[field] = 1.5
                     elif 'conceded' in field:
                         cleaned_data[field] = 1.5
@@ -152,54 +146,23 @@ class AdvancedPredictionEngine:
             score += 10
         max_score += 20
         
-        # Advanced metrics
-        if data.get('home_xg') is not None:
-            score += 10
-        if data.get('away_xg') is not None:
-            score += 10
+        # H2H data
+        h2h_data = data.get('h2h_data', {})
+        if h2h_data.get('matches', 0) >= 2:
+            score += 20
         max_score += 20
         
         return (score / max_score) * 100
     
     def _initialize_league_contexts(self) -> Dict[str, Dict]:
-        """Initialize league-specific parameters with calibrated values"""
+        """Initialize league-specific average goals"""
         return {
-            'premier_league': {
-                'avg_goals': 2.8, 'avg_corners': 10.5, 'home_advantage': 1.12,
-                'goal_timing_first_half': 0.47, 'goal_timing_second_half': 0.53,
-                'attack_weight': 1.05, 'defense_weight': 0.95,
-                'bivariate_correlation': 0.15, 'scoring_tendency': 'moderate_high'
-            },
-            'la_liga': {
-                'avg_goals': 2.6, 'avg_corners': 9.8, 'home_advantage': 1.15,
-                'goal_timing_first_half': 0.45, 'goal_timing_second_half': 0.55,
-                'attack_weight': 1.02, 'defense_weight': 0.98,
-                'bivariate_correlation': 0.12, 'scoring_tendency': 'moderate'
-            },
-            'serie_a': {
-                'avg_goals': 2.4, 'avg_corners': 10.2, 'home_advantage': 1.08,
-                'goal_timing_first_half': 0.46, 'goal_timing_second_half': 0.54,
-                'attack_weight': 1.00, 'defense_weight': 1.05,
-                'bivariate_correlation': 0.08, 'scoring_tendency': 'low'
-            },
-            'bundesliga': {
-                'avg_goals': 3.1, 'avg_corners': 9.5, 'home_advantage': 1.12,
-                'goal_timing_first_half': 0.48, 'goal_timing_second_half': 0.52,
-                'attack_weight': 1.08, 'defense_weight': 0.92,
-                'bivariate_correlation': 0.18, 'scoring_tendency': 'high'
-            },
-            'ligue_1': {
-                'avg_goals': 2.5, 'avg_corners': 9.2, 'home_advantage': 1.1,
-                'goal_timing_first_half': 0.44, 'goal_timing_second_half': 0.56,
-                'attack_weight': 1.01, 'defense_weight': 0.99,
-                'bivariate_correlation': 0.11, 'scoring_tendency': 'moderate_low'
-            },
-            'default': {
-                'avg_goals': 2.7, 'avg_corners': 10.0, 'home_advantage': 1.1,
-                'goal_timing_first_half': 0.46, 'goal_timing_second_half': 0.54,
-                'attack_weight': 1.04, 'defense_weight': 0.96,
-                'bivariate_correlation': 0.12, 'scoring_tendency': 'moderate'
-            }
+            'premier_league': {'avg_goals': 1.42},
+            'la_liga': {'avg_goals': 1.30},
+            'serie_a': {'avg_goals': 1.35},
+            'bundesliga': {'avg_goals': 1.55},
+            'ligue_1': {'avg_goals': 1.28},
+            'default': {'avg_goals': 1.35}
         }
     
     def _initialize_team_profiles(self) -> Dict[str, Dict]:
@@ -213,19 +176,14 @@ class AdvancedPredictionEngine:
         }
     
     def _setup_calibration_parameters(self):
-        """Setup calibration parameters from historical data"""
+        """Setup calibration parameters"""
         self.calibration_params = {
-            'home_attack_weight': 1.05,
-            'away_attack_weight': 0.95,
-            'defense_weight': 1.02,
+            'home_advantage': 1.12,
             'form_decay_rate': 0.9,
             'h2h_weight': 0.3,
             'injury_impact': 0.08,
             'motivation_impact': 0.12,
-            'regression_strength': 0.25,
-            'bivariate_lambda3_alpha': 0.12,
-            'defensive_team_adjustment': 0.85,
-            'min_goals_threshold': 0.15,
+            'bivariate_correlation': 0.12,
             'data_quality_threshold': 50.0
         }
         
@@ -344,15 +302,15 @@ class AdvancedPredictionEngine:
         }
     
     def generate_advanced_predictions(self) -> Dict[str, Any]:
-        """Generate comprehensive predictions with context-aware modeling"""
+        """Generate comprehensive predictions with proper mathematical normalization"""
         
         home_team = self.data['home_team']
         away_team = self.data['away_team']
-        league = self.data.get('league', 'default')
+        league = self.data.get('league', 'serie_a')
         market_odds = self.data.get('market_odds', {})
         
-        # Calculate context-aware expected goals
-        home_xg, away_xg = self._calculate_context_aware_xg()
+        # Calculate context-aware expected goals WITH PROPER NORMALIZATION
+        home_xg, away_xg = self._calculate_normalized_xg()
         
         # Determine match context
         self.match_context = self._determine_match_context(home_xg, away_xg, home_team, away_team)
@@ -413,12 +371,13 @@ class AdvancedPredictionEngine:
             }
         }
     
-    def _calculate_context_aware_xg(self) -> Tuple[float, float]:
-        """Calculate context-aware expected goals with team profiling - FIXED"""
-        league = self.data.get('league', 'default')
+    def _calculate_normalized_xg(self) -> Tuple[float, float]:
+        """Calculate expected goals with PROPER Dixon-Coles normalization"""
+        league = self.data.get('league', 'serie_a')
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
+        league_avg_goals = league_params['avg_goals']
         
-        # Extract validated data
+        # Extract raw data
         home_goals = self.data.get('home_goals', 0)
         away_goals = self.data.get('away_goals', 0)
         home_conceded = self.data.get('home_conceded', 0)
@@ -434,65 +393,39 @@ class AdvancedPredictionEngine:
         motivation = self.data.get('motivation', {})
         h2h_data = self.data.get('h2h_data', {})
         
-        # Get team profiles
+        # Get team profiles for context
         home_profile = self.team_profiles.get(self.data['home_team'], self.team_profiles['default'])
         away_profile = self.team_profiles.get(self.data['away_team'], self.team_profiles['default'])
         
-        # Bayesian prior (league average adjusted for team style)
-        prior_goals = league_params['avg_goals'] / 2
-        prior_weight = 6
+        # Convert to per-game averages (6 games for overall, 3 for home/away specific)
+        home_attack_pg = home_goals / 6.0 if home_goals > 0 else league_avg_goals
+        away_attack_pg = away_goals / 6.0 if away_goals > 0 else league_avg_goals
+        home_defense_pg = home_conceded / 6.0 if home_conceded > 0 else league_avg_goals
+        away_defense_pg = away_conceded / 6.0 if away_conceded > 0 else league_avg_goals
         
-        # Calculate observed metrics - REMOVED ARTIFICIAL MINIMUMS
-        home_attack_obs = home_goals / 6.0
-        away_attack_obs = away_goals / 6.0
-        home_defense_obs = home_conceded / 6.0
-        away_defense_obs = away_conceded / 6.0
+        # Home/away specific averages
+        home_attack_home_pg = home_goals_home / 3.0 if home_goals_home > 0 else home_attack_pg
+        away_attack_away_pg = away_goals_away / 3.0 if away_goals_away > 0 else away_attack_pg
         
-        # Home/away specific observations
-        home_attack_home_obs = home_goals_home / 3.0
-        away_attack_away_obs = away_goals_away / 3.0
+        # Apply Dixon-Coles normalization (YOUR CORRECTION)
+        home_attack_strength = home_attack_home_pg / league_avg_goals
+        home_defense_strength = home_defense_pg / league_avg_goals
+        away_attack_strength = away_attack_away_pg / league_avg_goals
+        away_defense_strength = away_defense_pg / league_avg_goals
         
-        # Apply reasonable bounds
-        home_attack_obs = max(0.1, min(3.0, home_attack_obs))
-        away_attack_obs = max(0.1, min(3.0, away_attack_obs))
-        home_defense_obs = max(0.1, min(3.0, home_defense_obs))
-        away_defense_obs = max(0.1, min(3.0, away_defense_obs))
-        home_attack_home_obs = max(0.1, min(4.0, home_attack_home_obs))
-        away_attack_away_obs = max(0.1, min(4.0, away_attack_away_obs))
+        # Calculate base expected goals
+        base_home_xg = league_avg_goals * home_attack_strength * away_defense_strength
+        base_away_xg = league_avg_goals * away_attack_strength * home_defense_strength
         
-        # Bayesian posterior estimates
-        home_attack = (prior_goals * prior_weight + home_attack_obs * 6) / (prior_weight + 6)
-        away_attack = (prior_goals * prior_weight + away_attack_obs * 6) / (prior_weight + 6)
-        home_defense = (prior_goals * prior_weight + home_defense_obs * 6) / (prior_weight + 6)
-        away_defense = (prior_goals * prior_weight + away_defense_obs * 6) / (prior_weight + 6)
+        # Apply home advantage
+        base_home_xg *= self.calibration_params['home_advantage']
         
-        home_attack_home = (prior_goals * prior_weight + home_attack_home_obs * 3) / (prior_weight + 3)
-        away_attack_away = (prior_goals * prior_weight + away_attack_away_obs * 3) / (prior_weight + 3)
-        
-        # Apply team style adjustments
-        if home_profile['style'] == 'defensive':
-            home_attack *= 0.9
-            home_defense *= 1.1
-        elif home_profile['style'] == 'attacking':
-            home_attack *= 1.1
-            home_defense *= 0.9
-            
-        if away_profile['style'] == 'defensive':
-            away_attack *= 0.9
-            away_defense *= 1.1
-        elif away_profile['style'] == 'attacking':
-            away_attack *= 1.1
-            away_defense *= 0.9
-        
-        # Apply calibration weights
-        home_attack *= self.calibration_params['home_attack_weight']
-        away_attack *= self.calibration_params['away_attack_weight']
-        home_defense *= self.calibration_params['defense_weight']
-        away_defense *= self.calibration_params['defense_weight']
-        
-        # Form factors with decay
+        # Form factors
         home_form_factor = self._calculate_decaying_form_factor(home_form)
         away_form_factor = self._calculate_decaying_form_factor(away_form)
+        
+        base_home_xg *= home_form_factor
+        base_away_xg *= away_form_factor
         
         # Injury and motivation adjustments
         home_injury_factor = max(0.7, 1.0 - (injuries.get('home', 0) * self.calibration_params['injury_impact']))
@@ -501,35 +434,37 @@ class AdvancedPredictionEngine:
         home_motivation_factor = 1.0 + (motivation.get('home', 1.0) - 1.0) * self.calibration_params['motivation_impact']
         away_motivation_factor = 1.0 + (motivation.get('away', 1.0) - 1.0) * self.calibration_params['motivation_impact']
         
-        # Calculate base xG
-        base_home_xg = (home_attack_home * away_defense * league_params['home_advantage'] * 
-                       home_form_factor * home_injury_factor * home_motivation_factor)
-        base_away_xg = (away_attack_away * home_defense * 
-                       away_form_factor * away_injury_factor * away_motivation_factor)
-        
-        # Apply defensive context adjustment
-        if self.match_context == MatchContext.DEFENSIVE_BATTLE:
-            base_home_xg *= 0.8
-            base_away_xg *= 0.8
-        elif self.match_context == MatchContext.TACTICAL_STALEMATE:
-            base_home_xg *= 0.9
-            base_away_xg *= 0.9
+        base_home_xg *= home_injury_factor * home_motivation_factor
+        base_away_xg *= away_injury_factor * away_motivation_factor
         
         # Apply H2H adjustment if available
-        if h2h_data:
+        if h2h_data and h2h_data.get('matches', 0) >= 2:
             base_home_xg, base_away_xg = self._apply_bayesian_h2h_adjustment(
                 base_home_xg, base_away_xg, h2h_data
             )
         
-        # Final regression to mean
-        home_xg = (base_home_xg + league_params['avg_goals'] * self.calibration_params['regression_strength']) / (1 + self.calibration_params['regression_strength'])
-        away_xg = (base_away_xg + league_params['avg_goals'] * self.calibration_params['regression_strength']) / (1 + self.calibration_params['regression_strength'])
+        # Apply team style adjustments
+        if home_profile['style'] == 'defensive':
+            base_home_xg *= 0.95
+            base_away_xg *= 0.9
+        elif home_profile['style'] == 'attacking':
+            base_home_xg *= 1.05
+            base_away_xg *= 1.1
+            
+        if away_profile['style'] == 'defensive':
+            base_away_xg *= 0.95
+            base_home_xg *= 0.9
+        elif away_profile['style'] == 'attacking':
+            base_away_xg *= 1.05
+            base_home_xg *= 1.1
         
-        # Ensure reasonable bounds with context awareness
-        home_xg = max(self.calibration_params['min_goals_threshold'], min(4.0, home_xg))
-        away_xg = max(self.calibration_params['min_goals_threshold'], min(3.5, away_xg))
+        # Ensure reasonable bounds
+        home_xg = max(0.1, min(4.0, base_home_xg))
+        away_xg = max(0.1, min(3.0, base_away_xg))
         
-        logger.info(f"xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
+        logger.info(f"Normalized xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
+        logger.info(f"Base calculation - Home: {base_home_xg:.3f}, Away: {base_away_xg:.3f}")
+        
         return round(home_xg, 3), round(away_xg, 3)
     
     def _calculate_simple_probabilities(self, home_xg: float, away_xg: float) -> Dict[str, Any]:
@@ -579,11 +514,11 @@ class AdvancedPredictionEngine:
         
         # Adjust correlation based on match context
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
-            lambda3_alpha = league_params['bivariate_correlation'] * 0.6
+            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 0.6
         elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
-            lambda3_alpha = league_params['bivariate_correlation'] * 1.2
+            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 1.2
         else:
-            lambda3_alpha = league_params['bivariate_correlation']
+            lambda3_alpha = self.calibration_params['bivariate_correlation']
         
         lambda3 = lambda3_alpha * min(home_xg, away_xg)
         lambda1 = max(0.1, home_xg - lambda3)
@@ -600,8 +535,8 @@ class AdvancedPredictionEngine:
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
         total_xg = home_xg + away_xg
-        first_half_xg_total = total_xg * league_params['goal_timing_first_half']
-        second_half_xg_total = total_xg * league_params['goal_timing_second_half']
+        first_half_xg_total = total_xg * 0.46  # Fixed distribution
+        second_half_xg_total = total_xg * 0.54
         
         # Probability of AT LEAST ONE goal in each half
         prob_goal_first = 1 - poisson.pmf(0, first_half_xg_total)
@@ -617,7 +552,7 @@ class AdvancedPredictionEngine:
         np.random.seed(42)
         
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        lambda3_alpha = league_params['bivariate_correlation']
+        lambda3_alpha = self.calibration_params['bivariate_correlation']
         lambda3 = lambda3_alpha * min(home_xg, away_xg)
         lambda1 = max(0.1, home_xg - lambda3)
         lambda2 = max(0.1, away_xg - lambda3)
@@ -856,8 +791,9 @@ class AdvancedPredictionEngine:
         """Calculate realistic corner predictions"""
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
-        base_corners = league_params['avg_corners']
-        attacking_bonus = (home_xg + away_xg - league_params['avg_goals']) * 1.2
+        # Base corners based on league average
+        base_corners = 10.0  # Reasonable base
+        attacking_bonus = (home_xg + away_xg - (league_params['avg_goals'] * 2)) * 1.2
         
         total_corners = base_corners + attacking_bonus
         total_corners = max(6, min(14, total_corners))
@@ -1028,17 +964,12 @@ class AdvancedPredictionEngine:
 # Example usage with improved data
 if __name__ == "__main__":
     calibration_data = {
-        'home_attack_weight': 1.05,
-        'away_attack_weight': 0.95,
-        'defense_weight': 1.02,
+        'home_advantage': 1.12,
         'form_decay_rate': 0.85,
         'h2h_weight': 0.25,
         'injury_impact': 0.08,
         'motivation_impact': 0.12,
-        'regression_strength': 0.2,
-        'bivariate_lambda3_alpha': 0.12,
-        'defensive_team_adjustment': 0.85,
-        'min_goals_threshold': 0.15,
+        'bivariate_correlation': 0.12,
         'data_quality_threshold': 50.0
     }
     

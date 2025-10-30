@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class MatchContext(Enum):
     OFFENSIVE_SHOWDOWN = "offensive_showdown"
-    DEFENSIVE_BATTLE = "defensive_battle"
+    DEFENSIVE_BATTLE = "defensive_battle" 
     TACTICAL_STALEMATE = "tactical_stalemate"
     HOME_DOMINANCE = "home_dominance"
     AWAY_COUNTER = "away_counter"
@@ -23,7 +23,7 @@ class MatchContext(Enum):
 
 @dataclass
 class BettingSignal:
-    """Data class for betting signals"""
+    """Data class for betting signals - SEPARATE from prediction logic"""
     market: str
     model_prob: float
     book_prob: float
@@ -44,20 +44,22 @@ class MonteCarloResults:
     confidence_intervals: Dict[str, Tuple[float, float]]
     probability_volatility: Dict[str, float]
 
-class AdvancedPredictionEngine:
-    """Enhanced Football Prediction Engine with Proper Mathematical Normalization"""
+class SignalEngine:
+    """
+    PURE PREDICTIVE ENGINE - No market influence
+    Only football data → probabilities
+    """
     
-    def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None, mc_iterations: int = 10000):
+    def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.data = self._validate_and_clean_data(match_data)
         self.calibration_data = calibration_data or {}
         self.league_contexts = self._initialize_league_contexts()
         self.team_profiles = self._initialize_team_profiles()
-        self.monte_carlo_iterations = mc_iterations
         self._setup_calibration_parameters()
         self.match_context = MatchContext.UNKNOWN
         
     def _validate_and_clean_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Comprehensive data validation and cleaning - FIXED to be less aggressive"""
+        """Data validation - NO MARKET DATA PROCESSING HERE"""
         required_fields = ['home_team', 'away_team']
         
         for field in required_fields:
@@ -66,64 +68,35 @@ class AdvancedPredictionEngine:
         
         cleaned_data = match_data.copy()
         
-        # More reasonable validation ranges
+        # Remove any market data that might accidentally be passed
+        if 'market_odds' in cleaned_data:
+            del cleaned_data['market_odds']
+        
+        # Standard numeric validation
         numeric_fields = {
-            'home_goals': (0, 20, None),
-            'away_goals': (0, 20, None),
-            'home_conceded': (0, 20, None),
-            'away_conceded': (0, 20, None),
-            'home_goals_home': (0, 15, None),
-            'away_goals_away': (0, 15, None),
+            'home_goals': (0, 20, 1.5),
+            'away_goals': (0, 20, 1.5),
+            'home_conceded': (0, 20, 1.5),
+            'away_conceded': (0, 20, 1.5),
         }
         
         for field, (min_val, max_val, default) in numeric_fields.items():
             if field in cleaned_data:
                 try:
                     value = float(cleaned_data[field])
-                    # Only intervene for extreme values
                     if value < min_val or value > max_val:
-                        logger.warning(f"Field {field} value {value} outside expected range, capping")
+                        logger.warning(f"Field {field} value {value} outside expected range")
                         cleaned_data[field] = max(min_val, min(value, max_val))
                 except (TypeError, ValueError):
-                    logger.warning(f"Invalid value for {field}, using reasonable default")
-                    # Use reasonable defaults instead of minimums
-                    if 'goals' in field and 'conceded' not in field:
-                        cleaned_data[field] = 1.5
-                    elif 'conceded' in field:
-                        cleaned_data[field] = 1.5
-                    else:
-                        cleaned_data[field] = 0.0
-        
-        # Validate form data
-        for side in ['home_form', 'away_form']:
-            if side in cleaned_data:
-                if not isinstance(cleaned_data[side], list):
-                    cleaned_data[side] = []
-                else:
-                    # Convert form items to numeric, filter invalid
-                    valid_form = []
-                    for item in cleaned_data[side]:
-                        try:
-                            val = float(item)
-                            if 0 <= val <= 3:
-                                valid_form.append(val)
-                        except (TypeError, ValueError):
-                            continue
-                    cleaned_data[side] = valid_form
-        
-        # Validate nested structures
-        for nested in ['injuries', 'motivation', 'h2h_data']:
-            if nested in cleaned_data and not isinstance(cleaned_data[nested], dict):
-                cleaned_data[nested] = {}
+                    cleaned_data[field] = default
         
         # Calculate data quality score
         cleaned_data['data_quality_score'] = self._calculate_data_quality(cleaned_data)
         
-        logger.info(f"Data validation complete. Quality score: {cleaned_data['data_quality_score']:.1f}")
         return cleaned_data
     
     def _calculate_data_quality(self, data: Dict) -> float:
-        """Calculate data quality score (0-100)"""
+        """Calculate data quality score (0-100) - PURE FOOTBALL METRICS ONLY"""
         score = 0
         max_score = 0
         
@@ -155,18 +128,18 @@ class AdvancedPredictionEngine:
         return (score / max_score) * 100
     
     def _initialize_league_contexts(self) -> Dict[str, Dict]:
-        """Initialize league-specific average goals"""
+        """League-specific parameters - NO MARKET INFLUENCE"""
         return {
-            'premier_league': {'avg_goals': 1.42},
-            'la_liga': {'avg_goals': 1.30},
-            'serie_a': {'avg_goals': 1.35},
-            'bundesliga': {'avg_goals': 1.55},
-            'ligue_1': {'avg_goals': 1.28},
-            'default': {'avg_goals': 1.35}
+            'premier_league': {'avg_goals': 1.42, 'home_advantage': 1.12},
+            'la_liga': {'avg_goals': 1.30, 'home_advantage': 1.15},
+            'serie_a': {'avg_goals': 1.35, 'home_advantage': 1.12},
+            'bundesliga': {'avg_goals': 1.55, 'home_advantage': 1.10},
+            'ligue_1': {'avg_goals': 1.28, 'home_advantage': 1.13},
+            'default': {'avg_goals': 1.35, 'home_advantage': 1.12}
         }
     
     def _initialize_team_profiles(self) -> Dict[str, Dict]:
-        """Initialize known team profiles for context-aware predictions"""
+        """Team playing styles - PURE FOOTBALL CHARACTERISTICS"""
         return {
             'Bologna': {'style': 'defensive', 'press_intensity': 'high', 'clean_sheet_freq': 0.45},
             'Torino': {'style': 'defensive', 'press_intensity': 'medium', 'clean_sheet_freq': 0.38},
@@ -176,7 +149,7 @@ class AdvancedPredictionEngine:
         }
     
     def _setup_calibration_parameters(self):
-        """Setup calibration parameters"""
+        """Calibration based on historical football data only"""
         self.calibration_params = {
             'home_advantage': 1.12,
             'form_decay_rate': 0.9,
@@ -191,193 +164,39 @@ class AdvancedPredictionEngine:
             self.calibration_params.update(self.calibration_data)
 
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str) -> MatchContext:
-        """Determine the match context based on team profiles and xG"""
+        """Determine match context - PURE FOOTBALL ANALYSIS"""
         home_profile = self.team_profiles.get(home_team, self.team_profiles['default'])
         away_profile = self.team_profiles.get(away_team, self.team_profiles['default'])
         
         total_xg = home_xg + away_xg
         
-        # Both teams defensive with low total xG
+        # Defensive battle detection (Bologna-Torino case)
         if (home_profile['style'] == 'defensive' and away_profile['style'] == 'defensive' 
             and total_xg < 2.2):
             return MatchContext.DEFENSIVE_BATTLE
         
-        # High xG differential
+        # Home dominance
         elif home_xg > away_xg + 1.0:
             return MatchContext.HOME_DOMINANCE
-        elif away_xg > home_xg + 0.8:
-            return MatchContext.AWAY_COUNTER
         
-        # Both teams attacking with high total xG
+        # Offensive showdown
         elif (home_profile['style'] == 'attacking' and away_profile['style'] == 'attacking'
               and total_xg > 3.0):
             return MatchContext.OFFENSIVE_SHOWDOWN
         
-        # Close defensive match
+        # Tactical stalemate
         elif total_xg < 2.5 and abs(home_xg - away_xg) < 0.5:
             return MatchContext.TACTICAL_STALEMATE
         
         return MatchContext.UNKNOWN
 
-    def bivariate_poisson_pmf_matrix(self, lambda1: float, lambda2: float, lambda3: float, max_goals: int = 8):
-        """Compute joint PMF matrix for Bivariate Poisson"""
-        exp_term = math.exp(-(lambda1 + lambda2 + lambda3))
-        P = np.zeros((max_goals+1, max_goals+1), dtype=float)
-        fact = [math.factorial(n) for n in range(max_goals+1)]
-
-        for i in range(max_goals+1):
-            for j in range(max_goals+1):
-                s = 0.0
-                k_max = min(i, j)
-                for k in range(k_max + 1):
-                    a = i - k
-                    b = j - k
-                    term = ( (lambda1 ** a) / fact[a] ) * ( (lambda2 ** b) / fact[b] ) * ( (lambda3 ** k) / fact[k] )
-                    s += term
-                P[i, j] = exp_term * s
-        
-        P /= P.sum()
-        return P
-    
-    def get_markets_from_joint_pmf(self, P: np.ndarray):
-        """Extract market probabilities from joint PMF matrix"""
-        max_goals = P.shape[0] - 1
-        
-        home_win_prob = 0.0
-        draw_prob = 0.0
-        away_win_prob = 0.0
-        exact_scores = {}
-        
-        for i in range(max_goals+1):
-            for j in range(max_goals+1):
-                prob = P[i, j]
-                if i > j:
-                    home_win_prob += prob
-                elif i == j:
-                    draw_prob += prob
-                else:
-                    away_win_prob += prob
-                
-                if prob > 0.001:
-                    exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
-
-        # Sort exact scores by probability
-        exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:10])
-
-        # Over/under probabilities
-        total_prob = {}
-        for line in [1.5, 2.5, 3.5]:
-            over_prob = 0.0
-            under_prob = 0.0
-            for i in range(max_goals+1):
-                for j in range(max_goals+1):
-                    total_goals = i + j
-                    prob = P[i, j]
-                    if total_goals > line:
-                        over_prob += prob
-                    elif total_goals < line:
-                        under_prob += prob
-            total_prob[f"over_{str(line).replace('.', '')}"] = round(over_prob * 100, 1)
-            total_prob[f"under_{str(line).replace('.', '')}"] = round(under_prob * 100, 1)
-
-        # Both teams to score
-        btts_yes = 0.0
-        for i in range(1, max_goals+1):
-            for j in range(1, max_goals+1):
-                btts_yes += P[i, j]
-        btts_no = 1.0 - btts_yes
-
-        return {
-            'match_outcomes': {
-                'home_win': round(home_win_prob * 100, 1),
-                'draw': round(draw_prob * 100, 1),
-                'away_win': round(away_win_prob * 100, 1)
-            },
-            'exact_scores': exact_scores,
-            'over_under': total_prob,
-            'both_teams_score': {
-                'yes': round(btts_yes * 100, 1),
-                'no': round(btts_no * 100, 1)
-            }
-        }
-    
-    def generate_advanced_predictions(self) -> Dict[str, Any]:
-        """Generate comprehensive predictions with proper mathematical normalization"""
-        
-        home_team = self.data['home_team']
-        away_team = self.data['away_team']
-        league = self.data.get('league', 'serie_a')
-        market_odds = self.data.get('market_odds', {})
-        
-        # Calculate context-aware expected goals WITH PROPER NORMALIZATION
-        home_xg, away_xg = self._calculate_normalized_xg()
-        
-        # Determine match context
-        self.match_context = self._determine_match_context(home_xg, away_xg, home_team, away_team)
-        
-        # Use appropriate model based on context and data quality
-        if self.data['data_quality_score'] < self.calibration_params['data_quality_threshold']:
-            probabilities = self._calculate_simple_probabilities(home_xg, away_xg)
-        else:
-            probabilities = self._calculate_bivariate_probabilities(home_xg, away_xg, league)
-        
-        # Run Monte Carlo simulation
-        mc_results = self._run_bivariate_monte_carlo_simulation(home_xg, away_xg, league)
-        
-        # Calculate handicap probabilities
-        handicap_probs = self._calculate_handicap_probabilities(home_xg, away_xg)
-        
-        # Generate betting signals
-        betting_signals = self._generate_betting_signals(probabilities, market_odds, mc_results)
-        
-        # Calculate advanced metrics
-        corner_predictions = self._calculate_corner_predictions(home_xg, away_xg, league)
-        timing_predictions = self._calculate_enhanced_timing_predictions(home_xg, away_xg)
-        
-        # Risk and confidence assessment
-        confidence_score = self._calculate_advanced_confidence(mc_results)
-        risk_assessment = self._assess_prediction_risk(probabilities, confidence_score, mc_results)
-        
-        # Validate output consistency
-        self._validate_output_consistency(probabilities, home_xg, away_xg, risk_assessment)
-        
-        # Debug output
-        logger.info(f"Final prediction - Home xG: {home_xg:.2f}, Away xG: {away_xg:.2f}")
-        logger.info(f"Match context: {self.match_context.value}")
-        logger.info(f"Probabilities: {probabilities['match_outcomes']}")
-        
-        return {
-            'match': f"{home_team} vs {away_team}",
-            'expected_goals': {'home': round(home_xg, 2), 'away': round(away_xg, 2)},
-            'match_context': self.match_context.value,
-            'data_quality_score': round(self.data['data_quality_score'], 1),
-            'probabilities': probabilities,
-            'handicap_probabilities': handicap_probs,
-            'monte_carlo_results': {
-                'confidence_intervals': mc_results.confidence_intervals,
-                'probability_volatility': mc_results.probability_volatility
-            },
-            'betting_signals': betting_signals,
-            'corner_predictions': corner_predictions,
-            'timing_predictions': timing_predictions,
-            'summary': self._generate_context_aware_summary(home_team, away_team, probabilities, home_xg, away_xg),
-            'confidence_score': confidence_score,
-            'risk_assessment': risk_assessment,
-            'model_metrics': self._calculate_model_metrics(probabilities, mc_results),
-            'bivariate_parameters': {
-                'lambda1': round(home_xg - (0.12 * min(home_xg, away_xg)), 3),
-                'lambda2': round(away_xg - (0.12 * min(home_xg, away_xg)), 3),
-                'lambda3': round(0.12 * min(home_xg, away_xg), 3)
-            }
-        }
-    
     def _calculate_normalized_xg(self) -> Tuple[float, float]:
-        """Calculate expected goals with PROPER Dixon-Coles normalization"""
+        """Calculate expected goals with Dixon-Coles normalization - PURE FOOTBALL DATA"""
         league = self.data.get('league', 'serie_a')
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         league_avg_goals = league_params['avg_goals']
         
-        # Extract raw data
+        # Extract raw football data
         home_goals = self.data.get('home_goals', 0)
         away_goals = self.data.get('away_goals', 0)
         home_conceded = self.data.get('home_conceded', 0)
@@ -397,7 +216,7 @@ class AdvancedPredictionEngine:
         home_profile = self.team_profiles.get(self.data['home_team'], self.team_profiles['default'])
         away_profile = self.team_profiles.get(self.data['away_team'], self.team_profiles['default'])
         
-        # Convert to per-game averages (6 games for overall, 3 for home/away specific)
+        # Convert to per-game averages
         home_attack_pg = home_goals / 6.0 if home_goals > 0 else league_avg_goals
         away_attack_pg = away_goals / 6.0 if away_goals > 0 else league_avg_goals
         home_defense_pg = home_conceded / 6.0 if home_conceded > 0 else league_avg_goals
@@ -407,7 +226,7 @@ class AdvancedPredictionEngine:
         home_attack_home_pg = home_goals_home / 3.0 if home_goals_home > 0 else home_attack_pg
         away_attack_away_pg = away_goals_away / 3.0 if away_goals_away > 0 else away_attack_pg
         
-        # Apply Dixon-Coles normalization (YOUR CORRECTION)
+        # Dixon-Coles normalization
         home_attack_strength = home_attack_home_pg / league_avg_goals
         home_defense_strength = home_defense_pg / league_avg_goals
         away_attack_strength = away_attack_away_pg / league_avg_goals
@@ -443,195 +262,29 @@ class AdvancedPredictionEngine:
                 base_home_xg, base_away_xg, h2h_data
             )
         
-        # Apply team style adjustments
+        # Apply team style adjustments - CRITICAL FOR DEFENSIVE BATTLES
         if home_profile['style'] == 'defensive':
-            base_home_xg *= 0.95
-            base_away_xg *= 0.9
+            base_home_xg *= 0.85  # Reduced scoring for defensive teams
+            base_away_xg *= 0.80  # Even more reduction for away team against defensive home
         elif home_profile['style'] == 'attacking':
-            base_home_xg *= 1.05
-            base_away_xg *= 1.1
+            base_home_xg *= 1.15
+            base_away_xg *= 1.10
             
         if away_profile['style'] == 'defensive':
-            base_away_xg *= 0.95
-            base_home_xg *= 0.9
+            base_away_xg *= 0.85
+            base_home_xg *= 0.80  # Home team struggles against defensive away
         elif away_profile['style'] == 'attacking':
-            base_away_xg *= 1.05
-            base_home_xg *= 1.1
+            base_away_xg *= 1.15
+            base_home_xg *= 1.10
         
         # Ensure reasonable bounds
         home_xg = max(0.1, min(4.0, base_home_xg))
         away_xg = max(0.1, min(3.0, base_away_xg))
         
-        logger.info(f"Normalized xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
-        logger.info(f"Base calculation - Home: {base_home_xg:.3f}, Away: {base_away_xg:.3f}")
+        logger.info(f"PURE xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
+        logger.info(f"Match context factors applied - Home style: {home_profile['style']}, Away style: {away_profile['style']}")
         
         return round(home_xg, 3), round(away_xg, 3)
-    
-    def _calculate_simple_probabilities(self, home_xg: float, away_xg: float) -> Dict[str, Any]:
-        """Calculate probabilities using simple Poisson when data quality is low"""
-        # Simple Poisson for match outcomes
-        home_win_prob = 0.0
-        draw_prob = 0.0
-        away_win_prob = 0.0
-        
-        for i in range(8):
-            for j in range(8):
-                prob = poisson.pmf(i, home_xg) * poisson.pmf(j, away_xg)
-                if i > j:
-                    home_win_prob += prob
-                elif i == j:
-                    draw_prob += prob
-                else:
-                    away_win_prob += prob
-        
-        # Simple BTTS calculation
-        btts_prob = (1 - poisson.pmf(0, home_xg)) * (1 - poisson.pmf(0, away_xg))
-        
-        # Goal timing probabilities
-        total_xg = home_xg + away_xg
-        first_half_prob = 1 - math.exp(-total_xg * 0.46)
-        second_half_prob = 1 - math.exp(-total_xg * 0.54)
-        
-        return {
-            'match_outcomes': {
-                'home_win': round(home_win_prob * 100, 1),
-                'draw': round(draw_prob * 100, 1),
-                'away_win': round(away_win_prob * 100, 1)
-            },
-            'both_teams_score': {
-                'yes': round(btts_prob * 100, 1),
-                'no': round((1 - btts_prob) * 100, 1)
-            },
-            'goal_timing': {
-                'first_half': round(first_half_prob * 100, 1),
-                'second_half': round(second_half_prob * 100, 1)
-            }
-        }
-    
-    def _calculate_bivariate_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
-        """Calculate probabilities using bivariate Poisson distribution"""
-        league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        
-        # Adjust correlation based on match context
-        if self.match_context == MatchContext.DEFENSIVE_BATTLE:
-            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 0.6
-        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
-            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 1.2
-        else:
-            lambda3_alpha = self.calibration_params['bivariate_correlation']
-        
-        lambda3 = lambda3_alpha * min(home_xg, away_xg)
-        lambda1 = max(0.1, home_xg - lambda3)
-        lambda2 = max(0.1, away_xg - lambda3)
-        
-        P = self.bivariate_poisson_pmf_matrix(lambda1, lambda2, lambda3, max_goals=8)
-        markets = self.get_markets_from_joint_pmf(P)
-        markets['goal_timing'] = self._calculate_goal_timing_probabilities(home_xg, away_xg, league)
-        
-        return markets
-    
-    def _calculate_goal_timing_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, float]:
-        """Calculate goal timing probabilities"""
-        league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        
-        total_xg = home_xg + away_xg
-        first_half_xg_total = total_xg * 0.46  # Fixed distribution
-        second_half_xg_total = total_xg * 0.54
-        
-        # Probability of AT LEAST ONE goal in each half
-        prob_goal_first = 1 - poisson.pmf(0, first_half_xg_total)
-        prob_goal_second = 1 - poisson.pmf(0, second_half_xg_total)
-        
-        return {
-            'first_half': round(prob_goal_first * 100, 1),
-            'second_half': round(prob_goal_second * 100, 1)
-        }
-    
-    def _run_bivariate_monte_carlo_simulation(self, home_xg: float, away_xg: float, league: str) -> MonteCarloResults:
-        """Run Monte Carlo simulation using bivariate Poisson structure"""
-        np.random.seed(42)
-        
-        league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        lambda3_alpha = self.calibration_params['bivariate_correlation']
-        lambda3 = lambda3_alpha * min(home_xg, away_xg)
-        lambda1 = max(0.1, home_xg - lambda3)
-        lambda2 = max(0.1, away_xg - lambda3)
-        
-        C = np.random.poisson(lambda3, self.monte_carlo_iterations)
-        A = np.random.poisson(lambda1, self.monte_carlo_iterations)
-        B = np.random.poisson(lambda2, self.monte_carlo_iterations)
-        
-        home_goals_sim = A + C
-        away_goals_sim = B + C
-        
-        home_wins = np.sum(home_goals_sim > away_goals_sim) / self.monte_carlo_iterations
-        draws = np.sum(home_goals_sim == away_goals_sim) / self.monte_carlo_iterations
-        away_wins = np.sum(home_goals_sim < away_goals_sim) / self.monte_carlo_iterations
-        
-        total_goals = home_goals_sim + away_goals_sim
-        over_25 = np.sum(total_goals > 2.5) / self.monte_carlo_iterations
-        btts = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / self.monte_carlo_iterations
-        
-        exact_scores = {}
-        for i in range(6):
-            for j in range(6):
-                count = np.sum((home_goals_sim == i) & (away_goals_sim == j))
-                prob = count / self.monte_carlo_iterations
-                if prob > 0.005:
-                    exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
-        
-        # Sort by probability
-        exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:8])
-        
-        def calculate_ci(probs, alpha=0.95):
-            se = np.sqrt(probs * (1 - probs) / self.monte_carlo_iterations)
-            z_score = 1.96
-            return (max(0, probs - z_score * se), min(1, probs + z_score * se))
-        
-        confidence_intervals = {
-            'home_win': calculate_ci(home_wins),
-            'draw': calculate_ci(draws),
-            'away_win': calculate_ci(away_wins),
-            'over_2.5': calculate_ci(over_25)
-        }
-        
-        # Calculate probability volatility
-        batch_size = 1000
-        num_batches = self.monte_carlo_iterations // batch_size
-        
-        batch_probs = {
-            'home_win': [], 'draw': [], 'away_win': [], 'over_2.5': []
-        }
-        
-        for i in range(num_batches):
-            start_idx = i * batch_size
-            end_idx = start_idx + batch_size
-            
-            batch_home_wins = np.sum(home_goals_sim[start_idx:end_idx] > away_goals_sim[start_idx:end_idx]) / batch_size
-            batch_draws = np.sum(home_goals_sim[start_idx:end_idx] == away_goals_sim[start_idx:end_idx]) / batch_size
-            batch_away_wins = np.sum(home_goals_sim[start_idx:end_idx] < away_goals_sim[start_idx:end_idx]) / batch_size
-            batch_over_25 = np.sum((home_goals_sim[start_idx:end_idx] + away_goals_sim[start_idx:end_idx]) > 2.5) / batch_size
-            
-            batch_probs['home_win'].append(batch_home_wins)
-            batch_probs['draw'].append(batch_draws)
-            batch_probs['away_win'].append(batch_away_wins)
-            batch_probs['over_2.5'].append(batch_over_25)
-        
-        probability_volatility = {
-            market: float(np.std(probs))
-            for market, probs in batch_probs.items()
-        }
-        
-        return MonteCarloResults(
-            home_win_prob=home_wins,
-            draw_prob=draws,
-            away_win_prob=away_wins,
-            over_25_prob=over_25,
-            btts_prob=btts,
-            exact_scores=exact_scores,
-            confidence_intervals=confidence_intervals,
-            probability_volatility=probability_volatility
-        )
     
     def _calculate_decaying_form_factor(self, form: List[float]) -> float:
         """Calculate form factor with exponential decay"""
@@ -669,167 +322,187 @@ class AdvancedPredictionEngine:
         adjusted_away_xg = (away_xg * (1 - h2h_weight)) + (h2h_away_avg * h2h_weight)
         
         return adjusted_home_xg, adjusted_away_xg
-    
-    def _calculate_handicap_probabilities(self, home_xg: float, away_xg: float) -> Dict[str, float]:
-        """Calculate Asian Handicap probabilities using Skellam distribution"""
+
+    def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
+        """Run Monte Carlo simulation - PURE PROBABILISTIC MODEL"""
+        np.random.seed(42)
+        
+        # Adjust correlation based on match context
+        if self.match_context == MatchContext.DEFENSIVE_BATTLE:
+            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 0.6
+        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
+            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 1.2
+        else:
+            lambda3_alpha = self.calibration_params['bivariate_correlation']
+        
+        lambda3 = lambda3_alpha * min(home_xg, away_xg)
+        lambda1 = max(0.1, home_xg - lambda3)
+        lambda2 = max(0.1, away_xg - lambda3)
+        
+        # Bivariate Poisson simulation
+        C = np.random.poisson(lambda3, iterations)
+        A = np.random.poisson(lambda1, iterations)
+        B = np.random.poisson(lambda2, iterations)
+        
+        home_goals_sim = A + C
+        away_goals_sim = B + C
+        
+        # Calculate probabilities
+        home_wins = np.sum(home_goals_sim > away_goals_sim) / iterations
+        draws = np.sum(home_goals_sim == away_goals_sim) / iterations
+        away_wins = np.sum(home_goals_sim < away_goals_sim) / iterations
+        
+        total_goals = home_goals_sim + away_goals_sim
+        over_25 = np.sum(total_goals > 2.5) / iterations
+        btts = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / iterations
+        
+        # Exact scores
+        exact_scores = {}
+        for i in range(6):
+            for j in range(6):
+                count = np.sum((home_goals_sim == i) & (away_goals_sim == j))
+                prob = count / iterations
+                if prob > 0.005:
+                    exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
+        
+        exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:8])
+        
+        # Confidence intervals
+        def calculate_ci(probs, alpha=0.95):
+            se = np.sqrt(probs * (1 - probs) / iterations)
+            z_score = 1.96
+            return (max(0, probs - z_score * se), min(1, probs + z_score * se))
+        
+        confidence_intervals = {
+            'home_win': calculate_ci(home_wins),
+            'draw': calculate_ci(draws),
+            'away_win': calculate_ci(away_wins),
+            'over_2.5': calculate_ci(over_25)
+        }
+        
+        # Probability volatility
+        batch_size = 1000
+        num_batches = iterations // batch_size
+        
+        batch_probs = {
+            'home_win': [], 'draw': [], 'away_win': [], 'over_2.5': []
+        }
+        
+        for i in range(num_batches):
+            start_idx = i * batch_size
+            end_idx = start_idx + batch_size
+            
+            batch_home_wins = np.sum(home_goals_sim[start_idx:end_idx] > away_goals_sim[start_idx:end_idx]) / batch_size
+            batch_draws = np.sum(home_goals_sim[start_idx:end_idx] == away_goals_sim[start_idx:end_idx]) / batch_size
+            batch_away_wins = np.sum(home_goals_sim[start_idx:end_idx] < away_goals_sim[start_idx:end_idx]) / batch_size
+            batch_over_25 = np.sum((home_goals_sim[start_idx:end_idx] + away_goals_sim[start_idx:end_idx]) > 2.5) / batch_size
+            
+            batch_probs['home_win'].append(batch_home_wins)
+            batch_probs['draw'].append(batch_draws)
+            batch_probs['away_win'].append(batch_away_wins)
+            batch_probs['over_2.5'].append(batch_over_25)
+        
+        probability_volatility = {
+            market: float(np.std(probs))
+            for market, probs in batch_probs.items()
+        }
+        
+        return MonteCarloResults(
+            home_win_prob=home_wins,
+            draw_prob=draws,
+            away_win_prob=away_wins,
+            over_25_prob=over_25,
+            btts_prob=btts,
+            exact_scores=exact_scores,
+            confidence_intervals=confidence_intervals,
+            probability_volatility=probability_volatility
+        )
+
+    def generate_predictions(self, mc_iterations: int = 10000) -> Dict[str, Any]:
+        """Generate PURE football predictions - NO MARKET INFLUENCE"""
+        
+        home_team = self.data['home_team']
+        away_team = self.data['away_team']
+        
+        # Calculate context-aware expected goals
+        home_xg, away_xg = self._calculate_normalized_xg()
+        
+        # Determine match context
+        self.match_context = self._determine_match_context(home_xg, away_xg, home_team, away_team)
+        
+        # Run Monte Carlo simulation
+        mc_results = self.run_monte_carlo_simulation(home_xg, away_xg, mc_iterations)
+        
+        # Calculate additional probabilities
+        total_xg = home_xg + away_xg
+        first_half_prob = 1 - poisson.pmf(0, total_xg * 0.46)
+        second_half_prob = 1 - poisson.pmf(0, total_xg * 0.54)
+        
+        # Calculate handicap probabilities
         handicap_probs = {}
-        
-        handicaps = [-2.5, -2.0, -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, 2.0, 2.5]
-        
+        handicaps = [-0.5, 0, 0.5, 1.0]
         for handicap in handicaps:
             if handicap == 0:
-                # Home wins (no handicap)
                 prob = 1 - skellam.cdf(0, home_xg, away_xg)
             elif handicap > 0:
-                # Home team gives handicap (home_goals + handicap > away_goals)
                 prob = 1 - skellam.cdf(-handicap, home_xg, away_xg)
             else:
-                # Away team gives handicap (home_goals > away_goals + abs(handicap))
                 prob = 1 - skellam.cdf(abs(handicap), home_xg, away_xg)
-            
             handicap_probs[f"handicap_{handicap}"] = round(prob * 100, 1)
         
-        return handicap_probs
-    
-    def _generate_betting_signals(self, probabilities: Dict, market_odds: Dict, 
-                                mc_results: MonteCarloResults) -> List[Dict]:
-        """Generate actionable betting signals with value detection"""
-        signals = []
-        market_probs = self._convert_odds_to_probabilities(market_odds)
+        # Corner predictions
+        base_corners = 10.0
+        attacking_bonus = (home_xg + away_xg - 2.7) * 1.2
+        total_corners = max(6, min(14, base_corners + attacking_bonus))
         
-        markets_to_check = [
-            ('home_win', '1x2 Home'),
-            ('draw', '1x2 Draw'), 
-            ('away_win', '1x2 Away'),
-            ('over_2.5', 'Over 2.5 Goals'),
-            ('both_teams_score', 'BTTS Yes')
-        ]
-        
-        for model_key, market_name in markets_to_check:
-            if model_key in probabilities.get('match_outcomes', {}):
-                model_prob = probabilities['match_outcomes'][model_key] / 100
-            elif model_key == 'both_teams_score':
-                model_prob = probabilities.get('both_teams_score', {}).get('yes', 0) / 100
-            elif model_key == 'over_2.5':
-                model_prob = probabilities.get('over_under', {}).get('over_25', 0) / 100
-            else:
-                model_prob = probabilities.get(model_key, 0) / 100
-            
-            book_prob = market_probs.get(market_name, 0)
-            
-            if book_prob > 0 and model_prob > 0:
-                edge = (model_prob - book_prob) * 100
-                
-                if abs(edge) > 2:
-                    confidence = self._calculate_bet_confidence(model_prob, mc_results.probability_volatility.get(model_key, 0))
-                    stake = self._calculate_kelly_stake(model_prob, book_prob)
-                    value_rating = self._get_value_rating(edge)
-                    
-                    signals.append(BettingSignal(
-                        market=market_name,
-                        model_prob=round(model_prob * 100, 1),
-                        book_prob=round(book_prob * 100, 1),
-                        edge=round(edge, 1),
-                        confidence=confidence,
-                        recommended_stake=stake,
-                        value_rating=value_rating
-                    ).__dict__)
-        
-        signals.sort(key=lambda x: x['edge'], reverse=True)
-        return signals
-    
-    def _convert_odds_to_probabilities(self, market_odds: Dict) -> Dict[str, float]:
-        """Convert decimal odds to probabilities"""
-        probs = {}
-        
-        for market, odds in market_odds.items():
-            if isinstance(odds, (int, float)) and odds > 1:
-                probs[market] = 1 / odds
-            elif isinstance(odds, dict):
-                total_implied = sum(1 / o for o in odds.values() if isinstance(o, (int, float)) and o > 1)
-                if total_implied > 0:
-                    for outcome, odd in odds.items():
-                        if isinstance(odd, (int, float)) and odd > 1:
-                            probs[f"{market} {outcome}"] = (1 / odd) / total_implied
-        
-        return probs
-    
-    def _calculate_bet_confidence(self, model_prob: float, volatility: float) -> str:
-        """Calculate betting confidence based on probability and volatility"""
-        if volatility < 0.02 and model_prob > 0.6:
-            return "HIGH"
-        elif volatility < 0.04 and model_prob > 0.55:
-            return "MEDIUM"
-        elif volatility < 0.06:
-            return "LOW"
-        else:
-            return "SPECULATIVE"
-    
-    def _calculate_kelly_stake(self, model_prob: float, book_prob: float, kelly_fraction: float = 0.25) -> float:
-        """Calculate Kelly criterion stake"""
-        if book_prob <= 0 or model_prob <= book_prob:
-            return 0.0
-        
-        decimal_odds = 1 / book_prob
-        kelly_stake = (model_prob * decimal_odds - 1) / (decimal_odds - 1)
-        return max(0.0, min(0.05, kelly_stake * kelly_fraction))
-    
-    def _get_value_rating(self, edge: float) -> str:
-        """Get value rating based on edge percentage"""
-        if edge > 10:
-            return "EXCEPTIONAL"
-        elif edge > 7:
-            return "HIGH"
-        elif edge > 5:
-            return "GOOD"
-        elif edge > 3:
-            return "MODERATE"
-        else:
-            return "LOW"
-    
-    def _calculate_corner_predictions(self, home_xg: float, away_xg: float, league: str) -> Dict[str, Any]:
-        """Calculate realistic corner predictions"""
-        league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        
-        # Base corners based on league average
-        base_corners = 10.0  # Reasonable base
-        attacking_bonus = (home_xg + away_xg - (league_params['avg_goals'] * 2)) * 1.2
-        
-        total_corners = base_corners + attacking_bonus
-        total_corners = max(6, min(14, total_corners))
-        
-        home_corners = total_corners * 0.55
-        away_corners = total_corners * 0.45
+        # Risk assessment
+        confidence_score = self._calculate_confidence_score(mc_results)
+        risk_assessment = self._assess_prediction_risk(mc_results, confidence_score)
         
         return {
-            'total': f"{int(total_corners)}-{int(total_corners + 1)}",
-            'home': f"{int(home_corners)}-{int(home_corners + 0.5)}",
-            'away': f"{int(away_corners)}-{int(away_corners + 0.5)}",
-            'over_9.5': 'YES' if total_corners > 9.5 else 'NO'
+            'match': f"{home_team} vs {away_team}",
+            'expected_goals': {'home': round(home_xg, 2), 'away': round(away_xg, 2)},
+            'match_context': self.match_context.value,
+            'data_quality_score': round(self.data['data_quality_score'], 1),
+            'probabilities': {
+                'match_outcomes': {
+                    'home_win': round(mc_results.home_win_prob * 100, 1),
+                    'draw': round(mc_results.draw_prob * 100, 1),
+                    'away_win': round(mc_results.away_win_prob * 100, 1)
+                },
+                'both_teams_score': {
+                    'yes': round(mc_results.btts_prob * 100, 1),
+                    'no': round((1 - mc_results.btts_prob) * 100, 1)
+                },
+                'over_under': {
+                    'over_15': round((1 - poisson.cdf(1, total_xg)) * 100, 1),
+                    'over_25': round(mc_results.over_25_prob * 100, 1),
+                    'over_35': round((1 - poisson.cdf(3, total_xg)) * 100, 1)
+                },
+                'exact_scores': mc_results.exact_scores,
+                'goal_timing': {
+                    'first_half': round(first_half_prob * 100, 1),
+                    'second_half': round(second_half_prob * 100, 1)
+                }
+            },
+            'handicap_probabilities': handicap_probs,
+            'corner_predictions': {
+                'total': f"{int(total_corners)}-{int(total_corners + 1)}",
+                'home': f"{int(total_corners * 0.55)}-{int(total_corners * 0.55 + 0.5)}",
+                'away': f"{int(total_corners * 0.45)}-{int(total_corners * 0.45 + 0.5)}"
+            },
+            'timing_predictions': self._generate_timing_predictions(home_xg, away_xg),
+            'summary': self._generate_football_summary(home_team, away_team, home_xg, away_xg, mc_results),
+            'confidence_score': confidence_score,
+            'risk_assessment': risk_assessment,
+            'monte_carlo_results': {
+                'confidence_intervals': mc_results.confidence_intervals,
+                'probability_volatility': mc_results.probability_volatility
+            }
         }
     
-    def _calculate_enhanced_timing_predictions(self, home_xg: float, away_xg: float) -> Dict[str, Any]:
-        """Calculate enhanced goal timing predictions"""
-        total_xg = home_xg + away_xg
-        
-        if total_xg < 1.5:
-            first_goal = "35+ minutes"
-            late_goals = "UNLIKELY"
-        elif total_xg < 2.5:
-            first_goal = "25-35 minutes"
-            late_goals = "POSSIBLE"
-        else:
-            first_goal = "15-30 minutes"
-            late_goals = "LIKELY"
-        
-        return {
-            'first_goal': first_goal,
-            'late_goals': late_goals,
-            'most_action': "Last 20 minutes of each half" if total_xg > 2.0 else "Scattered throughout"
-        }
-    
-    def _calculate_advanced_confidence(self, mc_results: MonteCarloResults) -> int:
-        """Calculate advanced confidence score using Monte Carlo results"""
+    def _calculate_confidence_score(self, mc_results: MonteCarloResults) -> int:
+        """Calculate confidence score based on data quality and simulation stability"""
         base_confidence = self.data['data_quality_score'] * 0.5
         
         # Add bonuses for good data
@@ -849,13 +522,16 @@ class AdvancedPredictionEngine:
         confidence = base_confidence - volatility_penalty
         return max(10, min(95, int(confidence)))
     
-    def _assess_prediction_risk(self, probabilities: Dict, confidence: int, 
-                              mc_results: MonteCarloResults) -> Dict[str, str]:
-        """Enhanced risk assessment with Monte Carlo uncertainty"""
-        outcomes = probabilities['match_outcomes']
-        highest_prob = max(outcomes.values())
+    def _assess_prediction_risk(self, mc_results: MonteCarloResults, confidence: int) -> Dict[str, str]:
+        """Assess prediction risk - PURE FOOTBALL UNCERTAINTY"""
+        home_win_prob = mc_results.home_win_prob
+        draw_prob = mc_results.draw_prob
+        away_win_prob = mc_results.away_win_prob
         
-        probs = np.array([outcomes['home_win'], outcomes['draw'], outcomes['away_win']]) / 100
+        highest_prob = max(home_win_prob, draw_prob, away_win_prob)
+        
+        # Calculate entropy for uncertainty measurement
+        probs = np.array([home_win_prob, draw_prob, away_win_prob])
         entropy = -np.sum(probs * np.log(probs + 1e-10))
         max_entropy = np.log(3)
         uncertainty_ratio = entropy / max_entropy
@@ -870,10 +546,10 @@ class AdvancedPredictionEngine:
             
         adjusted_uncertainty = uncertainty_ratio * risk_adjustment
         
-        if highest_prob > 70 and confidence > 80 and adjusted_uncertainty < 0.7:
+        if highest_prob > 0.7 and confidence > 80 and adjusted_uncertainty < 0.7:
             risk_level = "LOW"
             explanation = "Strong favorite with low uncertainty"
-        elif highest_prob > 55 and confidence > 65 and adjusted_uncertainty < 0.85:
+        elif highest_prob > 0.55 and confidence > 65 and adjusted_uncertainty < 0.85:
             risk_level = "MEDIUM"
             explanation = "Moderate favorite with acceptable uncertainty"
         else:
@@ -883,96 +559,218 @@ class AdvancedPredictionEngine:
         return {
             'risk_level': risk_level,
             'explanation': explanation,
-            'certainty': f"{highest_prob}%",
+            'certainty': f"{highest_prob*100:.1f}%",
             'uncertainty': round(uncertainty_ratio, 2)
         }
     
-    def _calculate_model_metrics(self, probabilities: Dict, mc_results: MonteCarloResults) -> Dict[str, float]:
-        """Calculate model performance metrics"""
-        probs = np.array([probabilities['match_outcomes'][k] for k in ['home_win', 'draw', 'away_win']]) / 100
-        entropy = -np.sum(probs * np.log(probs + 1e-10))
+    def _generate_timing_predictions(self, home_xg: float, away_xg: float) -> Dict[str, str]:
+        """Generate timing predictions based on xG"""
+        total_xg = home_xg + away_xg
         
-        avg_volatility = np.mean(list(mc_results.probability_volatility.values()))
-        avg_ci_width = np.mean([
-            ci[1] - ci[0] for ci in mc_results.confidence_intervals.values()
-        ])
+        if total_xg < 1.5:
+            first_goal = "35+ minutes"
+            late_goals = "UNLIKELY"
+        elif total_xg < 2.5:
+            first_goal = "25-35 minutes"
+            late_goals = "POSSIBLE"
+        else:
+            first_goal = "15-30 minutes"
+            late_goals = "LIKELY"
         
         return {
-            'shannon_entropy': round(entropy, 3),
-            'avg_probability_volatility': round(avg_volatility, 4),
-            'avg_confidence_interval_width': round(avg_ci_width, 4),
-            'monte_carlo_iterations': self.monte_carlo_iterations,
-            'match_context': self.match_context.value
+            'first_goal': first_goal,
+            'late_goals': late_goals,
+            'most_action': "Last 20 minutes of each half" if total_xg > 2.0 else "Scattered throughout"
         }
     
-    def _generate_context_aware_summary(self, home_team: str, away_team: str, probabilities: Dict,
-                                      home_xg: float, away_xg: float) -> str:
-        """Generate context-aware match summary"""
-        outcomes = probabilities['match_outcomes']
+    def _generate_football_summary(self, home_team: str, away_team: str, home_xg: float, 
+                                 away_xg: float, mc_results: MonteCarloResults) -> str:
+        """Generate pure football summary - NO MARKET TALK"""
         
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
-            return f"Defensive stalemate expected between {home_team} and {away_team}. Low-scoring affair likely with both teams prioritizing defensive solidity. Set-pieces and individual moments could prove decisive."
+            return f"Defensive stalemate expected between {home_team} and {away_team}. Both teams prioritize defensive solidity, suggesting a low-scoring affair where set-pieces and individual moments could prove decisive."
         
         elif self.match_context == MatchContext.TACTICAL_STALEMATE:
             return f"Tactical battle anticipated with minimal separation between {home_team} and {away_team}. Both teams well-organized defensively, suggesting a cagey encounter decided by fine margins."
         
-        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
-            return f"Open, attacking football expected as {home_team} and {away_team} both favor offensive approaches. High-scoring encounter likely with both teams creating numerous chances."
+        home_win_prob = mc_results.home_win_prob
         
-        elif outcomes['home_win'] > 65 and home_xg > away_xg + 0.8:
-            return f"{home_team} demonstrate clear superiority with {home_xg:.1f} expected goals. Strong home advantage and attacking efficiency suggest comfortable victory."
+        if home_win_prob > 0.65 and home_xg > away_xg + 0.8:
+            return f"{home_team} demonstrate clear superiority with {home_xg:.1f} expected goals. Strong home advantage and defensive organization suggest controlled victory."
         
-        elif outcomes['home_win'] > 55 and home_xg > away_xg + 0.4:
+        elif home_win_prob > 0.55:
             return f"{home_team} hold measurable advantage with better expected goal metrics. {away_team} will need exceptional defensive discipline to contain home threat."
         
-        elif outcomes['away_win'] > 50 and away_xg > home_xg:
-            return f"{away_team} pose significant threat with competitive expected goals. This could challenge {home_team}'s home defensive record."
-        
-        elif outcomes['draw'] > 35 and abs(home_xg - away_xg) < 0.3:
-            return f"Evenly balanced encounter with minimal separation in expected goals. Set-piece efficiency and individual quality likely decisive."
-        
         else:
-            return f"Competitive match with both teams creating opportunities. Small margins expected to determine outcome in what promises tactical engagement."
-    
-    def _validate_output_consistency(self, probabilities: Dict, home_xg: float, away_xg: float, 
-                                   risk_assessment: Dict) -> None:
-        """Validate output consistency and log warnings for inconsistencies"""
-        outcomes = probabilities['match_outcomes']
-        exact_scores = probabilities.get('exact_scores', {})
-        
-        # Check if high xG contradicts low-scoring predictions
-        total_xg = home_xg + away_xg
-        low_scoring_prob = sum(prob for score, prob in exact_scores.items() 
-                             if int(score.split('-')[0]) + int(score.split('-')[1]) <= 1)
-        
-        if total_xg > 2.5 and low_scoring_prob > 40:
-            logger.warning(f"High total xG ({total_xg:.1f}) contradicts low-scoring predictions ({low_scoring_prob}% probability)")
-        
-        # Check if match outcomes align with exact scores
-        implied_home_win = sum(prob for score, prob in exact_scores.items() 
-                             if int(score.split('-')[0]) > int(score.split('-')[1]))
-        actual_home_win = outcomes['home_win']
-        
-        if abs(implied_home_win - actual_home_win) > 15:
-            logger.warning(f"Home win probability mismatch: {actual_home_win}% vs {implied_home_win}% from exact scores")
-        
-        # Validate risk assessment aligns with probabilities
-        highest_prob = max(outcomes.values())
-        if risk_assessment['risk_level'] == 'LOW' and highest_prob < 60:
-            logger.warning("Low risk assessment contradicts moderate highest probability")
+            return f"Competitive match with both teams creating opportunities. Small margins expected to determine outcome in what promises to be a tactical engagement."
 
-# Example usage with improved data
-if __name__ == "__main__":
-    calibration_data = {
-        'home_advantage': 1.12,
-        'form_decay_rate': 0.85,
-        'h2h_weight': 0.25,
-        'injury_impact': 0.08,
-        'motivation_impact': 0.12,
-        'bivariate_correlation': 0.12,
-        'data_quality_threshold': 50.0
-    }
+
+class ValueDetectionEngine:
+    """
+    SEPARATE VALUE DETECTION ENGINE
+    Only compares pure probabilities to market odds
+    """
     
+    def __init__(self):
+        self.value_thresholds = {
+            'EXCEPTIONAL': 10.0,
+            'HIGH': 7.0,
+            'GOOD': 5.0,
+            'MODERATE': 3.0,
+            'LOW': 0.0
+        }
+    
+    def calculate_implied_probabilities(self, market_odds: Dict[str, float]) -> Dict[str, float]:
+        """Convert decimal odds to implied probabilities"""
+        implied_probs = {}
+        
+        for market, odds in market_odds.items():
+            if isinstance(odds, (int, float)) and odds > 1:
+                implied_probs[market] = 1 / odds
+        
+        return implied_probs
+    
+    def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
+        """Detect value bets by comparing pure probabilities to market odds"""
+        signals = []
+        
+        # Convert market odds to probabilities
+        market_probs = self.calculate_implied_probabilities(market_odds)
+        
+        # Map between pure probability keys and market names
+        probability_mapping = [
+            ('probabilities.match_outcomes.home_win', '1x2 Home'),
+            ('probabilities.match_outcomes.draw', '1x2 Draw'),
+            ('probabilities.match_outcomes.away_win', '1x2 Away'),
+            ('probabilities.over_under.over_25', 'Over 2.5 Goals'),
+            ('probabilities.both_teams_score.yes', 'BTTS Yes')
+        ]
+        
+        for prob_path, market_name in probability_mapping:
+            # Extract pure probability
+            pure_prob = self._get_nested_value(pure_probabilities, prob_path) / 100.0
+            
+            # Get market probability
+            market_prob = market_probs.get(market_name, 0)
+            
+            if market_prob > 0 and pure_prob > 0:
+                edge = (pure_prob - market_prob) * 100
+                
+                if edge > self.value_thresholds['MODERATE']:
+                    value_rating = self._get_value_rating(edge)
+                    confidence = self._calculate_bet_confidence(pure_prob, edge)
+                    stake = self._calculate_kelly_stake(pure_prob, market_prob)
+                    
+                    signals.append(BettingSignal(
+                        market=market_name,
+                        model_prob=round(pure_prob * 100, 1),
+                        book_prob=round(market_prob * 100, 1),
+                        edge=round(edge, 1),
+                        confidence=confidence,
+                        recommended_stake=stake,
+                        value_rating=value_rating
+                    ))
+        
+        # Sort by edge descending
+        signals.sort(key=lambda x: x.edge, reverse=True)
+        return signals
+    
+    def _get_nested_value(self, data: Dict, path: str):
+        """Get nested value from dictionary using dot notation"""
+        keys = path.split('.')
+        current = data
+        for key in keys:
+            if isinstance(current, dict) and key in current:
+                current = current[key]
+            else:
+                return 0
+        return current
+    
+    def _get_value_rating(self, edge: float) -> str:
+        """Get value rating based on edge percentage"""
+        for rating, threshold in self.value_thresholds.items():
+            if edge >= threshold:
+                return rating
+        return "LOW"
+    
+    def _calculate_bet_confidence(self, pure_prob: float, edge: float) -> str:
+        """Calculate betting confidence"""
+        if pure_prob > 0.6 and edge > 8:
+            return "HIGH"
+        elif pure_prob > 0.55 and edge > 5:
+            return "MEDIUM"
+        elif pure_prob > 0.5 and edge > 3:
+            return "LOW"
+        else:
+            return "SPECULATIVE"
+    
+    def _calculate_kelly_stake(self, pure_prob: float, market_prob: float, kelly_fraction: float = 0.25) -> float:
+        """Calculate Kelly criterion stake"""
+        if market_prob <= 0 or pure_prob <= market_prob:
+            return 0.0
+        
+        decimal_odds = 1 / market_prob
+        kelly_stake = (pure_prob * decimal_odds - 1) / (decimal_odds - 1)
+        return max(0.0, min(0.05, kelly_stake * kelly_fraction))
+
+
+# Main orchestrator class
+class AdvancedFootballPredictor:
+    """
+    ORCHESTRATOR: Coordinates pure prediction engine with value detection
+    Maintains strict separation of concerns
+    """
+    
+    def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
+        # Extract market data for separate processing
+        self.market_odds = match_data.get('market_odds', {})
+        
+        # Create pure football data (remove market influence)
+        football_data = match_data.copy()
+        if 'market_odds' in football_data:
+            del football_data['market_odds']
+        
+        # Initialize engines
+        self.signal_engine = SignalEngine(football_data, calibration_data)
+        self.value_engine = ValueDetectionEngine()
+    
+    def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
+        """Generate comprehensive analysis with strict separation"""
+        
+        # Step 1: Generate PURE football predictions
+        football_predictions = self.signal_engine.generate_predictions(mc_iterations)
+        
+        # Step 2: SEPARATELY detect value bets
+        value_signals = self.value_engine.detect_value_bets(football_predictions, self.market_odds)
+        
+        # Step 3: Combine results (no feedback between systems)
+        comprehensive_result = football_predictions.copy()
+        comprehensive_result['betting_signals'] = [signal.__dict__ for signal in value_signals]
+        
+        # Add bias monitoring
+        comprehensive_result['bias_monitoring'] = self._calculate_bias_metrics(football_predictions)
+        
+        return comprehensive_result
+    
+    def _calculate_bias_metrics(self, football_predictions: Dict) -> Dict[str, float]:
+        """Calculate bias monitoring metrics"""
+        # This would track correlation between pure probabilities and market odds over time
+        # For now, return basic metrics
+        return {
+            'pure_probability_entropy': self._calculate_entropy(football_predictions['probabilities']['match_outcomes']),
+            'data_quality_score': football_predictions['data_quality_score'],
+            'match_context': football_predictions['match_context']
+        }
+    
+    def _calculate_entropy(self, outcomes: Dict[str, float]) -> float:
+        """Calculate Shannon entropy of outcome probabilities"""
+        probs = np.array([v / 100 for v in outcomes.values()])
+        entropy = -np.sum(probs * np.log(probs + 1e-10))
+        return round(entropy, 3)
+
+
+# Example usage demonstrating the separation
+if __name__ == "__main__":
     # Realistic data for Bologna vs Torino (defensive battle)
     match_data = {
         'home_team': 'Bologna',
@@ -991,8 +789,8 @@ if __name__ == "__main__":
             'home_wins': 4,
             'away_wins': 1, 
             'draws': 1,
-            'home_goals': 5,
-            'away_goals': 3
+            'home_goals': 9,
+            'away_goals': 4
         },
         'injuries': {'home': 1, 'away': 2},
         'motivation': {'home': 1.1, 'away': 1.0},
@@ -1005,8 +803,16 @@ if __name__ == "__main__":
         }
     }
     
-    engine = AdvancedPredictionEngine(match_data, calibration_data)
-    predictions = engine.generate_advanced_predictions()
+    # Use the orchestrator
+    predictor = AdvancedFootballPredictor(match_data)
+    results = predictor.generate_comprehensive_analysis()
     
-    print("Enhanced Context-Aware Prediction Results:")
-    print(json.dumps(predictions, indent=2, default=str))
+    print("COMPREHENSIVE ANALYSIS WITH SEPARATION OF CONCERNS:")
+    print(f"Match: {results['match']}")
+    print(f"Expected Goals: Home {results['expected_goals']['home']:.2f} - Away {results['expected_goals']['away']:.2f}")
+    print(f"Match Context: {results['match_context']}")
+    print(f"Pure Probabilities: {results['probabilities']['match_outcomes']}")
+    print(f"Betting Signals: {len(results['betting_signals'])} value bets detected")
+    
+    for signal in results['betting_signals']:
+        print(f"  {signal['market']}: +{signal['edge']}% edge")

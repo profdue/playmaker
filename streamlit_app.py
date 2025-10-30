@@ -186,13 +186,13 @@ def create_advanced_input_form():
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
                 h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=4, key="h2h_home_wins")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0, key="h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=2, key="h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=9, key="h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=5, key="h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=3, key="h2h_away_goals")
     
     with tab2:
         # League Table Context
@@ -264,23 +264,23 @@ def create_advanced_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.75, step=0.01, key="home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.50, step=0.01, key="draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=4.75, step=0.01, key="away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.10, step=0.01, key="home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.10, step=0.01, key="draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.80, step=0.01, key="away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
             over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.40, step=0.01, key="over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.20, step=0.01, key="over_25_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.30, step=0.01, key="over_25_odds")
             over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=4.00, step=0.01, key="over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.00, step=0.01, key="btts_yes_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.95, step=0.01, key="btts_yes_odds")
             btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.75, step=0.01, key="btts_no_odds")
             
             st.write("**Asian Handicap**")
-            handicap_home_odds = st.number_input("Home -0.5", min_value=1.01, value=1.75, step=0.01, key="handicap_home_odds")
+            handicap_home_odds = st.number_input("Home -0.5", min_value=1.01, value=2.10, step=0.01, key="handicap_home_odds")
     
     with tab4:
         st.subheader("⚙️ Advanced Model Settings")
@@ -294,8 +294,8 @@ def create_advanced_input_form():
             ], index=2, key="league")
             
             st.write("**Injuries & Suspensions**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 0, key="home_injuries")
-            away_injuries = st.slider("Away Key Absences", 0, 5, 1, key="away_injuries")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 1, key="home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="away_injuries")
             
         with model_col2:
             st.write("**Match Motivation**")
@@ -360,7 +360,7 @@ def create_advanced_input_form():
             'subs_used': away_subs_used
         }
         
-        # Market odds - using your template odds
+        # Market odds
         market_odds = {
             '1x2 Home': home_odds,
             '1x2 Draw': draw_odds,
@@ -379,12 +379,16 @@ def create_advanced_input_form():
             calibration_data = {
                 'home_attack_weight': 1.05,
                 'away_attack_weight': 0.95,
-                'defense_weight': 0.92,
+                'defense_weight': 1.02,
                 'form_decay_rate': 0.85,
                 'h2h_weight': 0.25,
                 'injury_impact': 0.08,
                 'motivation_impact': 0.12,
-                'regression_strength': 0.2
+                'regression_strength': 0.2,
+                'bivariate_lambda3_alpha': 0.12,
+                'defensive_team_adjustment': 0.85,
+                'min_goals_threshold': 0.15,
+                'data_quality_threshold': 50.0
             }
         
         match_data = {
@@ -412,18 +416,10 @@ def create_advanced_input_form():
                 'home': motivation_map[home_motivation],
                 'away': motivation_map[away_motivation]
             },
-            'home_avg_stats': home_avg_stats,
-            'away_avg_stats': away_avg_stats,
-            'market_odds': market_odds,
-            'league_context': {
-                'home_position': home_position,
-                'away_position': away_position,
-                'home_points': home_points,
-                'away_points': away_points
-            }
+            'market_odds': market_odds
         }
         
-        # Store in session state without mc_iterations
+        # Store in session state
         st.session_state.match_data = match_data
         st.session_state.calibration_data = calibration_data
         
@@ -459,53 +455,45 @@ def display_advanced_predictions(predictions):
     with tab4:
         display_model_metrics(predictions)
 
-def display_dynamic_goals_analysis(predictions):
-    """Display dynamic goals recommendations"""
+def display_goals_analysis(predictions):
+    """Display goals analysis using actual data from predictions"""
     st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
     
-    goals_rec = safe_get(predictions, 'goals_recommendations', default={})
+    # Get actual data from predictions
+    probabilities = safe_get(predictions, 'probabilities', default={})
+    goal_timing = safe_get(probabilities, 'goal_timing', default={'first_half': 0, 'second_half': 0})
+    btts_data = safe_get(probabilities, 'both_teams_score', default={'yes': 0, 'no': 0})
+    over_under = safe_get(probabilities, 'over_under', default={})
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        first_half = safe_get(goals_rec, 'first_half', default={})
-        display_goal_timing_card(
-            "First Half Goal", 
-            first_half.get('probability', 0),
-            first_half.get('confidence', 'LOW'),
-            first_half.get('emoji', '🔴')
-        )
+        first_half_prob = goal_timing.get('first_half', 0)
+        confidence = "HIGH" if first_half_prob > 60 else "MEDIUM" if first_half_prob > 40 else "LOW"
+        emoji = "🟢" if first_half_prob > 60 else "🟡" if first_half_prob > 40 else "🔴"
+        display_goal_timing_card("First Half Goal", first_half_prob, confidence, emoji)
     
     with col2:
-        second_half = safe_get(goals_rec, 'second_half', default={})
-        display_goal_timing_card(
-            "Second Half Goal", 
-            second_half.get('probability', 0),
-            second_half.get('confidence', 'LOW'),
-            second_half.get('emoji', '🔴')
-        )
+        second_half_prob = goal_timing.get('second_half', 0)
+        confidence = "HIGH" if second_half_prob > 60 else "MEDIUM" if second_half_prob > 40 else "LOW"
+        emoji = "🟢" if second_half_prob > 60 else "🟡" if second_half_prob > 40 else "🔴"
+        display_goal_timing_card("Second Half Goal", second_half_prob, confidence, emoji)
     
     with col3:
-        btts = safe_get(goals_rec, 'btts', default={})
-        display_recommendation_card(
-            "Both Teams Score",
-            btts.get('recommendation', 'N/A'),
-            btts.get('confidence', 'LOW'),
-            btts.get('emoji', '🔴'),
-            btts.get('yes_prob', 0),
-            btts.get('no_prob', 0)
-        )
+        btts_yes_prob = btts_data.get('yes', 0)
+        btts_no_prob = btts_data.get('no', 0)
+        recommendation = "YES" if btts_yes_prob > 50 else "NO"
+        confidence = "HIGH" if abs(btts_yes_prob - 50) > 20 else "MEDIUM" if abs(btts_yes_prob - 50) > 10 else "LOW"
+        emoji = "🟢" if confidence == "HIGH" else "🟡" if confidence == "MEDIUM" else "🔴"
+        display_recommendation_card("Both Teams Score", recommendation, confidence, emoji, btts_yes_prob, btts_no_prob)
     
     with col4:
-        over_under = safe_get(goals_rec, 'over_under', default={})
-        display_recommendation_card(
-            "Over/Under 2.5",
-            over_under.get('recommendation', 'N/A'),
-            over_under.get('confidence', 'LOW'),
-            over_under.get('emoji', '🔴'),
-            over_under.get('over_prob', 0),
-            over_under.get('under_prob', 0)
-        )
+        over_25_prob = over_under.get('over_25', 0)
+        under_25_prob = over_under.get('under_25', 0)
+        recommendation = "OVER" if over_25_prob > 50 else "UNDER"
+        confidence = "HIGH" if abs(over_25_prob - 50) > 20 else "MEDIUM" if abs(over_25_prob - 50) > 10 else "LOW"
+        emoji = "🟢" if confidence == "HIGH" else "🟡" if confidence == "MEDIUM" else "🔴"
+        display_recommendation_card("Over/Under 2.5", recommendation, confidence, emoji, over_25_prob, under_25_prob)
 
 def display_goal_timing_card(label: str, probability: float, confidence: str, emoji: str):
     """Display goal timing probability card"""
@@ -547,7 +535,7 @@ def display_recommendation_card(label: str, recommendation: str, confidence: str
     ''', unsafe_allow_html=True)
 
 def display_prediction_overview(predictions):
-    """Display the main prediction overview with dynamic goals recommendations"""
+    """Display the main prediction overview"""
     
     st.markdown('<p class="main-header">🎯 Advanced Match Prediction</p>', unsafe_allow_html=True)
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
@@ -557,11 +545,11 @@ def display_prediction_overview(predictions):
     
     with col1:
         xg = safe_get(predictions, 'expected_goals', default={'home': 0, 'away': 0})
-        st.metric("🏠 Expected Goals (Home)", f"{xg.get('home', 0)}")
+        st.metric("🏠 Expected Goals (Home)", f"{xg.get('home', 0):.2f}")
     with col2:
-        st.metric("✈️ Expected Goals (Away)", f"{xg.get('away', 0)}")
+        st.metric("✈️ Expected Goals (Away)", f"{xg.get('away', 0):.2f}")
     with col3:
-        risk = safe_get(predictions, 'risk_assessment', default={'risk_level': 'UNKNOWN', 'explanation': 'No data', 'certainty': 'N/A'})
+        risk = safe_get(predictions, 'risk_assessment', default={'risk_level': 'UNKNOWN', 'explanation': 'No data', 'certainty': 'N/A', 'uncertainty': 'N/A'})
         risk_class = f"risk-{risk.get('risk_level', 'unknown').lower()}"
         st.markdown(f'''
         <div class="prediction-card {risk_class}">
@@ -569,7 +557,7 @@ def display_prediction_overview(predictions):
             <strong>{risk.get("risk_level", "UNKNOWN")} RISK</strong><br>
             {risk.get("explanation", "No data available")}<br>
             Certainty: {risk.get("certainty", "N/A")}<br>
-            Uncertainty: {risk.get('uncertainty_index', 'N/A')}
+            Uncertainty: {risk.get('uncertainty', 'N/A')}
         </div>
         ''', unsafe_allow_html=True)
     
@@ -586,21 +574,23 @@ def display_prediction_overview(predictions):
     with col3:
         display_probability_bar("Away Win", outcomes.get('away_win', 0), "#2196F3")
     
-    # Dynamic Goals Analysis - NEW IMPLEMENTATION
-    display_dynamic_goals_analysis(predictions)
+    # Goals Analysis - FIXED: Use actual data
+    display_goals_analysis(predictions)
     
     # Exact Score Probabilities
     st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
     exact_scores = safe_get(predictions, 'probabilities', 'exact_scores', default={})
     
-    # Take only the top 6 scores to fit our 6 columns
+    # Take only the top 6 scores
     top_scores = dict(list(exact_scores.items())[:6])
-    score_cols = st.columns(6)
-
-    for idx, (score, prob) in enumerate(top_scores.items()):
-        with score_cols[idx]:
-            st.metric(f"{score}", f"{prob}%")
+    if top_scores:
+        score_cols = st.columns(6)
+        for idx, (score, prob) in enumerate(top_scores.items()):
+            with score_cols[idx]:
+                st.metric(f"{score}", f"{prob}%")
+    else:
+        st.info("No exact score probabilities available")
     
     # Asian Handicap Probabilities
     st.markdown('<div class="section-title">🎲 Asian Handicap Probabilities</div>', unsafe_allow_html=True)
@@ -622,6 +612,8 @@ def display_prediction_overview(predictions):
                         </span>
                     </div>
                     ''', unsafe_allow_html=True)
+    else:
+        st.info("No handicap probabilities available")
     
     # Corner Predictions
     st.markdown('<div class="section-title">📊 Corner Predictions</div>', unsafe_allow_html=True)
@@ -690,7 +682,7 @@ def display_betting_signals(predictions):
     
     with col4:
         total_stake = np.sum([s.get('recommended_stake', 0) for s in betting_signals])
-        st.metric("Total Recommended Stake", f"{total_stake:.1f}%")
+        st.metric("Total Recommended Stake", f"{total_stake * 100:.1f}%")
     
     # Value bets by rating
     st.markdown('<div class="section-title">🎯 Value Bet Recommendations</div>', unsafe_allow_html=True)
@@ -795,6 +787,8 @@ def display_advanced_analytics(predictions):
         )
         
         st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No confidence interval data available")
     
     # Probability Volatility
     st.markdown('<div class="section-title">⚡ Probability Volatility</div>', unsafe_allow_html=True)
@@ -830,6 +824,8 @@ def display_advanced_analytics(predictions):
             color = "red"
         
         st.metric("Average Probability Volatility", f"{avg_volatility:.2f}%", volatility_rating)
+    else:
+        st.info("No probability volatility data available")
 
 def display_model_metrics(predictions):
     """Display model performance and technical metrics"""

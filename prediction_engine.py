@@ -57,7 +57,7 @@ class AdvancedPredictionEngine:
         self.match_context = MatchContext.UNKNOWN
         
     def _validate_and_clean_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Comprehensive data validation and cleaning"""
+        """Comprehensive data validation and cleaning - FIXED to be less aggressive"""
         required_fields = ['home_team', 'away_team', 'league']
         
         for field in required_fields:
@@ -66,32 +66,39 @@ class AdvancedPredictionEngine:
         
         cleaned_data = match_data.copy()
         
-        # Validate and clean numeric fields
+        # More reasonable validation ranges
         numeric_fields = {
-            'home_goals': (0, 100, 0),
-            'away_goals': (0, 100, 0),
-            'home_conceded': (0, 100, 0),
-            'away_conceded': (0, 100, 0),
-            'home_goals_home': (0, 100, None),
-            'away_goals_away': (0, 100, None),
-            'home_xg': (0, 10, None),
-            'away_xg': (0, 10, None),
-            'home_xg_against': (0, 10, None),
-            'away_xg_against': (0, 10, None)
+            'home_goals': (0, 20, None),
+            'away_goals': (0, 20, None),
+            'home_conceded': (0, 20, None),
+            'away_conceded': (0, 20, None),
+            'home_goals_home': (0, 15, None),
+            'away_goals_away': (0, 15, None),
+            'home_xg': (0, 5, None),
+            'away_xg': (0, 5, None),
+            'home_xg_against': (0, 5, None),
+            'away_xg_against': (0, 5, None)
         }
         
         for field, (min_val, max_val, default) in numeric_fields.items():
             if field in cleaned_data:
                 try:
                     value = float(cleaned_data[field])
-                    if not (min_val <= value <= max_val):
-                        logger.warning(f"Field {field} value {value} outside expected range, using default")
-                        cleaned_data[field] = default if default is not None else min_val
+                    # Only intervene for extreme values
+                    if value < min_val or value > max_val:
+                        logger.warning(f"Field {field} value {value} outside expected range, capping")
+                        cleaned_data[field] = max(min_val, min(value, max_val))
                     else:
                         cleaned_data[field] = value
                 except (TypeError, ValueError):
-                    logger.warning(f"Invalid value for {field}, using default")
-                    cleaned_data[field] = default if default is not None else min_val
+                    logger.warning(f"Invalid value for {field}, using reasonable default")
+                    # Use reasonable defaults instead of minimums
+                    if 'goals' in field:
+                        cleaned_data[field] = 1.5
+                    elif 'conceded' in field:
+                        cleaned_data[field] = 1.5
+                    else:
+                        cleaned_data[field] = 0.0
         
         # Validate form data
         for side in ['home_form', 'away_form']:
@@ -118,6 +125,7 @@ class AdvancedPredictionEngine:
         # Calculate data quality score
         cleaned_data['data_quality_score'] = self._calculate_data_quality(cleaned_data)
         
+        logger.info(f"Data validation complete. Quality score: {cleaned_data['data_quality_score']:.1f}")
         return cleaned_data
     
     def _calculate_data_quality(self, data: Dict) -> float:
@@ -218,7 +226,7 @@ class AdvancedPredictionEngine:
             'bivariate_lambda3_alpha': 0.12,
             'defensive_team_adjustment': 0.85,
             'min_goals_threshold': 0.15,
-            'data_quality_threshold': 50.0  # Lowered threshold for better testing
+            'data_quality_threshold': 50.0
         }
         
         if self.calibration_data:
@@ -298,20 +306,28 @@ class AdvancedPredictionEngine:
         # Sort exact scores by probability
         exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:10])
 
-        # Over/under probabilities - FIXED
+        # Over/under probabilities
         total_prob = {}
-        total_goals_matrix = np.add.outer(np.arange(max_goals+1), np.arange(max_goals+1))
-        
         for line in [1.5, 2.5, 3.5]:
-            over_mask = total_goals_matrix > line
-            under_mask = total_goals_matrix < line
-            total_prob[f"over_{str(line).replace('.', '')}"] = round(P[over_mask].sum() * 100, 1)
-            total_prob[f"under_{str(line).replace('.', '')}"] = round(P[under_mask].sum() * 100, 1)
+            over_prob = 0.0
+            under_prob = 0.0
+            for i in range(max_goals+1):
+                for j in range(max_goals+1):
+                    total_goals = i + j
+                    prob = P[i, j]
+                    if total_goals > line:
+                        over_prob += prob
+                    elif total_goals < line:
+                        under_prob += prob
+            total_prob[f"over_{str(line).replace('.', '')}"] = round(over_prob * 100, 1)
+            total_prob[f"under_{str(line).replace('.', '')}"] = round(under_prob * 100, 1)
 
-        # Both teams to score - FIXED
-        btts_mask = (np.arange(max_goals+1) > 0)[:, None] & (np.arange(max_goals+1) > 0)
-        btts_prob = round(P[btts_mask].sum() * 100, 1)
-        btts_no_prob = round(100 - btts_prob, 1)
+        # Both teams to score
+        btts_yes = 0.0
+        for i in range(1, max_goals+1):
+            for j in range(1, max_goals+1):
+                btts_yes += P[i, j]
+        btts_no = 1.0 - btts_yes
 
         return {
             'match_outcomes': {
@@ -322,8 +338,8 @@ class AdvancedPredictionEngine:
             'exact_scores': exact_scores,
             'over_under': total_prob,
             'both_teams_score': {
-                'yes': btts_prob,
-                'no': btts_no_prob
+                'yes': round(btts_yes * 100, 1),
+                'no': round(btts_no * 100, 1)
             }
         }
     
@@ -367,6 +383,11 @@ class AdvancedPredictionEngine:
         # Validate output consistency
         self._validate_output_consistency(probabilities, home_xg, away_xg, risk_assessment)
         
+        # Debug output
+        logger.info(f"Final prediction - Home xG: {home_xg:.2f}, Away xG: {away_xg:.2f}")
+        logger.info(f"Match context: {self.match_context.value}")
+        logger.info(f"Probabilities: {probabilities['match_outcomes']}")
+        
         return {
             'match': f"{home_team} vs {away_team}",
             'expected_goals': {'home': round(home_xg, 2), 'away': round(away_xg, 2)},
@@ -393,7 +414,7 @@ class AdvancedPredictionEngine:
         }
     
     def _calculate_context_aware_xg(self) -> Tuple[float, float]:
-        """Calculate context-aware expected goals with team profiling"""
+        """Calculate context-aware expected goals with team profiling - FIXED"""
         league = self.data.get('league', 'default')
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
@@ -421,15 +442,23 @@ class AdvancedPredictionEngine:
         prior_goals = league_params['avg_goals'] / 2
         prior_weight = 6
         
-        # Calculate observed metrics
-        home_attack_obs = max(0.3, home_goals / max(1, 6.0))
-        away_attack_obs = max(0.2, away_goals / max(1, 6.0))
-        home_defense_obs = max(0.3, home_conceded / max(1, 6.0))
-        away_defense_obs = max(0.4, away_conceded / max(1, 6.0))
+        # Calculate observed metrics - REMOVED ARTIFICIAL MINIMUMS
+        home_attack_obs = home_goals / 6.0
+        away_attack_obs = away_goals / 6.0
+        home_defense_obs = home_conceded / 6.0
+        away_defense_obs = away_conceded / 6.0
         
         # Home/away specific observations
-        home_attack_home_obs = max(0.3, home_goals_home / max(1, 3.0))
-        away_attack_away_obs = max(0.2, away_goals_away / max(1, 3.0))
+        home_attack_home_obs = home_goals_home / 3.0
+        away_attack_away_obs = away_goals_away / 3.0
+        
+        # Apply reasonable bounds
+        home_attack_obs = max(0.1, min(3.0, home_attack_obs))
+        away_attack_obs = max(0.1, min(3.0, away_attack_obs))
+        home_defense_obs = max(0.1, min(3.0, home_defense_obs))
+        away_defense_obs = max(0.1, min(3.0, away_defense_obs))
+        home_attack_home_obs = max(0.1, min(4.0, home_attack_home_obs))
+        away_attack_away_obs = max(0.1, min(4.0, away_attack_away_obs))
         
         # Bayesian posterior estimates
         home_attack = (prior_goals * prior_weight + home_attack_obs * 6) / (prior_weight + 6)
@@ -500,6 +529,7 @@ class AdvancedPredictionEngine:
         home_xg = max(self.calibration_params['min_goals_threshold'], min(4.0, home_xg))
         away_xg = max(self.calibration_params['min_goals_threshold'], min(3.5, away_xg))
         
+        logger.info(f"xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
         return round(home_xg, 3), round(away_xg, 3)
     
     def _calculate_simple_probabilities(self, home_xg: float, away_xg: float) -> Dict[str, Any]:
@@ -522,7 +552,7 @@ class AdvancedPredictionEngine:
         # Simple BTTS calculation
         btts_prob = (1 - poisson.pmf(0, home_xg)) * (1 - poisson.pmf(0, away_xg))
         
-        # Goal timing probabilities - FIXED
+        # Goal timing probabilities
         total_xg = home_xg + away_xg
         first_half_prob = 1 - math.exp(-total_xg * 0.46)
         second_half_prob = 1 - math.exp(-total_xg * 0.54)
@@ -566,7 +596,7 @@ class AdvancedPredictionEngine:
         return markets
     
     def _calculate_goal_timing_probabilities(self, home_xg: float, away_xg: float, league: str) -> Dict[str, float]:
-        """Calculate goal timing probabilities - FIXED"""
+        """Calculate goal timing probabilities"""
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
         total_xg = home_xg + away_xg
@@ -706,7 +736,7 @@ class AdvancedPredictionEngine:
         return adjusted_home_xg, adjusted_away_xg
     
     def _calculate_handicap_probabilities(self, home_xg: float, away_xg: float) -> Dict[str, float]:
-        """Calculate Asian Handicap probabilities using Skellam distribution - FIXED"""
+        """Calculate Asian Handicap probabilities using Skellam distribution"""
         handicap_probs = {}
         
         handicaps = [-2.5, -2.0, -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, 2.0, 2.5]
@@ -918,7 +948,7 @@ class AdvancedPredictionEngine:
             'risk_level': risk_level,
             'explanation': explanation,
             'certainty': f"{highest_prob}%",
-            'uncertainty': round(uncertainty_ratio, 2)  # Fixed: now returns uncertainty
+            'uncertainty': round(uncertainty_ratio, 2)
         }
     
     def _calculate_model_metrics(self, probabilities: Dict, mc_results: MonteCarloResults) -> Dict[str, float]:

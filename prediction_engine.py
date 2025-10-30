@@ -102,19 +102,36 @@ class AdvancedPredictionEngine:
         
         if self.calibration_data:
             self.calibration_params.update(self.calibration_data)
-    
-    def _ensure_numeric(self, value, name, default=0.0):
-        """Coerce value to float if possible, otherwise raise informative TypeError."""
+
+    def _safe_convert_to_float(self, value, field_name="unknown", default=0.0):
+        """Safely convert any value to float, handling edge cases"""
         if value is None:
             return float(default)
+        
         if isinstance(value, (int, float)):
             return float(value)
+        
+        if isinstance(value, dict):
+            # Try to extract first numeric value from dict
+            for key, val in value.items():
+                if isinstance(val, (int, float)):
+                    logger.warning(f"Extracted numeric value {val} from dict key '{key}' for field '{field_name}'")
+                    return float(val)
+            return float(default)
+        
         if isinstance(value, str):
             try:
                 return float(value)
             except ValueError:
-                raise TypeError(f"Field '{name}' expected numeric string or number but got string: {value!r}")
-        raise TypeError(f"Field '{name}' expected a numeric value but got {type(value).__name__}: {value!r}")
+                logger.warning(f"Could not convert string '{value}' to float for field '{field_name}', using default {default}")
+                return float(default)
+        
+        # Last attempt: try direct conversion
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            logger.warning(f"Could not convert {type(value).__name__} to float for field '{field_name}', using default {default}")
+            return float(default)
     
     def bivariate_poisson_pmf_matrix(self, lambda1: float, lambda2: float, lambda3: float, max_goals: int = 8):
         """Compute joint PMF matrix for Bivariate Poisson"""
@@ -351,43 +368,36 @@ class AdvancedPredictionEngine:
         )
     
     def _calculate_bayesian_xg(self) -> Tuple[float, float]:
-        """Calculate Bayesian-enhanced expected goals (with defensive input validation)."""
+        """Calculate Bayesian-enhanced expected goals with robust type checking"""
         league = self.data.get('league', 'default')
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
-
-        # Raw inputs (may be invalid types)
-        raw_home_goals = self.data.get('home_goals', 0)
-        raw_away_goals = self.data.get('away_goals', 0)
-        raw_home_conceded = self.data.get('home_conceded', 0)
-        raw_away_conceded = self.data.get('away_conceded', 0)
-        raw_home_goals_home = self.data.get('home_goals_home', raw_home_goals)
-        raw_away_goals_away = self.data.get('away_goals_away', raw_away_goals)
-
-        # Coerce / validate
-        try:
-            home_goals = self._ensure_numeric(raw_home_goals, 'home_goals', 0)
-            away_goals = self._ensure_numeric(raw_away_goals, 'away_goals', 0)
-            home_conceded = self._ensure_numeric(raw_home_conceded, 'home_conceded', 0)
-            away_conceded = self._ensure_numeric(raw_away_conceded, 'away_conceded', 0)
-            home_goals_home = self._ensure_numeric(raw_home_goals_home, 'home_goals_home', 0)
-            away_goals_away = self._ensure_numeric(raw_away_goals_away, 'away_goals_away', 0)
-        except TypeError as e:
-            match_label = f"{self.data.get('home_team','?')} vs {self.data.get('away_team','?')}"
-            logger.error("Input validation error for match %s: %s", match_label, e)
-            raise
-
+        
+        # Extract ALL data first with safe conversion
+        home_goals = self._safe_convert_to_float(self.data.get('home_goals'), 'home_goals', 0)
+        away_goals = self._safe_convert_to_float(self.data.get('away_goals'), 'away_goals', 0)
+        home_conceded = self._safe_convert_to_float(self.data.get('home_conceded'), 'home_conceded', 0)
+        away_conceded = self._safe_convert_to_float(self.data.get('away_conceded'), 'away_conceded', 0)
+        home_goals_home = self._safe_convert_to_float(self.data.get('home_goals_home', home_goals), 'home_goals_home', home_goals)
+        away_goals_away = self._safe_convert_to_float(self.data.get('away_goals_away', away_goals), 'away_goals_away', away_goals)
+        
         home_form = self.data.get('home_form', [])
         away_form = self.data.get('away_form', [])
         
-        injuries = self.data.get('injuries', {'home': 0, 'away': 0})
-        motivation = self.data.get('motivation', {'home': 1.0, 'away': 1.0})
+        injuries = self.data.get('injuries', {})
+        motivation = self.data.get('motivation', {})
         h2h_data = self.data.get('h2h_data', {})
+        
+        # Convert nested dict values safely
+        home_injuries = self._safe_convert_to_float(injuries.get('home', 0), 'home_injuries', 0)
+        away_injuries = self._safe_convert_to_float(injuries.get('away', 0), 'away_injuries', 0)
+        home_motivation = self._safe_convert_to_float(motivation.get('home', 1.0), 'home_motivation', 1.0)
+        away_motivation = self._safe_convert_to_float(motivation.get('away', 1.0), 'away_motivation', 1.0)
         
         # Bayesian prior (league average)
         prior_goals = league_params['avg_goals'] / 2
         prior_weight = 6
         
-        # Calculate observed attack/defense strength with Bayesian updating
+        # Calculate observed attack/defense strength - NOW SAFE
         home_attack_obs = max(0.3, home_goals / 6.0)
         away_attack_obs = max(0.2, away_goals / 6.0)
         home_defense_obs = max(0.3, home_conceded / 6.0)
@@ -417,11 +427,11 @@ class AdvancedPredictionEngine:
         away_form_factor = self._calculate_decaying_form_factor(away_form)
         
         # Injury and motivation adjustments
-        home_injury_factor = max(0.7, 1.0 - (injuries.get('home', 0) * self.calibration_params['injury_impact']))
-        away_injury_factor = max(0.7, 1.0 - (injuries.get('away', 0) * self.calibration_params['injury_impact']))
+        home_injury_factor = max(0.7, 1.0 - (home_injuries * self.calibration_params['injury_impact']))
+        away_injury_factor = max(0.7, 1.0 - (away_injuries * self.calibration_params['injury_impact']))
         
-        home_motivation_factor = 1.0 + (motivation.get('home', 1.0) - 1.0) * self.calibration_params['motivation_impact']
-        away_motivation_factor = 1.0 + (motivation.get('away', 1.0) - 1.0) * self.calibration_params['motivation_impact']
+        home_motivation_factor = 1.0 + (home_motivation - 1.0) * self.calibration_params['motivation_impact']
+        away_motivation_factor = 1.0 + (away_motivation - 1.0) * self.calibration_params['motivation_impact']
         
         # Calculate base xG
         base_home_xg = (home_attack_home * away_defense * league_params['home_advantage'] * 
@@ -450,10 +460,16 @@ class AdvancedPredictionEngine:
         if not form or len(form) == 0:
             return 1.0
         
-        weights = [self.calibration_params['form_decay_rate'] ** i for i in range(len(form))]
+        # Ensure all form values are numbers
+        try:
+            form_scores = [self._safe_convert_to_float(score, 'form_score', 0) for score in form]
+        except:
+            return 1.0
+        
+        weights = [self.calibration_params['form_decay_rate'] ** i for i in range(len(form_scores))]
         weights = [w / sum(weights) for w in weights]
         
-        total_points = sum(score * weight for score, weight in zip(form, reversed(weights)))
+        total_points = sum(score * weight for score, weight in zip(form_scores, reversed(weights)))
         max_possible = sum(3 * weight for weight in weights)
         
         form_ratio = total_points / max_possible if max_possible > 0 else 0.5
@@ -461,12 +477,9 @@ class AdvancedPredictionEngine:
     
     def _apply_bayesian_h2h_adjustment(self, home_xg: float, away_xg: float, h2h_data: Dict) -> Tuple[float, float]:
         """Apply Bayesian H2H adjustment"""
-        matches = h2h_data.get('matches', 0)
-        home_wins = h2h_data.get('home_wins', 0)
-        away_wins = h2h_data.get('away_wins', 0)
-        draws = h2h_data.get('draws', 0)
-        home_goals = h2h_data.get('home_goals', 0)
-        away_goals = h2h_data.get('away_goals', 0)
+        matches = self._safe_convert_to_float(h2h_data.get('matches', 0), 'h2h_matches', 0)
+        home_goals = self._safe_convert_to_float(h2h_data.get('home_goals', 0), 'h2h_home_goals', 0)
+        away_goals = self._safe_convert_to_float(h2h_data.get('away_goals', 0), 'h2h_away_goals', 0)
         
         if matches < 2:
             return home_xg, away_xg

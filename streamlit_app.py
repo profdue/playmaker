@@ -1,7 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from prediction_engine import AdvancedPredictionEngine
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+from prediction_engine import AdvancedPredictionEngine, BettingSignal, MonteCarloResults
+import json
+from typing import Dict, Any
 
 # Page configuration
 st.set_page_config(
@@ -11,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Advanced CSS styling
+# Enhanced CSS styling
 st.markdown("""
 <style>
     .main-header { 
@@ -73,6 +78,20 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     
+    .value-bet-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        border-left: 4px solid;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .value-exceptional { border-left-color: #4CAF50 !important; background: #f8fff8; }
+    .value-high { border-left-color: #8BC34A !important; background: #f9fff9; }
+    .value-good { border-left-color: #FFC107 !important; background: #fffdf6; }
+    .value-moderate { border-left-color: #FF9800 !important; background: #fffaf2; }
+    .value-low { border-left-color: #f44336 !important; background: #fff5f5; }
+    
     .section-title {
         font-size: 1.5rem;
         font-weight: 600;
@@ -98,6 +117,23 @@ st.markdown("""
         font-weight: bold;
         float: right;
     }
+    
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        margin: 0.5rem;
+    }
+    
+    .handicap-card {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        border-left: 4px solid #667eea;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -106,15 +142,19 @@ if 'match_data' not in st.session_state:
     st.session_state.match_data = {}
 if 'predictions' not in st.session_state:
     st.session_state.predictions = None
+if 'calibration_data' not in st.session_state:
+    st.session_state.calibration_data = {}
 
 def create_advanced_input_form():
-    """Create comprehensive input form with advanced options"""
+    """Create comprehensive input form with all advanced options"""
     
     st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional match analysis with precise probability calculations</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Match Analysis with Monte Carlo Simulation & Value Detection</p>', unsafe_allow_html=True)
     
-    with st.form("advanced_match_form"):
-        # Basic team information
+    # Use tabs for better organization
+    tab1, tab2, tab3, tab4 = st.tabs(["🏠 Basic Match Info", "📊 Advanced Statistics", "💰 Market Odds", "⚙️ Model Settings"])
+    
+    with tab1:
         col1, col2 = st.columns(2)
         
         with col1:
@@ -144,7 +184,8 @@ def create_advanced_input_form():
             with h2h_col3:
                 h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8, key="h2h_home_goals")
                 h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2, key="h2h_away_goals")
-        
+    
+    with tab2:
         # League Table Context
         with st.expander("🏆 League Table Context"):
             st.subheader("Serie A Italy League Table")
@@ -182,7 +223,7 @@ def create_advanced_input_form():
                     key="away_form"
                 )
         
-        # Home/Away Specific Statistics - THE MAIN ENHANCEMENT
+        # Home/Away Specific Statistics
         with st.expander("🏠✈️ Home/Away Specific Statistics", expanded=True):
             st.subheader("Team-Specific Performance Metrics")
             
@@ -205,113 +246,201 @@ def create_advanced_input_form():
                 away_time_first_conceded = st.number_input("Time first goal conceded", min_value=1, value=26, key="away_time_first_conceded")
                 away_yellow_cards = st.number_input("Yellow cards", min_value=0.0, value=2.3, key="away_yellow_cards")
                 away_subs_used = st.number_input("Subs used", min_value=0, value=5, key="away_subs_used")
-        
-        # Advanced options
-        with st.expander("⚙️ Advanced Match Parameters"):
-            adv_col1, adv_col2, adv_col3 = st.columns(3)
-            
-            with adv_col1:
-                league = st.selectbox("League", [
-                    "premier_league", "la_liga", "serie_a", "bundesliga", 
-                    "ligue_1", "default"
-                ], index=2, key="league")
-                
-            with adv_col2:
-                st.write("**Injuries & Suspensions**")
-                home_injuries = st.slider("Home Key Absences", 0, 5, 0, key="home_injuries")
-                away_injuries = st.slider("Away Key Absences", 0, 5, 1, key="away_injuries")
-                
-            with adv_col3:
-                st.write("**Match Motivation**")
-                home_motivation = st.select_slider(
-                    "Home Team Motivation",
-                    options=["Low", "Normal", "High", "Very High"],
-                    value="High",
-                    key="home_motivation"
-                )
-                away_motivation = st.select_slider(
-                    "Away Team Motivation", 
-                    options=["Low", "Normal", "High", "Very High"],
-                    value="Normal",
-                    key="away_motivation"
-                )
-        
-        submitted = st.form_submit_button("🎯 GENERATE ADVANCED PREDICTION", type="primary", use_container_width=True)
-        
-        if submitted:
-            if not home_team or not away_team:
-                st.error("❌ Please enter both team names")
-                return None
-            
-            # Convert form selections to points
-            form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
-            home_form_points = [form_map[result] for result in home_form]
-            away_form_points = [form_map[result] for result in away_form]
-            
-            # Convert motivation to multipliers
-            motivation_map = {"Low": 0.8, "Normal": 1.0, "High": 1.15, "Very High": 1.3}
-            
-            # Home/Away statistics
-            home_avg_stats = {
-                'goals_scored': home_goals_scored,
-                'goals_conceded': home_goals_conceded,
-                'time_first_goal_scored': home_time_first_goal,
-                'time_first_goal_conceded': home_time_first_conceded,
-                'yellow_cards': home_yellow_cards,
-                'subs_used': home_subs_used
-            }
-            
-            away_avg_stats = {
-                'goals_scored': away_goals_scored,
-                'goals_conceded': away_goals_conceded,
-                'time_first_goal_scored': away_time_first_goal,
-                'time_first_goal_conceded': away_time_first_conceded,
-                'yellow_cards': away_yellow_cards,
-                'subs_used': away_subs_used
-            }
-            
-            match_data = {
-                'home_team': home_team,
-                'away_team': away_team,
-                'league': league,
-                'home_goals': home_goals,
-                'away_goals': away_goals,
-                'home_conceded': home_conceded,
-                'away_conceded': away_conceded,
-                'home_goals_home': home_goals_home,
-                'away_goals_away': away_goals_away,
-                'home_form': home_form_points,
-                'away_form': away_form_points,
-                'h2h_data': {
-                    'matches': h2h_matches,
-                    'home_wins': h2h_home_wins,
-                    'away_wins': h2h_away_wins,
-                    'draws': h2h_draws,
-                    'home_goals': h2h_home_goals,
-                    'away_goals': h2h_away_goals
-                },
-                'injuries': {'home': home_injuries, 'away': away_injuries},
-                'motivation': {
-                    'home': motivation_map[home_motivation],
-                    'away': motivation_map[away_motivation]
-                },
-                'home_avg_stats': home_avg_stats,
-                'away_avg_stats': away_avg_stats,
-                'league_context': {
-                    'home_position': home_position,
-                    'away_position': away_position,
-                    'home_points': home_points,
-                    'away_points': away_points
-                }
-            }
-            
-            st.session_state.match_data = match_data
-            return match_data
     
-    return None
+    with tab3:
+        st.subheader("💰 Market Odds Input")
+        st.info("Enter current bookmaker odds for value betting analysis")
+        
+        odds_col1, odds_col2, odds_col3 = st.columns(3)
+        
+        with odds_col1:
+            st.write("**1X2 Market**")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.85, step=0.01, key="home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.40, step=0.01, key="draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=4.50, step=0.01, key="away_odds")
+        
+        with odds_col2:
+            st.write("**Over/Under Markets**")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.25, step=0.01, key="over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="over_35_odds")
+        
+        with odds_col3:
+            st.write("**Both Teams to Score**")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.95, step=0.01, key="btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.80, step=0.01, key="btts_no_odds")
+            
+            st.write("**Asian Handicap**")
+            handicap_home_odds = st.number_input("Home -0.5", min_value=1.01, value=1.75, step=0.01, key="handicap_home_odds")
+    
+    with tab4:
+        st.subheader("⚙️ Advanced Model Settings")
+        
+        model_col1, model_col2 = st.columns(2)
+        
+        with model_col1:
+            league = st.selectbox("League", [
+                "premier_league", "la_liga", "serie_a", "bundesliga", 
+                "ligue_1", "default"
+            ], index=2, key="league")
+            
+            st.write("**Injuries & Suspensions**")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 0, key="home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 1, key="away_injuries")
+            
+        with model_col2:
+            st.write("**Match Motivation**")
+            home_motivation = st.select_slider(
+                "Home Team Motivation",
+                options=["Low", "Normal", "High", "Very High"],
+                value="High",
+                key="home_motivation"
+            )
+            away_motivation = st.select_slider(
+                "Away Team Motivation", 
+                options=["Low", "Normal", "High", "Very High"],
+                value="Normal",
+                key="away_motivation"
+            )
+            
+            # Monte Carlo Settings
+            st.write("**Simulation Settings**")
+            mc_iterations = st.select_slider(
+                "Monte Carlo Iterations",
+                options=[1000, 5000, 10000, 25000],
+                value=10000,
+                key="mc_iterations"
+            )
+        
+        # Calibration toggle
+        use_calibration = st.checkbox("Use Advanced Calibration", value=True, 
+                                    help="Apply historical data-driven calibration parameters")
+    
+    # Submit button
+    submitted = st.button("🎯 GENERATE ADVANCED PREDICTION", type="primary", use_container_width=True)
+    
+    if submitted:
+        if not home_team or not away_team:
+            st.error("❌ Please enter both team names")
+            return None
+        
+        # Convert form selections to points
+        form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
+        home_form_points = [form_map[result] for result in home_form]
+        away_form_points = [form_map[result] for result in away_form]
+        
+        # Convert motivation to multipliers
+        motivation_map = {"Low": 0.8, "Normal": 1.0, "High": 1.15, "Very High": 1.3}
+        
+        # Home/Away statistics
+        home_avg_stats = {
+            'goals_scored': home_goals_scored,
+            'goals_conceded': home_goals_conceded,
+            'time_first_goal_scored': home_time_first_goal,
+            'time_first_goal_conceded': home_time_first_conceded,
+            'yellow_cards': home_yellow_cards,
+            'subs_used': home_subs_used
+        }
+        
+        away_avg_stats = {
+            'goals_scored': away_goals_scored,
+            'goals_conceded': away_goals_conceded,
+            'time_first_goal_scored': away_time_first_goal,
+            'time_first_goal_conceded': away_time_first_conceded,
+            'yellow_cards': away_yellow_cards,
+            'subs_used': away_subs_used
+        }
+        
+        # Market odds
+        market_odds = {
+            '1x2 Home': home_odds,
+            '1x2 Draw': draw_odds,
+            '1x2 Away': away_odds,
+            'Over 1.5 Goals': over_15_odds,
+            'Over 2.5 Goals': over_25_odds,
+            'Over 3.5 Goals': over_35_odds,
+            'BTTS Yes': btts_yes_odds,
+            'BTTS No': btts_no_odds,
+            'Asian Handicap Home -0.5': handicap_home_odds
+        }
+        
+        # Calibration data
+        calibration_data = {}
+        if use_calibration:
+            calibration_data = {
+                'home_attack_weight': 1.05,
+                'away_attack_weight': 0.95,
+                'defense_weight': 0.92,
+                'form_decay_rate': 0.85,
+                'h2h_weight': 0.25,
+                'injury_impact': 0.08,
+                'motivation_impact': 0.12,
+                'regression_strength': 0.2
+            }
+        
+        match_data = {
+            'home_team': home_team,
+            'away_team': away_team,
+            'league': league,
+            'home_goals': home_goals,
+            'away_goals': away_goals,
+            'home_conceded': home_conceded,
+            'away_conceded': away_conceded,
+            'home_goals_home': home_goals_home,
+            'away_goals_away': away_goals_away,
+            'home_form': home_form_points,
+            'away_form': away_form_points,
+            'h2h_data': {
+                'matches': h2h_matches,
+                'home_wins': h2h_home_wins,
+                'away_wins': h2h_away_wins,
+                'draws': h2h_draws,
+                'home_goals': h2h_home_goals,
+                'away_goals': h2h_away_goals
+            },
+            'injuries': {'home': home_injuries, 'away': away_injuries},
+            'motivation': {
+                'home': motivation_map[home_motivation],
+                'away': motivation_map[away_motivation]
+            },
+            'home_avg_stats': home_avg_stats,
+            'away_avg_stats': away_avg_stats,
+            'market_odds': market_odds,
+            'league_context': {
+                'home_position': home_position,
+                'away_position': away_position,
+                'home_points': home_points,
+                'away_points': away_points
+            }
+        }
+        
+        st.session_state.match_data = match_data
+        st.session_state.calibration_data = calibration_data
+        st.session_state.mc_iterations = mc_iterations
+        return match_data, calibration_data
+    
+    return None, None
 
 def display_advanced_predictions(predictions):
-    """Display comprehensive predictions with detailed analysis"""
+    """Display comprehensive predictions with all enhanced features"""
+    
+    # Use tabs for different sections
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Prediction Overview", "💰 Betting Signals", "📈 Advanced Analytics", "⚙️ Model Metrics"])
+    
+    with tab1:
+        display_prediction_overview(predictions)
+    
+    with tab2:
+        display_betting_signals(predictions)
+    
+    with tab3:
+        display_advanced_analytics(predictions)
+    
+    with tab4:
+        display_model_metrics(predictions)
+
+def display_prediction_overview(predictions):
+    """Display the main prediction overview (preserves original beautiful design)"""
     
     st.markdown('<p class="main-header">🎯 Advanced Match Prediction</p>', unsafe_allow_html=True)
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
@@ -327,7 +456,15 @@ def display_advanced_predictions(predictions):
     with col3:
         risk = predictions['risk_assessment']
         risk_class = f"risk-{risk['risk_level'].lower()}"
-        st.markdown(f'<div class="prediction-card {risk_class}"><h3>📊 Risk Assessment</h3><strong>{risk["risk_level"]} RISK</strong><br>{risk["explanation"]}<br>Certainty: {risk["certainty"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'''
+        <div class="prediction-card {risk_class}">
+            <h3>📊 Risk Assessment</h3>
+            <strong>{risk["risk_level"]} RISK</strong><br>
+            {risk["explanation"]}<br>
+            Certainty: {risk["certainty"]}<br>
+            Uncertainty: {risk.get('uncertainty_index', 'N/A')}
+        </div>
+        ''', unsafe_allow_html=True)
     
     # Match Outcomes
     st.markdown('<div class="section-title">📈 Match Outcome Probabilities</div>', unsafe_allow_html=True)
@@ -369,6 +506,27 @@ def display_advanced_predictions(predictions):
         with score_cols[idx]:
             st.metric(f"{score}", f"{prob}%")
     
+    # Asian Handicap Probabilities
+    st.markdown('<div class="section-title">🎲 Asian Handicap Probabilities</div>', unsafe_allow_html=True)
+    
+    handicap_probs = predictions.get('handicap_probabilities', {})
+    if handicap_probs:
+        handicap_cols = st.columns(4)
+        common_handicaps = ['handicap_-0.5', 'handicap_0', 'handicap_0.5', 'handicap_1.0']
+        
+        for idx, handicap in enumerate(common_handicaps):
+            if handicap in handicap_probs:
+                with handicap_cols[idx]:
+                    handicap_label = handicap.replace('handicap_', '').replace('_', '.')
+                    st.markdown(f'''
+                    <div class="handicap-card">
+                        <h4>Handicap {handicap_label}</h4>
+                        <span style="font-size: 1.5rem; font-weight: bold; color: #667eea;">
+                            {handicap_probs[handicap]}%
+                        </span>
+                    </div>
+                    ''', unsafe_allow_html=True)
+    
     # Corner Predictions
     st.markdown('<div class="section-title">📊 Corner Predictions</div>', unsafe_allow_html=True)
     
@@ -382,8 +540,8 @@ def display_advanced_predictions(predictions):
     with col3:
         st.markdown(f'<div class="prediction-card"><h3>✈️ Away Corners</h3><span style="font-size: 1.8rem; font-weight: bold;">{corners["away"]}</span></div>', unsafe_allow_html=True)
     
-    # Enhanced Timing Predictions
-    st.markdown('<div class="section-title">⏰ Enhanced Timing Analysis</div>', unsafe_allow_html=True)
+    # Timing Predictions
+    st.markdown('<div class="section-title">⏰ Match Timing Analysis</div>', unsafe_allow_html=True)
     
     timing = predictions['timing_predictions']
     st.markdown(f'''
@@ -391,32 +549,9 @@ def display_advanced_predictions(predictions):
         <h3>⏰ Key Timing Patterns</h3>
         • <strong>First Goal:</strong> {timing['first_goal']}<br>
         • <strong>Late Goals:</strong> {timing['late_goals']}<br>
-        • <strong>Most Action:</strong> {timing['most_action']}<br>
-        • <strong>Avg First Goal Time:</strong> {timing.get('avg_first_goal_time', 'N/A')}<br>
-        • <strong>Avg First Conceded:</strong> {timing.get('avg_first_conceded_time', 'N/A')}
+        • <strong>Most Action:</strong> {timing['most_action']}
     </div>
     ''', unsafe_allow_html=True)
-    
-    # Betting Recommendations
-    st.markdown('<div class="section-title">💰 Professional Betting Recommendations</div>', unsafe_allow_html=True)
-    
-    bets = predictions['betting_recommendations']
-    
-    # Top Bet
-    st.markdown(f'<div class="bet-card">🚀 TOP CONFIDENCE BET<br><strong>{bets["top_bet"]}</strong></div>', unsafe_allow_html=True)
-    
-    # Other Recommendations
-    for i, recommendation in enumerate(bets['recommendations']):
-        if recommendation not in bets['top_bet']:
-            confidence = bets['confidence_scores'][i] if i < len(bets['confidence_scores']) else 65
-            confidence_class = "confidence-high" if confidence > 75 else "confidence-medium" if confidence > 60 else "confidence-low"
-            
-            st.markdown(f'''
-            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 0.5rem 0; border-left: 4px solid #4CAF50;">
-                ✅ {recommendation}
-                <span class="confidence-badge {confidence_class}" style="float: right;">{confidence}% conf</span>
-            </div>
-            ''', unsafe_allow_html=True)
     
     # Summary and Confidence
     st.markdown('<div class="section-title">📝 Professional Summary</div>', unsafe_allow_html=True)
@@ -428,6 +563,248 @@ def display_advanced_predictions(predictions):
     
     with col2:
         st.metric("Overall Confidence Score", f"{predictions['confidence_score']}%")
+
+def display_betting_signals(predictions):
+    """Display betting signals and value detection"""
+    
+    st.markdown('<p class="main-header">💰 Value Betting Signals</p>', unsafe_allow_html=True)
+    
+    betting_signals = predictions.get('betting_signals', [])
+    
+    if not betting_signals:
+        st.warning("No betting signals generated. Please check market odds input.")
+        return
+    
+    # Summary metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        total_signals = len(betting_signals)
+        st.metric("Total Signals", total_signals)
+    
+    with col2:
+        high_value_signals = len([s for s in betting_signals if s['value_rating'] in ['EXCEPTIONAL', 'HIGH']])
+        st.metric("High Value Signals", high_value_signals)
+    
+    with col3:
+        avg_edge = np.mean([s['edge'] for s in betting_signals])
+        st.metric("Average Edge", f"{avg_edge:.1f}%")
+    
+    with col4:
+        total_stake = np.sum([s['recommended_stake'] for s in betting_signals])
+        st.metric("Total Recommended Stake", f"{total_stake:.1f}%")
+    
+    # Value bets by rating
+    st.markdown('<div class="section-title">🎯 Value Bet Recommendations</div>', unsafe_allow_html=True)
+    
+    # Sort by value rating and edge
+    exceptional_bets = [s for s in betting_signals if s['value_rating'] == 'EXCEPTIONAL']
+    high_bets = [s for s in betting_signals if s['value_rating'] == 'HIGH']
+    good_bets = [s for s in betting_signals if s['value_rating'] == 'GOOD']
+    moderate_bets = [s for s in betting_signals if s['value_rating'] == 'MODERATE']
+    
+    def display_bet_group(bets, title, emoji):
+        if bets:
+            st.subheader(f"{emoji} {title} Value Bets")
+            for bet in bets:
+                value_class = f"value-{bet['value_rating'].lower()}"
+                st.markdown(f'''
+                <div class="value-bet-card {value_class}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{bet['market']}</strong><br>
+                            <small>Model: {bet['model_prob']}% | Market: {bet['book_prob']}%</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="color: #4CAF50;">+{bet['edge']}% Edge</strong><br>
+                            <small>Stake: {bet['recommended_stake']*100:.1f}% | {bet['confidence']} Confidence</small>
+                        </div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+    
+    display_bet_group(exceptional_bets, "Exceptional", "🔥")
+    display_bet_group(high_bets, "High", "⭐")
+    display_bet_group(good_bets, "Good", "✅")
+    display_bet_group(moderate_bets, "Moderate", "📊")
+    
+    # Edge distribution chart
+    if betting_signals:
+        st.markdown('<div class="section-title">📈 Edge Distribution</div>', unsafe_allow_html=True)
+        
+        df_edges = pd.DataFrame(betting_signals)
+        fig = px.bar(df_edges, x='market', y='edge', color='value_rating',
+                    title="Value Edge by Market",
+                    color_discrete_map={
+                        'EXCEPTIONAL': '#4CAF50',
+                        'HIGH': '#8BC34A', 
+                        'GOOD': '#FFC107',
+                        'MODERATE': '#FF9800',
+                        'LOW': '#f44336'
+                    })
+        fig.update_layout(xaxis_tickangle=-45, showlegend=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+def display_advanced_analytics(predictions):
+    """Display Monte Carlo results and advanced analytics"""
+    
+    st.markdown('<p class="main-header">📈 Advanced Analytics</p>', unsafe_allow_html=True)
+    
+    mc_results = predictions.get('monte_carlo_results', {})
+    
+    if not mc_results:
+        st.warning("Monte Carlo results not available.")
+        return
+    
+    # Confidence Intervals
+    st.markdown('<div class="section-title">📊 Probability Confidence Intervals</div>', unsafe_allow_html=True)
+    
+    confidence_intervals = mc_results.get('confidence_intervals', {})
+    
+    if confidence_intervals:
+        # Create confidence interval visualization
+        markets = list(confidence_intervals.keys())
+        lower_bounds = [ci[0] * 100 for ci in confidence_intervals.values()]
+        upper_bounds = [ci[1] * 100 for ci in confidence_intervals.values()]
+        means = [(lower + upper) / 2 for lower, upper in zip(lower_bounds, upper_bounds)]
+        
+        fig = go.Figure()
+        
+        # Add confidence intervals
+        fig.add_trace(go.Scatter(
+            x=markets,
+            y=means,
+            mode='markers',
+            name='Mean Probability',
+            marker=dict(size=10, color='#667eea')
+        ))
+        
+        # Add error bars
+        for i, market in enumerate(markets):
+            fig.add_trace(go.Scatter(
+                x=[market, market],
+                y=[lower_bounds[i], upper_bounds[i]],
+                mode='lines',
+                line=dict(color='#667eea', width=2),
+                showlegend=False
+            ))
+        
+        fig.update_layout(
+            title="95% Confidence Intervals for Key Probabilities",
+            yaxis_title="Probability (%)",
+            xaxis_tickangle=-45,
+            showlegend=True
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Probability Volatility
+    st.markdown('<div class="section-title">⚡ Probability Volatility</div>', unsafe_allow_html=True)
+    
+    probability_volatility = mc_results.get('probability_volatility', {})
+    
+    if probability_volatility:
+        volatility_df = pd.DataFrame({
+            'Market': list(probability_volatility.keys()),
+            'Volatility': [v * 100 for v in probability_volatility.values()]
+        })
+        
+        fig = px.bar(volatility_df, x='Market', y='Volatility',
+                    title="Probability Volatility Across Simulation Runs",
+                    color='Volatility',
+                    color_continuous_scale='Viridis')
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Volatility interpretation
+        avg_volatility = np.mean(list(probability_volatility.values())) * 100
+        if avg_volatility < 2:
+            volatility_rating = "Very Stable"
+            color = "green"
+        elif avg_volatility < 4:
+            volatility_rating = "Stable"
+            color = "blue"
+        elif avg_volatility < 6:
+            volatility_rating = "Moderate"
+            color = "orange"
+        else:
+            volatility_rating = "High Volatility"
+            color = "red"
+        
+        st.metric("Average Probability Volatility", f"{avg_volatility:.2f}%", volatility_rating)
+
+def display_model_metrics(predictions):
+    """Display model performance and technical metrics"""
+    
+    st.markdown('<p class="main-header">⚙️ Model Performance Metrics</p>', unsafe_allow_html=True)
+    
+    model_metrics = predictions.get('model_metrics', {})
+    
+    if not model_metrics:
+        st.warning("Model metrics not available.")
+        return
+    
+    # Key metrics in cards
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        entropy = model_metrics.get('shannon_entropy', 0)
+        st.metric("Shannon Entropy", f"{entropy:.3f}")
+    
+    with col2:
+        volatility = model_metrics.get('avg_probability_volatility', 0)
+        st.metric("Avg Probability Volatility", f"{volatility:.4f}")
+    
+    with col3:
+        ci_width = model_metrics.get('avg_confidence_interval_width', 0)
+        st.metric("Avg CI Width", f"{ci_width:.3f}")
+    
+    with col4:
+        iterations = model_metrics.get('monte_carlo_iterations', 0)
+        st.metric("Monte Carlo Iterations", f"{iterations:,}")
+    
+    # Entropy explanation
+    st.markdown('<div class="section-title">🧠 Uncertainty Analysis</div>', unsafe_allow_html=True)
+    
+    entropy = model_metrics.get('shannon_entropy', 0)
+    
+    if entropy < 0.7:
+        entropy_interpretation = "Low Uncertainty - Clear favorite"
+        entropy_color = "green"
+    elif entropy < 1.0:
+        entropy_interpretation = "Moderate Uncertainty - Competitive match"
+        entropy_color = "orange"
+    else:
+        entropy_interpretation = "High Uncertainty - Very unpredictable"
+        entropy_color = "red"
+    
+    st.markdown(f'''
+    <div class="prediction-card">
+        <h3>Information Theory Metrics</h3>
+        <strong>Shannon Entropy:</strong> {entropy:.3f}<br>
+        <strong>Interpretation:</strong> <span style="color: {entropy_color}">{entropy_interpretation}</span><br>
+        <small>Lower entropy indicates more predictable outcomes</small>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    # Model configuration
+    st.markdown('<div class="section-title">⚙️ Model Configuration</div>', unsafe_allow_html=True)
+    
+    config_col1, config_col2 = st.columns(2)
+    
+    with config_col1:
+        st.write("**Prediction Engine**")
+        st.write("• Bayesian xG Calculation")
+        st.write("• Monte Carlo Simulation")
+        st.write("• Skellam Distribution")
+        st.write("• Market Integration")
+    
+    with config_col2:
+        st.write("**Advanced Features**")
+        st.write("• Value Detection")
+        st.write("• Kelly Criterion Staking")
+        st.write("• Uncertainty Quantification")
+        st.write("• Historical Calibration")
 
 def display_probability_bar(label: str, probability: float, color: str):
     """Display a probability with a visual bar"""
@@ -462,7 +839,7 @@ def main():
         display_advanced_predictions(st.session_state.predictions)
         
         st.markdown("---")
-        col1, col2 = st.columns([1, 1])
+        col1, col2, col3 = st.columns([1, 1, 1])
         
         with col1:
             if st.button("🔄 Analyze Another Match", use_container_width=True):
@@ -471,19 +848,47 @@ def main():
                 st.rerun()
         
         with col2:
-            if st.button("📊 Download Analysis", use_container_width=True):
-                # In a real app, this would generate a PDF report
-                st.success("Analysis download feature would be implemented here")
+            if st.button("📊 Download Analysis Report", use_container_width=True):
+                # Generate downloadable report
+                predictions = st.session_state.predictions
+                report_data = {
+                    'match': predictions['match'],
+                    'timestamp': str(pd.Timestamp.now()),
+                    'expected_goals': predictions['expected_goals'],
+                    'key_probabilities': predictions['probabilities']['match_outcomes'],
+                    'betting_signals': predictions.get('betting_signals', []),
+                    'confidence_score': predictions['confidence_score'],
+                    'risk_assessment': predictions['risk_assessment']
+                }
+                
+                st.download_button(
+                    label="📥 Download JSON Report",
+                    data=json.dumps(report_data, indent=2),
+                    file_name=f"football_prediction_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.json",
+                    mime="application/json",
+                    use_container_width=True
+                )
+        
+        with col3:
+            if st.button("📈 View Raw Data", use_container_width=True):
+                st.json(st.session_state.predictions)
         
         return
     
     # Input form
-    match_data = create_advanced_input_form()
+    match_data, calibration_data = create_advanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Performing advanced match analysis..."):
+        with st.spinner("🔍 Performing advanced match analysis with Monte Carlo simulation..."):
             try:
-                engine = AdvancedPredictionEngine(match_data)
+                # Initialize engine with calibration data
+                engine = AdvancedPredictionEngine(match_data, calibration_data)
+                
+                # Set Monte Carlo iterations if specified
+                if hasattr(st.session_state, 'mc_iterations'):
+                    engine.monte_carlo_iterations = st.session_state.mc_iterations
+                
+                # Generate predictions
                 predictions = engine.generate_advanced_predictions()
                 
                 st.session_state.predictions = predictions

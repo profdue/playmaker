@@ -72,7 +72,7 @@ class SignalEngine:
         if 'market_odds' in cleaned_data:
             del cleaned_data['market_odds']
         
-        # Standard numeric validation
+        # Standard numeric validation - ENSURE ALL VALUES ARE FLOATS
         numeric_fields = {
             'home_goals': (0, 20, 1.5),
             'away_goals': (0, 20, 1.5),
@@ -87,8 +87,39 @@ class SignalEngine:
                     if value < min_val or value > max_val:
                         logger.warning(f"Field {field} value {value} outside expected range")
                         cleaned_data[field] = max(min_val, min(value, max_val))
+                    else:
+                        cleaned_data[field] = value  # Ensure it's float
                 except (TypeError, ValueError):
                     cleaned_data[field] = default
+        
+        # Ensure form data is properly formatted
+        for form_field in ['home_form', 'away_form']:
+            if form_field in cleaned_data:
+                try:
+                    # Convert all form values to floats
+                    cleaned_data[form_field] = [float(x) for x in cleaned_data[form_field]]
+                except (TypeError, ValueError):
+                    logger.warning(f"Invalid form data in {form_field}, using default")
+                    cleaned_data[form_field] = []
+        
+        # Ensure motivation values are properly formatted
+        if 'motivation' in cleaned_data:
+            motivation = cleaned_data['motivation']
+            if isinstance(motivation, dict):
+                # Convert any numeric motivation to string labels
+                for key in ['home', 'away']:
+                    if key in motivation:
+                        mot_value = motivation[key]
+                        if isinstance(mot_value, (int, float)):
+                            # Convert numeric motivation to string label
+                            if mot_value <= 0.8:
+                                motivation[key] = "Low"
+                            elif mot_value <= 1.0:
+                                motivation[key] = "Normal"
+                            elif mot_value <= 1.15:
+                                motivation[key] = "High"
+                            else:
+                                motivation[key] = "Very High"
         
         # Calculate data quality score
         cleaned_data['data_quality_score'] = self._calculate_data_quality(cleaned_data)
@@ -140,7 +171,7 @@ class SignalEngine:
     
     def _initialize_team_profiles(self) -> Dict[str, Dict]:
         """Team playing styles - PURE FOOTBALL CHARACTERISTICS"""
-        # Base profiles for known teams, others will be calculated dynamically
+        # Base profiles for known teams, others will use default
         base_profiles = {
             'Bologna': {'style': 'defensive', 'press_intensity': 'high', 'clean_sheet_freq': 0.45},
             'Torino': {'style': 'defensive', 'press_intensity': 'medium', 'clean_sheet_freq': 0.38},
@@ -155,35 +186,6 @@ class SignalEngine:
             'default': {'style': 'balanced', 'press_intensity': 'medium', 'clean_sheet_freq': 0.30}
         }
         return base_profiles
-    
-    def _calculate_dynamic_team_profile(self, team_data: Dict, is_home: bool) -> Dict:
-        """Calculate team profile dynamically based on performance data"""
-        goals_for = team_data.get('goals_scored', team_data.get('goals', 0))
-        goals_against = team_data.get('goals_conceded', 0)
-        matches_played = 6  # Default to 6 games for form
-        
-        if matches_played == 0:
-            return self.team_profiles['default']
-        
-        attack_ratio = goals_for / matches_played
-        defense_ratio = goals_against / matches_played
-        
-        # Determine style based on ratios
-        if attack_ratio < 1.0 and defense_ratio < 1.0:
-            style = 'defensive'
-        elif attack_ratio > 1.5 and defense_ratio > 1.2:
-            style = 'attacking'
-        else:
-            style = 'balanced'
-        
-        # Estimate clean sheet frequency
-        clean_sheet_freq = max(0.1, min(0.6, (matches_played - (goals_against / 2)) / matches_played))
-        
-        return {
-            'style': style,
-            'press_intensity': 'medium',  # Default, could be enhanced
-            'clean_sheet_freq': clean_sheet_freq
-        }
     
     def _setup_calibration_parameters(self):
         """Calibration based on historical football data only"""
@@ -202,22 +204,30 @@ class SignalEngine:
 
     def _calculate_motivation_impact(self, motivation_level: str, match_context: str) -> float:
         """Context-aware motivation impact calculation"""
+        # FIXED: Ensure motivation_level is string and handle properly
+        if not isinstance(motivation_level, str):
+            motivation_level = str(motivation_level)
+            
         base_multipliers = {
-            "Low": 0.7, "Normal": 1.0, "High": 1.2, "Very High": 1.4
+            "Low": 0.7, "Normal": 1.0, "High": 1.2, "Very High": 1.4,
+            "low": 0.7, "normal": 1.0, "high": 1.2, "very high": 1.4,  # Handle case variations
+            "0.7": 0.7, "1.0": 1.0, "1.2": 1.2, "1.4": 1.4  # Handle numeric strings
         }
         
         # Adjust based on match context
         context_adjustments = {
-            'DEFENSIVE_BATTLE': 0.9,    # Motivation matters less in defensive games
-            'OFFENSIVE_SHOWDOWN': 1.1,  # Motivation matters more in open games
-            'HOME_DOMINANCE': 0.95,     # Home advantage reduces motivation need
-            'AWAY_COUNTER': 1.15,       # Away teams need more motivation
-            'TACTICAL_STALEMATE': 1.05, # Motivation can break stalemates
-            'UNKNOWN': 1.0
+            'defensive_battle': 0.9,    # Motivation matters less in defensive games
+            'offensive_showdown': 1.1,  # Motivation matters more in open games
+            'home_dominance': 0.95,     # Home advantage reduces motivation need
+            'away_counter': 1.15,       # Away teams need more motivation
+            'tactical_stalemate': 1.05, # Motivation can break stalemates
+            'unknown': 1.0
         }
         
         adjustment = context_adjustments.get(match_context, 1.0)
-        return base_multipliers.get(motivation_level, 1.0) * adjustment
+        motivation_multiplier = base_multipliers.get(motivation_level, 1.0)
+        
+        return motivation_multiplier * adjustment
 
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str) -> MatchContext:
         """Determine match context - PURE FOOTBALL ANALYSIS"""
@@ -287,14 +297,14 @@ class SignalEngine:
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         league_avg_goals = league_params['avg_goals']
         
-        # Extract raw football data
-        home_goals = self.data.get('home_goals', 0)
-        away_goals = self.data.get('away_goals', 0)
-        home_conceded = self.data.get('home_conceded', 0)
-        away_conceded = self.data.get('away_conceded', 0)
+        # Extract raw football data - ENSURE ALL VALUES ARE FLOATS
+        home_goals = float(self.data.get('home_goals', 0))
+        away_goals = float(self.data.get('away_goals', 0))
+        home_conceded = float(self.data.get('home_conceded', 0))
+        away_conceded = float(self.data.get('away_conceded', 0))
         
-        home_goals_home = self.data.get('home_goals_home', home_goals)
-        away_goals_away = self.data.get('away_goals_away', away_goals)
+        home_goals_home = float(self.data.get('home_goals_home', home_goals))
+        away_goals_away = float(self.data.get('away_goals_away', away_goals))
         
         home_form = self.data.get('home_form', [])
         away_form = self.data.get('away_form', [])
@@ -307,7 +317,7 @@ class SignalEngine:
         home_profile = self.team_profiles.get(self.data['home_team'], self.team_profiles['default'])
         away_profile = self.team_profiles.get(self.data['away_team'], self.team_profiles['default'])
         
-        # Convert to per-game averages
+        # Convert to per-game averages - ADD SAFETY CHECKS
         home_attack_pg = home_goals / 6.0 if home_goals > 0 else league_avg_goals
         away_attack_pg = away_goals / 6.0 if away_goals > 0 else league_avg_goals
         home_defense_pg = home_conceded / 6.0 if home_conceded > 0 else league_avg_goals
@@ -337,7 +347,7 @@ class SignalEngine:
         base_home_xg *= home_form_factor
         base_away_xg *= away_form_factor
         
-        # Enhanced motivation adjustments
+        # Enhanced motivation adjustments - FIXED TYPE HANDLING
         home_motivation_level = motivation.get('home', 'Normal')
         away_motivation_level = motivation.get('away', 'Normal')
         
@@ -348,9 +358,12 @@ class SignalEngine:
         home_motivation_factor = self._calculate_motivation_impact(home_motivation_level, temp_context.value)
         away_motivation_factor = self._calculate_motivation_impact(away_motivation_level, temp_context.value)
         
-        # Injury adjustments
-        home_injury_factor = max(0.7, 1.0 - (injuries.get('home', 0) * self.calibration_params['injury_impact']))
-        away_injury_factor = max(0.7, 1.0 - (injuries.get('away', 0) * self.calibration_params['injury_impact']))
+        # Injury adjustments - ENSURE INJURIES ARE NUMERIC
+        home_injuries = float(injuries.get('home', 0))
+        away_injuries = float(injuries.get('away', 0))
+        
+        home_injury_factor = max(0.7, 1.0 - (home_injuries * self.calibration_params['injury_impact']))
+        away_injury_factor = max(0.7, 1.0 - (away_injuries * self.calibration_params['injury_impact']))
         
         base_home_xg *= home_injury_factor * home_motivation_factor
         base_away_xg *= away_injury_factor * away_motivation_factor
@@ -390,8 +403,9 @@ class SignalEngine:
             return 1.0
         
         try:
+            # Ensure all form values are floats
             form_scores = [float(score) for score in form]
-        except:
+        except (TypeError, ValueError):
             return 1.0
         
         weights = [self.calibration_params['form_decay_rate'] ** i for i in range(len(form_scores))]

@@ -140,12 +140,49 @@ class SignalEngine:
     
     def _initialize_team_profiles(self) -> Dict[str, Dict]:
         """Team playing styles - PURE FOOTBALL CHARACTERISTICS"""
-        return {
+        # Base profiles for known teams, others will be calculated dynamically
+        base_profiles = {
             'Bologna': {'style': 'defensive', 'press_intensity': 'high', 'clean_sheet_freq': 0.45},
             'Torino': {'style': 'defensive', 'press_intensity': 'medium', 'clean_sheet_freq': 0.38},
             'Atalanta': {'style': 'attacking', 'press_intensity': 'high', 'clean_sheet_freq': 0.25},
             'Inter': {'style': 'balanced', 'press_intensity': 'high', 'clean_sheet_freq': 0.40},
+            'PSG': {'style': 'attacking', 'press_intensity': 'high', 'clean_sheet_freq': 0.35},
+            'Nice': {'style': 'balanced', 'press_intensity': 'medium', 'clean_sheet_freq': 0.30},
+            'Augsburg': {'style': 'defensive', 'press_intensity': 'medium', 'clean_sheet_freq': 0.20},
+            'Borussia Dortmund': {'style': 'attacking', 'press_intensity': 'high', 'clean_sheet_freq': 0.40},
+            'Getafe': {'style': 'defensive', 'press_intensity': 'medium', 'clean_sheet_freq': 0.25},
+            'Girona': {'style': 'attacking', 'press_intensity': 'high', 'clean_sheet_freq': 0.15},
             'default': {'style': 'balanced', 'press_intensity': 'medium', 'clean_sheet_freq': 0.30}
+        }
+        return base_profiles
+    
+    def _calculate_dynamic_team_profile(self, team_data: Dict, is_home: bool) -> Dict:
+        """Calculate team profile dynamically based on performance data"""
+        goals_for = team_data.get('goals_scored', team_data.get('goals', 0))
+        goals_against = team_data.get('goals_conceded', 0)
+        matches_played = 6  # Default to 6 games for form
+        
+        if matches_played == 0:
+            return self.team_profiles['default']
+        
+        attack_ratio = goals_for / matches_played
+        defense_ratio = goals_against / matches_played
+        
+        # Determine style based on ratios
+        if attack_ratio < 1.0 and defense_ratio < 1.0:
+            style = 'defensive'
+        elif attack_ratio > 1.5 and defense_ratio > 1.2:
+            style = 'attacking'
+        else:
+            style = 'balanced'
+        
+        # Estimate clean sheet frequency
+        clean_sheet_freq = max(0.1, min(0.6, (matches_played - (goals_against / 2)) / matches_played))
+        
+        return {
+            'style': style,
+            'press_intensity': 'medium',  # Default, could be enhanced
+            'clean_sheet_freq': clean_sheet_freq
         }
     
     def _setup_calibration_parameters(self):
@@ -163,14 +200,34 @@ class SignalEngine:
         if self.calibration_data:
             self.calibration_params.update(self.calibration_data)
 
+    def _calculate_motivation_impact(self, motivation_level: str, match_context: str) -> float:
+        """Context-aware motivation impact calculation"""
+        base_multipliers = {
+            "Low": 0.7, "Normal": 1.0, "High": 1.2, "Very High": 1.4
+        }
+        
+        # Adjust based on match context
+        context_adjustments = {
+            'DEFENSIVE_BATTLE': 0.9,    # Motivation matters less in defensive games
+            'OFFENSIVE_SHOWDOWN': 1.1,  # Motivation matters more in open games
+            'HOME_DOMINANCE': 0.95,     # Home advantage reduces motivation need
+            'AWAY_COUNTER': 1.15,       # Away teams need more motivation
+            'TACTICAL_STALEMATE': 1.05, # Motivation can break stalemates
+            'UNKNOWN': 1.0
+        }
+        
+        adjustment = context_adjustments.get(match_context, 1.0)
+        return base_multipliers.get(motivation_level, 1.0) * adjustment
+
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str) -> MatchContext:
         """Determine match context - PURE FOOTBALL ANALYSIS"""
         home_profile = self.team_profiles.get(home_team, self.team_profiles['default'])
         away_profile = self.team_profiles.get(away_team, self.team_profiles['default'])
         
         total_xg = home_xg + away_xg
+        xg_difference = abs(home_xg - away_xg)
         
-        # Defensive battle detection (Bologna-Torino case)
+        # Defensive battle detection
         if (home_profile['style'] == 'defensive' and away_profile['style'] == 'defensive' 
             and total_xg < 2.2):
             return MatchContext.DEFENSIVE_BATTLE
@@ -179,16 +236,50 @@ class SignalEngine:
         elif home_xg > away_xg + 1.0:
             return MatchContext.HOME_DOMINANCE
         
+        # Away counter
+        elif away_xg > home_xg + 0.8:
+            return MatchContext.AWAY_COUNTER
+        
         # Offensive showdown
         elif (home_profile['style'] == 'attacking' and away_profile['style'] == 'attacking'
               and total_xg > 3.0):
             return MatchContext.OFFENSIVE_SHOWDOWN
         
         # Tactical stalemate
-        elif total_xg < 2.5 and abs(home_xg - away_xg) < 0.5:
+        elif total_xg < 2.5 and xg_difference < 0.5:
             return MatchContext.TACTICAL_STALEMATE
         
-        return MatchContext.UNKNOWN
+        # Enhanced unknown context handling
+        if total_xg > 3.0:
+            return MatchContext.OFFENSIVE_SHOWDOWN
+        elif xg_difference > 0.7:
+            return MatchContext.HOME_DOMINANCE if home_xg > away_xg else MatchContext.AWAY_COUNTER
+        else:
+            return MatchContext.TACTICAL_STALEMATE
+
+    def _apply_realistic_xg_bounds(self, home_xg: float, away_xg: float, league: str) -> Tuple[float, float]:
+        """Apply realistic bounds to xG based on league and team styles"""
+        league_bounds = {
+            'premier_league': (0.2, 3.5),
+            'la_liga': (0.15, 3.2),
+            'serie_a': (0.1, 3.0),
+            'bundesliga': (0.25, 4.0),
+            'ligue_1': (0.15, 3.3),
+            'default': (0.1, 3.5)
+        }
+        
+        min_xg, max_xg = league_bounds.get(league, (0.1, 3.5))
+        
+        # Apply team-style specific adjustments
+        home_profile = self.team_profiles.get(self.data['home_team'], self.team_profiles['default'])
+        away_profile = self.team_profiles.get(self.data['away_team'], self.team_profiles['default'])
+        
+        if home_profile['style'] == 'defensive':
+            max_xg = min(max_xg, 2.8)
+        if away_profile['style'] == 'defensive':
+            max_xg = min(max_xg, 2.5)
+        
+        return max(min_xg, min(max_xg, home_xg)), max(min_xg, min(max_xg, away_xg))
 
     def _calculate_normalized_xg(self) -> Tuple[float, float]:
         """Calculate expected goals with Dixon-Coles normalization - PURE FOOTBALL DATA"""
@@ -246,12 +337,20 @@ class SignalEngine:
         base_home_xg *= home_form_factor
         base_away_xg *= away_form_factor
         
-        # Injury and motivation adjustments
+        # Enhanced motivation adjustments
+        home_motivation_level = motivation.get('home', 'Normal')
+        away_motivation_level = motivation.get('away', 'Normal')
+        
+        # Get current match context for motivation adjustment
+        temp_context = self._determine_match_context(base_home_xg, base_away_xg, 
+                                                   self.data['home_team'], self.data['away_team'])
+        
+        home_motivation_factor = self._calculate_motivation_impact(home_motivation_level, temp_context.value)
+        away_motivation_factor = self._calculate_motivation_impact(away_motivation_level, temp_context.value)
+        
+        # Injury adjustments
         home_injury_factor = max(0.7, 1.0 - (injuries.get('home', 0) * self.calibration_params['injury_impact']))
         away_injury_factor = max(0.7, 1.0 - (injuries.get('away', 0) * self.calibration_params['injury_impact']))
-        
-        home_motivation_factor = 1.0 + (motivation.get('home', 1.0) - 1.0) * self.calibration_params['motivation_impact']
-        away_motivation_factor = 1.0 + (motivation.get('away', 1.0) - 1.0) * self.calibration_params['motivation_impact']
         
         base_home_xg *= home_injury_factor * home_motivation_factor
         base_away_xg *= away_injury_factor * away_motivation_factor
@@ -262,24 +361,23 @@ class SignalEngine:
                 base_home_xg, base_away_xg, h2h_data
             )
         
-        # Apply team style adjustments - CRITICAL FOR DEFENSIVE BATTLES
+        # Apply team style adjustments
         if home_profile['style'] == 'defensive':
-            base_home_xg *= 0.85  # Reduced scoring for defensive teams
-            base_away_xg *= 0.80  # Even more reduction for away team against defensive home
+            base_home_xg *= 0.85
+            base_away_xg *= 0.80
         elif home_profile['style'] == 'attacking':
             base_home_xg *= 1.15
             base_away_xg *= 1.10
             
         if away_profile['style'] == 'defensive':
             base_away_xg *= 0.85
-            base_home_xg *= 0.80  # Home team struggles against defensive away
+            base_home_xg *= 0.80
         elif away_profile['style'] == 'attacking':
             base_away_xg *= 1.15
             base_home_xg *= 1.10
         
-        # Ensure reasonable bounds
-        home_xg = max(0.1, min(4.0, base_home_xg))
-        away_xg = max(0.1, min(3.0, base_away_xg))
+        # Apply realistic bounds
+        home_xg, away_xg = self._apply_realistic_xg_bounds(base_home_xg, base_away_xg, league)
         
         logger.info(f"PURE xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
         logger.info(f"Match context factors applied - Home style: {home_profile['style']}, Away style: {away_profile['style']}")
@@ -596,6 +694,15 @@ class SignalEngine:
         elif self.match_context == MatchContext.TACTICAL_STALEMATE:
             return f"Tactical battle anticipated with minimal separation between {home_team} and {away_team}. Both teams well-organized defensively, suggesting a cagey encounter decided by fine margins."
         
+        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
+            return f"Goals expected in this offensive showdown between {home_team} and {away_team}. Both teams favor attacking football, promising an open, end-to-end encounter with multiple scoring opportunities."
+        
+        elif self.match_context == MatchContext.HOME_DOMINANCE:
+            return f"{home_team} demonstrate clear superiority with {home_xg:.1f} expected goals. Strong home advantage and defensive organization suggest controlled victory."
+        
+        elif self.match_context == MatchContext.AWAY_COUNTER:
+            return f"{away_team} hold the tactical advantage with better expected goal metrics. Their counter-attacking threat could prove decisive against {home_team}'s defense."
+        
         home_win_prob = mc_results.home_win_prob
         
         if home_win_prob > 0.65 and home_xg > away_xg + 0.8:
@@ -661,16 +768,19 @@ class ValueDetectionEngine:
             if market_prob > 0 and pure_prob > 0:
                 edge = (pure_prob - market_prob) * 100
                 
-                if edge > self.value_thresholds['MODERATE']:
-                    value_rating = self._get_value_rating(edge)
-                    confidence = self._calculate_bet_confidence(pure_prob, edge)
+                # Enhanced edge calculation with market confidence weighting
+                adjusted_edge = self._apply_market_confidence_weighting(edge, market_prob)
+                
+                if adjusted_edge > self.value_thresholds['MODERATE']:
+                    value_rating = self._get_value_rating(adjusted_edge)
+                    confidence = self._calculate_bet_confidence(pure_prob, adjusted_edge)
                     stake = self._calculate_kelly_stake(pure_prob, market_prob)
                     
                     signals.append(BettingSignal(
                         market=market_name,
                         model_prob=round(pure_prob * 100, 1),
                         book_prob=round(market_prob * 100, 1),
-                        edge=round(edge, 1),
+                        edge=round(adjusted_edge, 1),
                         confidence=confidence,
                         recommended_stake=stake,
                         value_rating=value_rating
@@ -679,6 +789,18 @@ class ValueDetectionEngine:
         # Sort by edge descending
         signals.sort(key=lambda x: x.edge, reverse=True)
         return signals
+    
+    def _apply_market_confidence_weighting(self, edge: float, market_prob: float) -> float:
+        """Adjust edge based on market confidence and efficiency"""
+        # Markets with extreme probabilities are often less efficient
+        if market_prob < 0.1 or market_prob > 0.9:
+            return edge * 0.8  # Reduce edge for extreme probabilities
+        
+        # Medium-range probabilities are typically more efficient markets
+        if 0.3 < market_prob < 0.7:
+            return edge * 1.1  # Slight boost for efficient markets
+        
+        return edge
     
     def _get_nested_value(self, data: Dict, path: str):
         """Get nested value from dictionary using dot notation"""
@@ -738,6 +860,7 @@ class AdvancedFootballPredictor:
         # Initialize engines
         self.signal_engine = SignalEngine(football_data, calibration_data)
         self.value_engine = ValueDetectionEngine()
+        self.prediction_history = []
     
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
         """Generate comprehensive analysis with strict separation"""
@@ -755,16 +878,18 @@ class AdvancedFootballPredictor:
         # Add bias monitoring
         comprehensive_result['bias_monitoring'] = self._calculate_bias_metrics(football_predictions)
         
+        # Store prediction for historical tracking
+        self._store_prediction_history(football_predictions)
+        
         return comprehensive_result
     
     def _calculate_bias_metrics(self, football_predictions: Dict) -> Dict[str, float]:
         """Calculate bias monitoring metrics"""
-        # This would track correlation between pure probabilities and market odds over time
-        # For now, return basic metrics
         return {
             'pure_probability_entropy': self._calculate_entropy(football_predictions['probabilities']['match_outcomes']),
             'data_quality_score': football_predictions['data_quality_score'],
-            'match_context': football_predictions['match_context']
+            'match_context': football_predictions['match_context'],
+            'total_predictions_tracked': len(self.prediction_history)
         }
     
     def _calculate_entropy(self, outcomes: Dict[str, float]) -> float:
@@ -772,6 +897,27 @@ class AdvancedFootballPredictor:
         probs = np.array([v / 100 for v in outcomes.values()])
         entropy = -np.sum(probs * np.log(probs + 1e-10))
         return round(entropy, 3)
+    
+    def _store_prediction_history(self, prediction: Dict):
+        """Store prediction for historical tracking and learning"""
+        prediction_record = {
+            'timestamp': datetime.now().isoformat(),
+            'match': prediction['match'],
+            'expected_goals': prediction['expected_goals'],
+            'probabilities': prediction['probabilities']['match_outcomes'],
+            'match_context': prediction['match_context'],
+            'confidence_score': prediction['confidence_score'],
+            'data_quality': prediction['data_quality_score']
+        }
+        self.prediction_history.append(prediction_record)
+        
+        # Keep only last 100 predictions to manage memory
+        if len(self.prediction_history) > 100:
+            self.prediction_history = self.prediction_history[-100:]
+    
+    def get_prediction_history(self) -> List[Dict]:
+        """Get prediction history for analysis"""
+        return self.prediction_history
 
 
 # Example usage demonstrating the separation
@@ -798,7 +944,7 @@ if __name__ == "__main__":
             'away_goals': 4
         },
         'injuries': {'home': 1, 'away': 2},
-        'motivation': {'home': 1.1, 'away': 1.0},
+        'motivation': {'home': 'High', 'away': 'Normal'},
         'market_odds': {
             '1x2 Home': 2.10,
             '1x2 Draw': 3.10,

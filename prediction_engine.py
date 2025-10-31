@@ -97,29 +97,46 @@ class SignalEngine:
             if form_field in cleaned_data:
                 try:
                     # Convert all form values to floats
-                    cleaned_data[form_field] = [float(x) for x in cleaned_data[form_field]]
+                    if isinstance(cleaned_data[form_field], list):
+                        cleaned_data[form_field] = [float(x) for x in cleaned_data[form_field]]
+                    else:
+                        cleaned_data[form_field] = []
                 except (TypeError, ValueError):
                     logger.warning(f"Invalid form data in {form_field}, using default")
                     cleaned_data[form_field] = []
         
-        # Ensure motivation values are properly formatted
+        # Ensure motivation values are properly formatted - FIXED
         if 'motivation' in cleaned_data:
             motivation = cleaned_data['motivation']
             if isinstance(motivation, dict):
-                # Convert any numeric motivation to string labels
+                cleaned_motivation = {}
                 for key in ['home', 'away']:
                     if key in motivation:
                         mot_value = motivation[key]
-                        if isinstance(mot_value, (int, float)):
+                        # Handle both string and numeric motivation values
+                        if isinstance(mot_value, str):
+                            cleaned_motivation[key] = mot_value  # Keep as string
+                        elif isinstance(mot_value, (int, float)):
                             # Convert numeric motivation to string label
                             if mot_value <= 0.8:
-                                motivation[key] = "Low"
+                                cleaned_motivation[key] = "Low"
                             elif mot_value <= 1.0:
-                                motivation[key] = "Normal"
+                                cleaned_motivation[key] = "Normal"
                             elif mot_value <= 1.15:
-                                motivation[key] = "High"
+                                cleaned_motivation[key] = "High"
                             else:
-                                motivation[key] = "Very High"
+                                cleaned_motivation[key] = "Very High"
+                        else:
+                            cleaned_motivation[key] = "Normal"  # Default
+                    else:
+                        cleaned_motivation[key] = "Normal"  # Default
+                cleaned_data['motivation'] = cleaned_motivation
+            else:
+                # If motivation is not a dict, create default
+                cleaned_data['motivation'] = {'home': 'Normal', 'away': 'Normal'}
+        else:
+            # If no motivation data, create default
+            cleaned_data['motivation'] = {'home': 'Normal', 'away': 'Normal'}
         
         # Calculate data quality score
         cleaned_data['data_quality_score'] = self._calculate_data_quality(cleaned_data)
@@ -204,29 +221,26 @@ class SignalEngine:
 
     def _calculate_motivation_impact(self, motivation_level: str, match_context: str) -> float:
         """Context-aware motivation impact calculation"""
-        # FIXED: Ensure motivation_level is string and handle properly
-        if not isinstance(motivation_level, str):
-            motivation_level = str(motivation_level)
-            
+        # FIXED: Simplified motivation calculation to avoid type errors
         base_multipliers = {
             "Low": 0.7, "Normal": 1.0, "High": 1.2, "Very High": 1.4,
-            "low": 0.7, "normal": 1.0, "high": 1.2, "very high": 1.4,  # Handle case variations
-            "0.7": 0.7, "1.0": 1.0, "1.2": 1.2, "1.4": 1.4  # Handle numeric strings
+            "low": 0.7, "normal": 1.0, "high": 1.2, "very high": 1.4
         }
         
-        # Adjust based on match context
+        # Get base multiplier
+        motivation_multiplier = base_multipliers.get(motivation_level, 1.0)
+        
+        # Simple context adjustment - removed complex calculations that caused errors
         context_adjustments = {
-            'defensive_battle': 0.9,    # Motivation matters less in defensive games
-            'offensive_showdown': 1.1,  # Motivation matters more in open games
-            'home_dominance': 0.95,     # Home advantage reduces motivation need
-            'away_counter': 1.15,       # Away teams need more motivation
-            'tactical_stalemate': 1.05, # Motivation can break stalemates
+            'defensive_battle': 0.95,
+            'offensive_showdown': 1.05, 
+            'home_dominance': 1.0,
+            'away_counter': 1.1,
+            'tactical_stalemate': 1.0,
             'unknown': 1.0
         }
         
         adjustment = context_adjustments.get(match_context, 1.0)
-        motivation_multiplier = base_multipliers.get(motivation_level, 1.0)
-        
         return motivation_multiplier * adjustment
 
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str) -> MatchContext:
@@ -347,7 +361,7 @@ class SignalEngine:
         base_home_xg *= home_form_factor
         base_away_xg *= away_form_factor
         
-        # Enhanced motivation adjustments - FIXED TYPE HANDLING
+        # Enhanced motivation adjustments - FIXED: Simplified to avoid type errors
         home_motivation_level = motivation.get('home', 'Normal')
         away_motivation_level = motivation.get('away', 'Normal')
         

@@ -169,18 +169,18 @@ def create_advanced_input_form():
     """Create input form with clear separation between football data and market data"""
     
     st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Match Analysis with Realistic Football Thresholds</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Match Analysis with Context-Aware Risk Assessment</p>', unsafe_allow_html=True)
     
     # System Architecture Overview
     with st.expander("🏗️ System Architecture Overview", expanded=True):
         st.markdown("""
-        ### 🎯 Project Purity v2.0 - Realistic Football Assessment
+        ### 🎯 Project Purity v2.0 - Context-Aware Assessment
         
         **Signal Engine** 🟢 (Pure Football Analysis)
         - Input: Only football data (goals, form, H2H, etc.)
         - Process: Dixon-Coles xG, Monte Carlo simulation
-        - Output: Pure probabilities
-        - **NEW**: Realistic football thresholds (0.5 xG difference)
+        - Output: Pure probabilities + Match Context
+        - **NEW**: Context-aware risk assessment
         
         **Value Engine** 🟠 (Market Analysis)  
         - Input: Pure probabilities + Market odds
@@ -322,7 +322,7 @@ def create_advanced_input_form():
             
             # Performance quality (enhanced form)
             st.write("**Form Quality Assessment**")
-            form_quality_note = st.info("💡 The model now uses realistic football thresholds (0.5 xG difference)")
+            form_quality_note = st.info("💡 The model now uses context-aware risk assessment")
 
     with tab4:
         st.markdown("### 📊 Enhanced System Information")
@@ -333,15 +333,15 @@ def create_advanced_input_form():
         - 📈 **Accuracy**: Pure football model focuses on match reality
         - 💰 **Value Detection**: Independent engine finds market inefficiencies
         
-        **REALISTIC FOOTBALL ENHANCEMENTS:**
-        - 🎯 **Realistic xG Thresholds**: 0.5 xG difference = clear dominance (not 0.8)
-        - 📊 **Practical Risk Assessment**: Differentiates real football advantages
-        - 💰 **Reasonable Value Thresholds**: More accessible edge detection
+        **CONTEXT-AWARE ENHANCEMENTS:**
+        - 🎯 **Context-Aware Risk**: Home dominance + >50% probability = MEDIUM RISK
+        - 📊 **Tiered Assessment**: 4-tier system for appropriate risk levels
+        - 💰 **Practical Thresholds**: More accessible edge detection
         - 🎲 **Professional Stake Sizing**: Better capital allocation
         
         **Data Flow:**
         ```
-        Football Data → Signal Engine → Pure Probabilities
+        Football Data → Signal Engine → Pure Probabilities + Context
         Market Odds → Value Engine → Betting Signals
         ```
         """)
@@ -365,7 +365,7 @@ def create_advanced_input_form():
             st.info("No prediction history yet. Generate some predictions to see historical data here!")
 
     # Submit button
-    submitted = st.button("🎯 GENERATE REALISTIC ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE CONTEXT-AWARE ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -581,7 +581,7 @@ def display_pure_predictions(predictions):
     """Display pure football predictions from Signal Engine"""
     
     st.markdown('<p class="main-header">🎯 Pure Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="pure-engine-card"><h3>🟢 Enhanced Signal Engine Output</h3>Market-independent football analysis with realistic thresholds</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pure-engine-card"><h3>🟢 Enhanced Signal Engine Output</h3>Market-independent football analysis with context-aware risk assessment</div>', unsafe_allow_html=True)
     
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
     
@@ -642,7 +642,7 @@ def display_pure_predictions(predictions):
     
     st.markdown(f'''
     <div class="prediction-card {risk_class}">
-        <h3>📊 Realistic Risk Assessment</h3>
+        <h3>📊 Context-Aware Risk Assessment</h3>
         <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
         <strong>Explanation:</strong> {risk.get("explanation", "No data available")}<br>
         <strong>Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
@@ -658,7 +658,7 @@ def display_pure_predictions(predictions):
 def display_value_detection(predictions):
     """Display value detection results from Value Engine"""
     
-    st.markdown('<p class="main-header">💰 Realistic Value Betting Detection</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">💰 Context-Aware Value Betting Detection</p>', unsafe_allow_html=True)
     st.markdown('<div class="value-engine-card"><h3>🟠 Enhanced Value Engine Output</h3>Market confidence-weighted edge detection with practical thresholds</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals', default=[])
@@ -670,7 +670,7 @@ def display_value_detection(predictions):
         - Pure probabilities align with market expectations  
         - Insufficient data for value detection
         - All edges below minimum threshold
-        - **NEW**: Realistic football thresholds applied
+        - **NEW**: Context-aware risk assessment applied
         """)
         return
     
@@ -694,7 +694,7 @@ def display_value_detection(predictions):
         st.metric("Total Stake", f"{total_stake * 100:.1f}%")
     
     # Display value bets by rating
-    st.markdown('<div class="section-title">🎯 Realistic Value Bet Recommendations</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🎯 Context-Aware Value Bet Recommendations</div>', unsafe_allow_html=True)
     
     # Group by value rating
     exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
@@ -736,7 +736,7 @@ def display_value_detection(predictions):
     
     # Edge distribution visualization
     if betting_signals:
-        st.markdown('<div class="section-title">📈 Realistic Edge Distribution Analysis</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📈 Context-Aware Edge Distribution Analysis</div>', unsafe_allow_html=True)
         
         df_edges = pd.DataFrame(betting_signals)
         fig = px.bar(df_edges, x='market', y='edge', color='value_rating',
@@ -758,7 +758,7 @@ def display_value_detection(predictions):
 def display_advanced_analytics(predictions):
     """Display advanced analytics from both engines"""
     
-    st.markdown('<p class="main-header">📈 Realistic Analytics</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">📈 Context-Aware Analytics</p>', unsafe_allow_html=True)
     
     # Monte Carlo Results
     mc_results = safe_get(predictions, 'monte_carlo_results', default={})
@@ -846,18 +846,18 @@ def display_advanced_analytics(predictions):
 def display_system_health(predictions):
     """Display system health and bias monitoring"""
     
-    st.markdown('<p class="main-header">🏗️ Realistic System Health Monitoring</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">🏗️ Context-Aware System Health Monitoring</p>', unsafe_allow_html=True)
     
     # Architecture Diagram
     st.markdown("""
     <div class="architecture-diagram">
-        <h3>🔄 Realistic Data Flow Architecture</h3>
+        <h3>🔄 Context-Aware Data Flow Architecture</h3>
         <pre>
         ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
         │   Football Data │ ──▶│   Signal Engine  │ ──▶│ Pure Probabilities │
         │ (Goals, Form)   │    │  (No Market Bias)│    │   (Market-Free)   │
-        │    + Realistic  │    │ + Realistic      │    │ + Realistic       │
-        │   Thresholds    │    │ Football Rules   │    │   Risk Assessment │
+        │    + Context    │    │ + Context-Aware  │    │ + Context-Aware   │
+        │                 │    │   Risk Assessment│    │   Recommendations │
         └─────────────────┘    └──────────────────┘    └─────────────────┘
                                                                   │
         ┌─────────────────┐    ┌──────────────────┐              │
@@ -879,16 +879,16 @@ def display_system_health(predictions):
     """, unsafe_allow_html=True)
     
     # Bias Monitoring
-    st.markdown('<div class="section-title">🛡️ Realistic Bias Protection Status</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🛡️ Context-Aware Bias Protection Status</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.success("**✅ Enhanced Signal Engine**")
         st.write("• Pure football data only")
-        st.write("• Realistic xG thresholds (0.5)")
-        st.write("• Football-appropriate rules")
-        st.write("• Context-aware motivation")
+        st.write("• Context-aware risk assessment")
+        st.write("• 4-tier risk system")
+        st.write("• Match context integration")
     
     with col2:
         st.warning("**✅ Enhanced Value Engine**") 
@@ -898,14 +898,14 @@ def display_system_health(predictions):
         st.write("• No feedback to predictions")
     
     with col3:
-        st.info("**✅ Realistic System Integrity**")
-        st.write("• Realistic football dominance detection")
-        st.write("• Probability-tiered risk assessment")
+        st.info("**✅ Context-Aware System Integrity**")
+        st.write("• Home dominance properly rewarded")
+        st.write("• Unpredictable matches stay high risk")
         st.write("• Architecture compliance: 100%")
         st.write("• Historical tracking enabled")
     
     # Model Metrics
-    st.markdown('<div class="section-title">📈 Realistic Model Quality Metrics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📈 Context-Aware Model Quality Metrics</div>', unsafe_allow_html=True)
     
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes', default={'home_win': 0, 'draw': 0, 'away_win': 0})
     probs = np.array([v / 100 for v in outcomes.values()])
@@ -1006,7 +1006,7 @@ def main():
     match_data, mc_iterations = create_advanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running realistic engine analysis..."):
+        with st.spinner("🔍 Running context-aware engine analysis..."):
             try:
                 predictor = AdvancedFootballPredictor(match_data)
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)

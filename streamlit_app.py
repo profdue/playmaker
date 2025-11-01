@@ -10,7 +10,7 @@ from datetime import datetime
 
 # Import the COMPLETELY FIXED PREDICTION ENGINE
 try:
-    from fixed_prediction_engine import AdvancedFootballPredictor, SignalEngine, ValueDetectionEngine
+    from prediction_engine import AdvancedFootballPredictor, SignalEngine, ValueDetectionEngine
 except ImportError as e:
     st.error(f"❌ Could not import FIXED prediction modules: {e}")
     st.info("""

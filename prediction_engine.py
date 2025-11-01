@@ -175,7 +175,7 @@ class SignalEngine:
             'serie_a': {'avg_goals': 2.7, 'home_advantage': 1.20},
             'bundesliga': {'avg_goals': 3.1, 'home_advantage': 1.12},
             'ligue_1': {'avg_goals': 2.5, 'home_advantage': 1.18},
-            'liga_portugal': {'avg_goals': 2.6, 'home_advantage': 1.25},  # Stronger home advantage
+            'liga_portugal': {'avg_goals': 2.6, 'home_advantage': 1.25},
             'default': {'avg_goals': 2.7, 'home_advantage': 1.18}
         }
     
@@ -195,14 +195,14 @@ class SignalEngine:
     def _setup_realistic_parameters(self):
         """REALISTIC calibration parameters"""
         self.calibration_params = {
-            'home_advantage': 1.25,  # Strong home advantage
+            'home_advantage': 1.25,
             'form_decay_rate': 0.85,
             'h2h_weight': 0.15,
             'injury_impact': 0.08,
             'motivation_impact': 0.10,
             'bivariate_correlation': 0.12,
-            'strength_tier_impact': 0.25,  # NEW: Strength tier impact
-            'defensive_impact_multiplier': 0.4,  # NEW: Stronger defensive impact
+            'strength_tier_impact': 0.25,
+            'defensive_impact_multiplier': 0.4,
         }
         
         if self.calibration_data:
@@ -210,7 +210,7 @@ class SignalEngine:
 
     def _get_team_strength(self, team: str) -> int:
         """Get team strength tier"""
-        return self.team_strength_tiers.get(team, 2)  # Default to medium
+        return self.team_strength_tiers.get(team, 2)
 
     def _calculate_strength_based_adjustment(self, home_team: str, away_team: str) -> float:
         """Calculate adjustment based on team strength difference"""
@@ -219,14 +219,13 @@ class SignalEngine:
         
         strength_diff = home_strength - away_strength
         
-        # Strong home team vs weak away team
-        if strength_diff >= 3:  # Elite vs Weak
+        if strength_diff >= 3:
             return 0.4
-        elif strength_diff >= 2:  # Strong vs Weak
+        elif strength_diff >= 2:
             return 0.25
-        elif strength_diff >= 1:  # Slight advantage
+        elif strength_diff >= 1:
             return 0.12
-        elif strength_diff <= -2:  # Weak vs Strong
+        elif strength_diff <= -2:
             return -0.25
         else:
             return 0.0
@@ -247,13 +246,11 @@ class SignalEngine:
         total_xg = home_xg + away_xg
         xg_difference = home_xg - away_xg
         
-        # STRONG home dominance detection
         if (xg_difference > 1.0) or (home_strength - away_strength >= 3 and xg_difference > 0.5):
             return MatchContext.HOME_DOMINANCE
         elif xg_difference < -0.8:
             return MatchContext.AWAY_COUNTER
         
-        # Standard context detection
         if total_xg < 2.2:
             return MatchContext.DEFENSIVE_BATTLE
         elif total_xg > 3.2:
@@ -268,16 +265,14 @@ class SignalEngine:
         home_strength = self._get_team_strength(home_team)
         away_strength = self._get_team_strength(away_team)
         
-        # ENFORCE REALISTIC BOUNDS BASED ON TEAM STRENGTH
-        if home_strength >= 4 and away_strength <= 2:  # Strong home vs weak away
-            home_xg = max(home_xg, 1.8)  # Minimum for strong teams
-            away_xg = min(away_xg, 1.0)  # Maximum for weak teams
+        if home_strength >= 4 and away_strength <= 2:
+            home_xg = max(home_xg, 1.8)
+            away_xg = min(away_xg, 1.0)
         
-        if home_strength == 5 and away_strength == 1:  # Elite vs Very Weak
+        if home_strength == 5 and away_strength == 1:
             home_xg = max(home_xg, 2.2)
             away_xg = min(away_xg, 0.7)
         
-        # Ensure realistic bounds
         home_xg = max(0.5, min(3.5, home_xg))
         away_xg = max(0.3, min(2.5, away_xg))
         
@@ -289,35 +284,29 @@ class SignalEngine:
         league = self.data.get('league', 'liga_portugal')
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
         
-        # Base calculation from goals and conceded
         home_goals_avg = self.data.get('home_goals', 0) / 6.0
         away_goals_avg = self.data.get('away_goals', 0) / 6.0
         
         home_conceded_avg = self.data.get('home_conceded', 0) / 6.0
         away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
         
-        # STRONG defensive impact
         home_xg = home_goals_avg * (1 - (away_conceded_avg / league_params['avg_goals']) * self.calibration_params['defensive_impact_multiplier'])
         away_xg = away_goals_avg * (1 - (home_conceded_avg / league_params['avg_goals']) * self.calibration_params['defensive_impact_multiplier'])
         
-        # Apply home advantage
         home_xg *= league_params['home_advantage']
         
-        # Team strength adjustment - CRITICAL FIX
         strength_adjustment = self._calculate_strength_based_adjustment(
             self.data['home_team'], self.data['away_team']
         )
         home_xg *= (1 + strength_adjustment)
         away_xg *= (1 - strength_adjustment * 0.8)
         
-        # Form adjustments
         home_form = self._calculate_form_impact('home')
         away_form = self._calculate_form_impact('away')
         
         home_xg *= home_form
         away_xg *= away_form
         
-        # Motivation and injuries
         motivation = self.data.get('motivation', {})
         home_motivation = self._calculate_motivation_impact(motivation.get('home', 'Normal'))
         away_motivation = self._calculate_motivation_impact(motivation.get('away', 'Normal'))
@@ -329,12 +318,10 @@ class SignalEngine:
         home_xg *= home_motivation * home_injuries
         away_xg *= away_motivation * away_injuries
         
-        # H2H adjustment
         h2h_data = self.data.get('h2h_data', {})
         if h2h_data and h2h_data.get('matches', 0) >= 3:
             home_xg, away_xg = self._apply_h2h_adjustment(home_xg, away_xg, h2h_data)
         
-        # CRITICAL: Apply football reality checks
         home_xg, away_xg = self._apply_football_reality_checks(
             home_xg, away_xg, self.data['home_team'], self.data['away_team']
         )
@@ -353,9 +340,8 @@ class SignalEngine:
             form_scores = [float(score) for score in form]
             avg_form = np.mean(form_scores)
             
-            # Normalize to 0-3 scale impact
             form_ratio = avg_form / 3.0
-            return 0.8 + (form_ratio * 0.4)  # 0.8 to 1.2 range
+            return 0.8 + (form_ratio * 0.4)
             
         except (TypeError, ValueError):
             return 1.0
@@ -382,7 +368,6 @@ class SignalEngine:
         """Run Monte Carlo simulation"""
         np.random.seed(42)
         
-        # Adjust correlation based on match context
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
             lambda3_alpha = self.calibration_params['bivariate_correlation'] * 0.7
         elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
@@ -419,7 +404,6 @@ class SignalEngine:
         
         exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:8])
         
-        # Calculate confidence intervals
         def calculate_ci(probs, alpha=0.95):
             se = np.sqrt(probs * (1 - probs) / iterations)
             z_score = 1.96
@@ -432,7 +416,6 @@ class SignalEngine:
             'over_2.5': calculate_ci(over_25)
         }
         
-        # Calculate probability volatility
         batch_size = 1000
         num_batches = iterations // batch_size
         
@@ -474,21 +457,17 @@ class SignalEngine:
         """Validate that probabilities make football sense"""
         total = home_win + draw + away_win
         
-        # Check normalization
         if not 0.99 <= total <= 1.01:
             logger.error(f"Probabilities not normalized: {total}")
             return False
         
-        # FOOTBALL REALITY CHECKS
         home_strength = self._get_team_strength(home_team)
         away_strength = self._get_team_strength(away_team)
         
-        # Strong home team should never have low probability
         if home_strength >= 4 and away_strength <= 2 and home_win < 0.60:
             logger.warning(f"Strong home team {home_team} has unrealistically low win probability: {home_win}")
             return False
         
-        # Weak away team should never have high win probability
         if away_strength <= 2 and home_strength >= 4 and away_win > 0.15:
             logger.warning(f"Weak away team {away_team} has unrealistically high win probability: {away_win}")
             return False
@@ -507,23 +486,19 @@ class SignalEngine:
         
         mc_results = self.run_monte_carlo_simulation(home_xg, away_xg, mc_iterations)
         
-        # CRITICAL: Validate probability sanity with team context
         if not self._validate_probability_sanity(
             mc_results.home_win_prob, mc_results.draw_prob, mc_results.away_win_prob,
             home_team, away_team
         ):
             logger.warning("Probability sanity check failed - applying football reality corrections")
             
-            # Apply football-aware corrections
             home_strength = self._get_team_strength(home_team)
             away_strength = self._get_team_strength(away_team)
             
             if home_strength >= 4 and away_strength <= 2:
-                # Strong home vs weak away - enforce realistic probabilities
                 mc_results.home_win_prob = max(mc_results.home_win_prob, 0.65)
                 mc_results.away_win_prob = min(mc_results.away_win_prob, 0.12)
             
-            # Re-normalize
             total = mc_results.home_win_prob + mc_results.draw_prob + mc_results.away_win_prob
             mc_results.home_win_prob /= total
             mc_results.draw_prob /= total  
@@ -533,7 +508,6 @@ class SignalEngine:
         first_half_prob = 1 - poisson.pmf(0, total_xg * 0.46)
         second_half_prob = 1 - poisson.pmf(0, total_xg * 0.54)
         
-        # Calculate handicap probabilities
         handicap_probs = {}
         handicaps = [-1.5, -1.0, -0.5, 0, 0.5]
         for handicap in handicaps:
@@ -545,7 +519,6 @@ class SignalEngine:
                 prob = 1 - skellam.cdf(abs(handicap), home_xg, away_xg)
             handicap_probs[f"handicap_{handicap}"] = round(prob * 100, 1)
         
-        # Corner predictions
         base_corners = 9.5
         attacking_bonus = (home_xg + away_xg - 2.7) * 0.8
         total_corners = max(6, min(14, base_corners + attacking_bonus))
@@ -604,7 +577,6 @@ class SignalEngine:
         """Calculate confidence score"""
         base_confidence = self.data['data_quality_score'] * 0.7
         
-        # Data quality bonuses
         if len(self.data.get('home_form', [])) >= 5:
             base_confidence += 8
         if len(self.data.get('away_form', [])) >= 5:
@@ -614,11 +586,9 @@ class SignalEngine:
         if h2h_data.get('matches', 0) >= 5:
             base_confidence += 10
         
-        # Volatility penalty
         avg_volatility = np.mean(list(mc_results.probability_volatility.values()))
         volatility_penalty = min(25, int(avg_volatility * 500))
         
-        # Match context adjustment
         if self.match_context == MatchContext.UNPREDICTABLE:
             base_confidence -= 12
         
@@ -631,7 +601,6 @@ class SignalEngine:
         home_strength = self._get_team_strength(home_team)
         away_strength = self._get_team_strength(away_team)
         
-        # Strong home favorite scenario
         if (home_strength >= 4 and away_strength <= 2 and
             home_win_prob > 0.65 and confidence > 70 and
             self.data['data_quality_score'] > 75):
@@ -684,7 +653,6 @@ class SignalEngine:
         home_strength = self._get_team_strength(home_team)
         away_strength = self._get_team_strength(away_team)
         
-        # Strong home team vs weak away team
         if home_strength >= 4 and away_strength <= 2 and home_win_prob > 0.65:
             return f"{home_team} are strong favorites with {home_xg:.1f} expected goals. Their superior quality and home advantage should see them comfortably overcome {away_team}."
         
@@ -706,17 +674,29 @@ class SignalEngine:
 
 class ValueDetectionEngine:
     """
-    REALISTIC VALUE DETECTION ENGINE - No absurd recommendations
+    REALISTIC VALUE DETECTION ENGINE - Now properly aligned with Signal Engine
     """
     
     def __init__(self):
         # Realistic thresholds
         self.value_thresholds = {
-            'EXCEPTIONAL': 25.0,   # 25%+ edge
-            'HIGH': 15.0,          # 15%+ edge  
-            'GOOD': 8.0,           # 8%+ edge
-            'MODERATE': 4.0,       # 4%+ edge
+            'EXCEPTIONAL': 25.0,
+            'HIGH': 15.0,  
+            'GOOD': 8.0,
+            'MODERATE': 4.0,
         }
+        
+        # CRITICAL: Minimum probabilities for value consideration
+        self.min_probability_thresholds = {
+            '1x2 Home': 20.0,   # At least 20% probability for home value
+            '1x2 Draw': 25.0,   # At least 25% probability for draw value  
+            '1x2 Away': 15.0,   # At least 15% probability for away value
+            'Over 2.5 Goals': 35.0,
+            'Under 2.5 Goals': 35.0,
+            'BTTS Yes': 40.0,
+            'BTTS No': 40.0,
+        }
+        
         self.min_confidence = 60
         self.min_probability = 0.12
         self.max_stake = 0.03
@@ -749,32 +729,46 @@ class ValueDetectionEngine:
         
         return implied_probs
     
-    def _validate_football_reality(self, signal: BettingSignal, home_team: str, away_team: str, pure_probabilities: Dict) -> bool:
-        """CRITICAL: Validate that betting signals make football sense"""
+    def _apply_football_reality_filter(self, signal: BettingSignal, pure_probabilities: Dict, home_team: str, away_team: str) -> BettingSignal:
+        """CRITICAL: Ensure value bets align with football reality"""
+        
+        home_win_prob = pure_probabilities['probabilities']['match_outcomes']['home_win']
+        match_context = pure_probabilities['match_context']
+        
         home_strength = self._get_team_strength(home_team)
         away_strength = self._get_team_strength(away_team)
         
-        # NEVER recommend away win for weak teams against strong home teams
+        # NEVER recommend against strong home dominance
+        if (match_context == "home_dominance" and home_win_prob > 65 and
+            signal.market in ['1x2 Draw', '1x2 Away']):
+            
+            logger.info(f"Football reality filter: Downgrading {signal.market} in home dominance context")
+            signal.value_rating = "LOW"
+            signal.confidence = "SPECULATIVE"
+            signal.recommended_stake = min(signal.recommended_stake, 0.005)  # Minimal stake
+        
+        # NEVER recommend weak away teams to win against strong home teams
         if (signal.market == '1x2 Away' and 
             home_strength >= 4 and away_strength <= 2 and
-            signal.model_prob > 12):  # If model says >12% for away win
+            home_win_prob > 60):
             
-            logger.error(f"FOOTBALL REALITY VIOLATION: Recommending {away_team} to beat {home_team}")
-            logger.error(f"Model probability {signal.model_prob}% is football impossible")
-            return False
+            logger.info(f"Football reality filter: Rejecting away win for weak team against strong home")
+            signal.value_rating = "LOW"
+            signal.confidence = "SPECULATIVE"
+            signal.recommended_stake = 0.001  # Absolute minimum
         
-        # NEVER recommend bets with unrealistic probabilities
-        if signal.market == '1x2 Away' and signal.model_prob > 25:
-            # Away win probability >25% is suspicious for most matches
-            home_win_prob = pure_probabilities['probabilities']['match_outcomes']['home_win']
-            if home_win_prob > 55:  # If home is strong favorite
-                logger.warning(f"Suspicious away win probability {signal.model_prob}% when home is favorite")
-                return False
+        # Ensure value bets meet minimum probability thresholds
+        min_threshold = self.min_probability_thresholds.get(signal.market, 15.0)
+        if signal.model_prob < min_threshold:
+            logger.info(f"Probability threshold filter: {signal.market} below {min_threshold}% minimum")
+            signal.value_rating = "MODERATE" if signal.value_rating in ["EXCEPTIONAL", "HIGH"] else signal.value_rating
+            signal.confidence = "LOW"
+            signal.recommended_stake *= 0.5  # Reduce stake
         
-        return True
+        return signal
 
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
-        """REALISTIC value bet detection with football sanity checks"""
+        """REALISTIC value bet detection - NOW ALIGNED WITH SIGNAL ENGINE"""
         
         signals = []
         
@@ -842,51 +836,49 @@ class ValueDetectionEngine:
                     value_rating=value_rating
                 )
                 
-                # CRITICAL: Apply football reality check
-                if self._validate_football_reality(signal, home_team, away_team, pure_probabilities):
-                    if stake > 0.001 and stake <= self.max_stake:
-                        signals.append(signal)
+                # CRITICAL: Apply football reality filter
+                signal = self._apply_football_reality_filter(signal, pure_probabilities, home_team, away_team)
+                
+                # Only include if stake is reasonable and value rating is at least MODERATE
+                if (stake > 0.001 and stake <= self.max_stake and 
+                    signal.value_rating in ["MODERATE", "GOOD", "HIGH", "EXCEPTIONAL"]):
+                    signals.append(signal)
         
-        # Enforce mutual exclusivity for 1X2 markets
-        signals = self._enforce_mutual_exclusivity(signals, home_team, away_team)
+        # Enforce primary prediction alignment
+        signals = self._enforce_primary_prediction_alignment(signals, pure_probabilities, home_team, away_team)
         
         # Sort by edge and return
         signals.sort(key=lambda x: x.edge, reverse=True)
         return signals
     
-    def _enforce_mutual_exclusivity(self, signals: List[BettingSignal], home_team: str, away_team: str) -> List[BettingSignal]:
-        """Ensure realistic 1X2 betting recommendations"""
-        one_x_two_signals = [s for s in signals if s.market in ['1x2 Home', '1x2 Draw', '1x2 Away']]
-        other_signals = [s for s in signals if s.market not in ['1x2 Home', '1x2 Draw', '1x2 Away']]
+    def _enforce_primary_prediction_alignment(self, signals: List[BettingSignal], pure_probabilities: Dict, home_team: str, away_team: str) -> List[BettingSignal]:
+        """Ensure value bets align with the primary prediction"""
         
-        if len(one_x_two_signals) > 1:
-            home_strength = self._get_team_strength(home_team)
-            away_strength = self._get_team_strength(away_team)
+        home_win_prob = pure_probabilities['probabilities']['match_outcomes']['home_win']
+        match_context = pure_probabilities['match_context']
+        
+        home_strength = self._get_team_strength(home_team)
+        away_strength = self._get_team_strength(away_team)
+        
+        # In home dominance scenarios, prioritize home win bets
+        if (match_context == "home_dominance" and home_win_prob > 65 and
+            home_strength >= 4 and away_strength <= 2):
             
-            # Strong home team scenario - prefer home win if reasonable
-            if home_strength >= 4 and away_strength <= 2:
-                home_signals = [s for s in one_x_two_signals if s.market == '1x2 Home' and s.model_prob >= 15]
-                if home_signals:
-                    best_home = max(home_signals, key=lambda x: x.edge)
-                    return [best_home] + other_signals
+            home_signals = [s for s in signals if s.market == '1x2 Home']
+            contradictory_signals = [s for s in signals if s.market in ['1x2 Draw', '1x2 Away']]
             
-            # Otherwise keep the best signal
-            valid_signals = [s for s in one_x_two_signals if s.model_prob >= 12]
-            if valid_signals:
-                best_signal = max(valid_signals, key=lambda x: x.edge)
-                return [best_signal] + other_signals
-            else:
-                return other_signals
+            # If we have strong home signals, remove contradictory signals
+            if home_signals and any(s.value_rating in ["GOOD", "HIGH", "EXCEPTIONAL"] for s in home_signals):
+                signals = [s for s in signals if s not in contradictory_signals]
+                logger.info("Primary prediction alignment: Removed contradictory signals in home dominance")
         
         return signals
     
     def _apply_market_wisdom(self, edge: float, market_prob: float, pure_prob: float) -> float:
         """Market efficiency adjustments"""
-        # Reduce edge for extreme probabilities
         if market_prob < 0.12 or market_prob > 0.85:
             return edge * 0.6
         
-        # Moderate reduction for medium probabilities
         if market_prob < 0.20 or market_prob > 0.75:
             return edge * 0.75
         
@@ -918,14 +910,11 @@ class ValueDetectionEngine:
         if market_prob <= 0 or pure_prob <= market_prob:
             return 0.0
         
-        # Kelly criterion
         decimal_odds = 1 / market_prob
         kelly_stake = (pure_prob * decimal_odds - 1) / (decimal_odds - 1)
         
-        # Confidence adjustment
         confidence_factor = max(0.4, confidence / 100)
         
-        # Edge-based cap
         base_stake = kelly_stake * kelly_fraction * confidence_factor
         edge_cap = min(self.max_stake, edge / 1000)
         
@@ -936,7 +925,7 @@ class ValueDetectionEngine:
 
 class AdvancedFootballPredictor:
     """
-    REALISTIC ORCHESTRATOR: Professional integration
+    REALISTIC ORCHESTRATOR: Professional integration with aligned engines
     """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
@@ -951,7 +940,7 @@ class AdvancedFootballPredictor:
         self.prediction_history = []
     
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate comprehensive analysis"""
+        """Generate comprehensive analysis with aligned engines"""
         
         football_predictions = self.signal_engine.generate_predictions(mc_iterations)
         
@@ -967,28 +956,33 @@ class AdvancedFootballPredictor:
         return comprehensive_result
     
     def _validate_system_output(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> Dict[str, str]:
-        """Validate system output for realism"""
+        """Validate system output for realism and alignment"""
         home_team = football_predictions['match'].split(' vs ')[0]
         away_team = football_predictions['match'].split(' vs ')[1]
         
         home_win_prob = football_predictions['probabilities']['match_outcomes']['home_win']
-        away_win_prob = football_predictions['probabilities']['match_outcomes']['away_win']
+        match_context = football_predictions['match_context']
         
-        # Check for football reality violations
         issues = []
         
-        if home_win_prob < 50 and 'HOME_DOMINANCE' in football_predictions['match_context']:
-            issues.append("Home dominance context with low home win probability")
+        # Check for contradictory value signals
+        if match_context == "home_dominance" and home_win_prob > 65:
+            contradictory_bets = [s for s in value_signals if s.market in ['1x2 Draw', '1x2 Away'] and s.value_rating in ["HIGH", "EXCEPTIONAL"]]
+            if contradictory_bets:
+                issues.append("High-value contradictory bets in home dominance scenario")
         
-        # Check value signals for absurd recommendations
-        away_win_signals = [s for s in value_signals if s.market == '1x2 Away']
-        if away_win_signals and home_win_prob > 60:
-            issues.append("Away win recommended despite strong home favorite")
+        # Check for football reality violations
+        home_strength = self.value_engine._get_team_strength(home_team)
+        away_strength = self.value_engine._get_team_strength(away_team)
+        
+        if (home_strength >= 4 and away_strength <= 2 and 
+            any(s.market == '1x2 Away' and s.value_rating in ["GOOD", "HIGH", "EXCEPTIONAL"] for s in value_signals)):
+            issues.append("High-value away win bet for weak team against strong home")
         
         if not issues:
-            return {'status': 'VALID', 'issues': 'None'}
+            return {'status': 'VALID', 'issues': 'None', 'alignment': 'PERFECT'}
         else:
-            return {'status': 'WARNING', 'issues': '; '.join(issues)}
+            return {'status': 'WARNING', 'issues': '; '.join(issues), 'alignment': 'PARTIAL'}
     
     def _store_prediction_history(self, prediction: Dict):
         """Store prediction for historical tracking"""

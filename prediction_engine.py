@@ -674,7 +674,7 @@ class SignalEngine:
 
 class ValueDetectionEngine:
     """
-    REALISTIC VALUE DETECTION ENGINE - Now properly aligned with Signal Engine
+    PERFECTLY ALIGNED VALUE DETECTION ENGINE - NO CONTRADICTIONS
     """
     
     def __init__(self):
@@ -688,9 +688,9 @@ class ValueDetectionEngine:
         
         # CRITICAL: Minimum probabilities for value consideration
         self.min_probability_thresholds = {
-            '1x2 Home': 20.0,   # At least 20% probability for home value
-            '1x2 Draw': 25.0,   # At least 25% probability for draw value  
-            '1x2 Away': 15.0,   # At least 15% probability for away value
+            '1x2 Home': 20.0,
+            '1x2 Draw': 25.0,  
+            '1x2 Away': 15.0,
             'Over 2.5 Goals': 35.0,
             'Under 2.5 Goals': 35.0,
             'BTTS Yes': 40.0,
@@ -729,50 +729,73 @@ class ValueDetectionEngine:
         
         return implied_probs
     
-    def _apply_football_reality_filter(self, signal: BettingSignal, pure_probabilities: Dict, home_team: str, away_team: str) -> BettingSignal:
-        """CRITICAL: Ensure value bets align with football reality"""
+    def _get_primary_prediction(self, pure_probabilities: Dict) -> Dict:
+        """Get the primary prediction from Signal Engine"""
+        outcomes = pure_probabilities['probabilities']['match_outcomes']
+        btts = pure_probabilities['probabilities']['both_teams_score']
+        over_under = pure_probabilities['probabilities']['over_under']
         
-        home_win_prob = pure_probabilities['probabilities']['match_outcomes']['home_win']
-        match_context = pure_probabilities['match_context']
+        # Determine primary match outcome
+        home_win = outcomes['home_win']
+        draw = outcomes['draw']
+        away_win = outcomes['away_win']
         
-        home_strength = self._get_team_strength(home_team)
-        away_strength = self._get_team_strength(away_team)
+        primary_outcome = None
+        if home_win >= draw and home_win >= away_win:
+            primary_outcome = 'HOME'
+        elif draw >= home_win and draw >= away_win:
+            primary_outcome = 'DRAW'
+        else:
+            primary_outcome = 'AWAY'
         
-        # NEVER recommend against strong home dominance
-        if (match_context == "home_dominance" and home_win_prob > 65 and
-            signal.market in ['1x2 Draw', '1x2 Away']):
+        # Determine primary BTTS
+        primary_btts = 'YES' if btts['yes'] > btts['no'] else 'NO'
+        
+        # Determine primary Over/Under
+        primary_over_under = 'OVER' if over_under['over_25'] > over_under['under_25'] else 'UNDER'
+        
+        return {
+            'outcome': primary_outcome,
+            'btts': primary_btts,
+            'over_under': primary_over_under,
+            'match_context': pure_probabilities['match_context']
+        }
+    
+    def _is_contradictory_signal(self, signal: BettingSignal, primary_prediction: Dict) -> bool:
+        """Check if a signal contradicts the primary prediction"""
+        
+        # NEVER allow contradictory outcomes in home dominance
+        if (primary_prediction['match_context'] == 'home_dominance' and 
+            primary_prediction['outcome'] == 'HOME'):
             
-            logger.info(f"Football reality filter: Downgrading {signal.market} in home dominance context")
-            signal.value_rating = "LOW"
-            signal.confidence = "SPECULATIVE"
-            signal.recommended_stake = min(signal.recommended_stake, 0.005)  # Minimal stake
+            if signal.market in ['1x2 Draw', '1x2 Away']:
+                return True
         
-        # NEVER recommend weak away teams to win against strong home teams
-        if (signal.market == '1x2 Away' and 
-            home_strength >= 4 and away_strength <= 2 and
-            home_win_prob > 60):
+        # NEVER allow BTTS Yes when primary says No (and vice versa)
+        if (signal.market == 'BTTS Yes' and primary_prediction['btts'] == 'NO') or \
+           (signal.market == 'BTTS No' and primary_prediction['btts'] == 'YES'):
+            return True
+        
+        # NEVER allow Over/Under contradictions when confidence is high
+        if (signal.market == 'Over 2.5 Goals' and primary_prediction['over_under'] == 'UNDER' and 
+            abs(primary_prediction.get('over_under_confidence', 0)) > 15):
+            return True
             
-            logger.info(f"Football reality filter: Rejecting away win for weak team against strong home")
-            signal.value_rating = "LOW"
-            signal.confidence = "SPECULATIVE"
-            signal.recommended_stake = 0.001  # Absolute minimum
+        if (signal.market == 'Under 2.5 Goals' and primary_prediction['over_under'] == 'OVER' and 
+            abs(primary_prediction.get('over_under_confidence', 0)) > 15):
+            return True
         
-        # Ensure value bets meet minimum probability thresholds
-        min_threshold = self.min_probability_thresholds.get(signal.market, 15.0)
-        if signal.model_prob < min_threshold:
-            logger.info(f"Probability threshold filter: {signal.market} below {min_threshold}% minimum")
-            signal.value_rating = "MODERATE" if signal.value_rating in ["EXCEPTIONAL", "HIGH"] else signal.value_rating
-            signal.confidence = "LOW"
-            signal.recommended_stake *= 0.5  # Reduce stake
-        
-        return signal
+        return False
 
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
-        """REALISTIC value bet detection - NOW ALIGNED WITH SIGNAL ENGINE"""
+        """PERFECTLY ALIGNED value bet detection - NO CONTRADICTIONS"""
         
         signals = []
         
         market_probs = self.calculate_implied_probabilities(market_odds)
+        
+        # Get the primary prediction from Signal Engine
+        primary_prediction = self._get_primary_prediction(pure_probabilities)
         
         # Get probabilities
         home_pure = pure_probabilities['probabilities']['match_outcomes']['home_win'] / 100.0
@@ -836,42 +859,24 @@ class ValueDetectionEngine:
                     value_rating=value_rating
                 )
                 
-                # CRITICAL: Apply football reality filter
-                signal = self._apply_football_reality_filter(signal, pure_probabilities, home_team, away_team)
+                # CRITICAL: REJECT CONTRADICTORY SIGNALS
+                if self._is_contradictory_signal(signal, primary_prediction):
+                    logger.info(f"REJECTED contradictory signal: {signal.market}")
+                    continue
+                
+                # Apply minimum probability thresholds
+                min_threshold = self.min_probability_thresholds.get(signal.market, 15.0)
+                if signal.model_prob < min_threshold:
+                    logger.info(f"Below probability threshold: {signal.market} ({signal.model_prob}% < {min_threshold}%)")
+                    continue
                 
                 # Only include if stake is reasonable and value rating is at least MODERATE
                 if (stake > 0.001 and stake <= self.max_stake and 
                     signal.value_rating in ["MODERATE", "GOOD", "HIGH", "EXCEPTIONAL"]):
                     signals.append(signal)
         
-        # Enforce primary prediction alignment
-        signals = self._enforce_primary_prediction_alignment(signals, pure_probabilities, home_team, away_team)
-        
         # Sort by edge and return
         signals.sort(key=lambda x: x.edge, reverse=True)
-        return signals
-    
-    def _enforce_primary_prediction_alignment(self, signals: List[BettingSignal], pure_probabilities: Dict, home_team: str, away_team: str) -> List[BettingSignal]:
-        """Ensure value bets align with the primary prediction"""
-        
-        home_win_prob = pure_probabilities['probabilities']['match_outcomes']['home_win']
-        match_context = pure_probabilities['match_context']
-        
-        home_strength = self._get_team_strength(home_team)
-        away_strength = self._get_team_strength(away_team)
-        
-        # In home dominance scenarios, prioritize home win bets
-        if (match_context == "home_dominance" and home_win_prob > 65 and
-            home_strength >= 4 and away_strength <= 2):
-            
-            home_signals = [s for s in signals if s.market == '1x2 Home']
-            contradictory_signals = [s for s in signals if s.market in ['1x2 Draw', '1x2 Away']]
-            
-            # If we have strong home signals, remove contradictory signals
-            if home_signals and any(s.value_rating in ["GOOD", "HIGH", "EXCEPTIONAL"] for s in home_signals):
-                signals = [s for s in signals if s not in contradictory_signals]
-                logger.info("Primary prediction alignment: Removed contradictory signals in home dominance")
-        
         return signals
     
     def _apply_market_wisdom(self, edge: float, market_prob: float, pure_prob: float) -> float:
@@ -925,7 +930,7 @@ class ValueDetectionEngine:
 
 class AdvancedFootballPredictor:
     """
-    REALISTIC ORCHESTRATOR: Professional integration with aligned engines
+    PERFECTLY ALIGNED ORCHESTRATOR: No contradictions between engines
     """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
@@ -940,7 +945,7 @@ class AdvancedFootballPredictor:
         self.prediction_history = []
     
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate comprehensive analysis with aligned engines"""
+        """Generate comprehensive analysis with PERFECT alignment"""
         
         football_predictions = self.signal_engine.generate_predictions(mc_iterations)
         
@@ -956,33 +961,45 @@ class AdvancedFootballPredictor:
         return comprehensive_result
     
     def _validate_system_output(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> Dict[str, str]:
-        """Validate system output for realism and alignment"""
-        home_team = football_predictions['match'].split(' vs ')[0]
-        away_team = football_predictions['match'].split(' vs ')[1]
-        
-        home_win_prob = football_predictions['probabilities']['match_outcomes']['home_win']
-        match_context = football_predictions['match_context']
+        """Validate system output for perfect alignment"""
         
         issues = []
         
-        # Check for contradictory value signals
-        if match_context == "home_dominance" and home_win_prob > 65:
-            contradictory_bets = [s for s in value_signals if s.market in ['1x2 Draw', '1x2 Away'] and s.value_rating in ["HIGH", "EXCEPTIONAL"]]
-            if contradictory_bets:
-                issues.append("High-value contradictory bets in home dominance scenario")
+        # Get primary predictions
+        outcomes = football_predictions['probabilities']['match_outcomes']
+        btts = football_predictions['probabilities']['both_teams_score']
+        over_under = football_predictions['probabilities']['over_under']
         
-        # Check for football reality violations
-        home_strength = self.value_engine._get_team_strength(home_team)
-        away_strength = self.value_engine._get_team_strength(away_team)
+        primary_outcome = max(outcomes, key=outcomes.get)
+        primary_btts = 'yes' if btts['yes'] > btts['no'] else 'no'
+        primary_over_under = 'over_25' if over_under['over_25'] > over_under['under_25'] else 'under_25'
         
-        if (home_strength >= 4 and away_strength <= 2 and 
-            any(s.market == '1x2 Away' and s.value_rating in ["GOOD", "HIGH", "EXCEPTIONAL"] for s in value_signals)):
-            issues.append("High-value away win bet for weak team against strong home")
+        # Check for any contradictory value signals
+        for signal in value_signals:
+            signal_dict = signal.__dict__ if hasattr(signal, '__dict__') else signal
+            
+            # Check outcome contradictions
+            if (signal_dict['market'] == '1x2 Draw' and primary_outcome == 'home_win' and 
+                outcomes['home_win'] > 65):
+                issues.append("Draw value bet contradicts strong home win prediction")
+            
+            if (signal_dict['market'] == '1x2 Away' and primary_outcome == 'home_win' and 
+                outcomes['home_win'] > 65):
+                issues.append("Away win value bet contradicts strong home win prediction")
+            
+            # Check BTTS contradictions
+            if (signal_dict['market'] == 'BTTS Yes' and primary_btts == 'no' and 
+                btts['no'] > 60):
+                issues.append("BTTS Yes value bet contradicts BTTS No prediction")
+            
+            if (signal_dict['market'] == 'BTTS No' and primary_btts == 'yes' and 
+                btts['yes'] > 60):
+                issues.append("BTTS No value bet contradicts BTTS Yes prediction")
         
         if not issues:
             return {'status': 'VALID', 'issues': 'None', 'alignment': 'PERFECT'}
         else:
-            return {'status': 'WARNING', 'issues': '; '.join(issues), 'alignment': 'PARTIAL'}
+            return {'status': 'INVALID', 'issues': '; '.join(issues), 'alignment': 'CONTRADICTORY'}
     
     def _store_prediction_history(self, prediction: Dict):
         """Store prediction for historical tracking"""

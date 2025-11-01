@@ -19,7 +19,7 @@ class MatchContext(Enum):
     TACTICAL_STALEMATE = "tactical_stalemate"
     HOME_DOMINANCE = "home_dominance"
     AWAY_COUNTER = "away_counter"
-    UNPREDICTABLE = "unpredictable"  # NEW: For inconsistent teams
+    UNPREDICTABLE = "unpredictable"
 
 @dataclass
 class BettingSignal:
@@ -55,7 +55,7 @@ class SignalEngine:
         self.calibration_data = calibration_data or {}
         self.league_contexts = self._initialize_league_contexts()
         self.team_profiles = self._initialize_team_profiles()
-        self._setup_predictive_parameters()  # CHANGED: Now predictive
+        self._setup_predictive_parameters()
         self.match_context = MatchContext.UNPREDICTABLE
         
     def _validate_and_enhance_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -78,10 +78,10 @@ class SignalEngine:
             'away_goals': (0, 20, 1.5),
             'home_conceded': (0, 20, 1.5),
             'away_conceded': (0, 20, 1.5),
-            'home_xg': (0, 5, 1.3),  # NEW: Expected goals
-            'away_xg': (0, 5, 1.1),  # NEW: Expected goals
-            'home_shots': (0, 30, 12),  # NEW: Predictive metric
-            'away_shots': (0, 30, 10),  # NEW: Predictive metric
+            'home_xg': (0, 5, 1.3),
+            'away_xg': (0, 5, 1.1),
+            'home_shots': (0, 30, 12),
+            'away_shots': (0, 30, 10),
         }
         
         for field, (min_val, max_val, default) in predictive_fields.items():
@@ -96,7 +96,7 @@ class SignalEngine:
                 except (TypeError, ValueError):
                     enhanced_data[field] = default
             else:
-                enhanced_data[field] = default  # Ensure all fields exist
+                enhanced_data[field] = default
         
         # Ensure form data is properly formatted
         for form_field in ['home_form', 'away_form']:
@@ -142,7 +142,7 @@ class SignalEngine:
         # Calculate PREDICTIVE data quality score
         enhanced_data['data_quality_score'] = self._calculate_predictive_data_quality(enhanced_data)
         
-        # Calculate performance trends (NEW PREDICTIVE FEATURE)
+        # Calculate performance trends
         enhanced_data = self._calculate_performance_trends(enhanced_data)
         
         return enhanced_data
@@ -157,14 +157,14 @@ class SignalEngine:
             score += 15
         max_score += 15
         
-        # Advanced metrics (PREDICTIVE BONUS)
+        # Advanced metrics
         if data.get('home_xg', 0) > 0:
             score += 15
         if data.get('away_xg', 0) > 0:
             score += 15
         max_score += 30
         
-        # Shot data (PREDICTIVE BONUS)
+        # Shot data
         if data.get('home_shots', 0) > 0:
             score += 10
         if data.get('away_shots', 0) > 0:
@@ -187,12 +187,10 @@ class SignalEngine:
         return (score / max_score) * 100
     
     def _calculate_performance_trends(self, data: Dict) -> Dict:
-        """Calculate performance trends - KEY PREDICTIVE FEATURE"""
-        # Form trend analysis
+        """Calculate performance trends"""
         for team in ['home', 'away']:
             form = data.get(f'{team}_form', [])
             if len(form) >= 4:
-                # Recent vs earlier performance
                 recent_games = min(3, len(form))
                 earlier_games = min(3, len(form) - recent_games)
                 
@@ -204,7 +202,6 @@ class SignalEngine:
                 else:
                     data[f'{team}_trend'] = 0.0
                 
-                # Consistency (lower = more consistent)
                 data[f'{team}_consistency'] = np.std(form) / max(np.mean(form), 0.1) if len(form) > 1 else 1.0
             else:
                 data[f'{team}_trend'] = 0.0
@@ -213,7 +210,7 @@ class SignalEngine:
         return data
     
     def _initialize_league_contexts(self) -> Dict[str, Dict]:
-        """League-specific parameters with PREDICTIVE focus"""
+        """League-specific parameters"""
         return {
             'premier_league': {'avg_goals': 2.8, 'home_advantage': 1.08, 'goal_variance': 1.15},
             'la_liga': {'avg_goals': 2.6, 'home_advantage': 1.10, 'goal_variance': 1.10},
@@ -224,7 +221,7 @@ class SignalEngine:
         }
     
     def _initialize_team_profiles(self) -> Dict[str, Dict]:
-        """Team playing styles - Enhanced with predictive elements"""
+        """Team playing styles"""
         base_profiles = {
             'Bologna': {'style': 'defensive', 'press_intensity': 'high', 'clean_sheet_freq': 0.45, 'consistency': 0.7},
             'Torino': {'style': 'defensive', 'press_intensity': 'medium', 'clean_sheet_freq': 0.38, 'consistency': 0.8},
@@ -245,23 +242,22 @@ class SignalEngine:
         self.calibration_params = {
             'home_advantage': 1.12,
             'form_decay_rate': 0.9,
-            'h2h_weight': 0.2,  # Reduced - less predictive
+            'h2h_weight': 0.2,
             'injury_impact': 0.06,
             'motivation_impact': 0.08,
             'bivariate_correlation': 0.12,
             'data_quality_threshold': 50.0,
-            # NEW PREDICTIVE PARAMETERS
-            'trend_weight': 0.15,  # How much to weight performance trends
-            'consistency_weight': 0.10,  # Penalty for inconsistent teams
-            'regression_factor': 0.85,  # Regression to mean
-            'surprise_factor': 1.02,  # Football unpredictability
+            'trend_weight': 0.15,
+            'consistency_weight': 0.10,
+            'regression_factor': 0.85,
+            'surprise_factor': 1.02,
         }
         
         if self.calibration_data:
             self.calibration_params.update(self.calibration_data)
 
     def _calculate_motivation_impact(self, motivation_level: str, match_context: str) -> float:
-        """Context-aware motivation impact - More realistic"""
+        """Context-aware motivation impact"""
         base_multipliers = {
             "Low": 0.92, "Normal": 1.0, "High": 1.06, "Very High": 1.10,
             "low": 0.92, "normal": 1.0, "high": 1.06, "very high": 1.10
@@ -282,43 +278,42 @@ class SignalEngine:
         return motivation_multiplier * adjustment
 
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str) -> MatchContext:
-        """Enhanced context determination with PREDICTIVE elements"""
+        """PRACTICAL context determination - statistical evidence can override inconsistency"""
         home_profile = self.team_profiles.get(home_team, self.team_profiles['default'])
         away_profile = self.team_profiles.get(away_team, self.team_profiles['default'])
         
         total_xg = home_xg + away_xg
         xg_difference = home_xg - away_xg
         
-        # Check for unpredictability first
+        # PRACTICAL RULE: Clear statistical dominance overrides inconsistency
+        if xg_difference > 0.8 and home_xg > 1.4:
+            # Strong statistical evidence - don't penalize for inconsistency
+            if xg_difference > 0.8:
+                return MatchContext.HOME_DOMINANCE
+            elif xg_difference < -0.6:
+                return MatchContext.AWAY_COUNTER
+        
+        # Only check for unpredictability if no clear statistical dominance
         home_consistency = self.data.get('home_consistency', 1.0)
         away_consistency = self.data.get('away_consistency', 1.0)
         
         if home_consistency > 0.9 or away_consistency > 0.9:
             return MatchContext.UNPREDICTABLE
         
-        # Defensive battle detection
+        # Standard context detection
         if (home_profile['style'] == 'defensive' and away_profile['style'] == 'defensive' 
             and total_xg < 2.4):
             return MatchContext.DEFENSIVE_BATTLE
-        
-        # Home dominance
         elif xg_difference > 0.8:
             return MatchContext.HOME_DOMINANCE
-        
-        # Away counter
         elif xg_difference < -0.6:
             return MatchContext.AWAY_COUNTER
-        
-        # Offensive showdown
         elif (home_profile['style'] == 'attacking' and away_profile['style'] == 'attacking'
               and total_xg > 3.0):
             return MatchContext.OFFENSIVE_SHOWDOWN
-        
-        # Tactical stalemate
         elif total_xg < 2.7 and abs(xg_difference) < 0.5:
             return MatchContext.TACTICAL_STALEMATE
         
-        # Default based on xG patterns
         if total_xg > 3.2:
             return MatchContext.OFFENSIVE_SHOWDOWN
         elif xg_difference > 0.5:
@@ -329,7 +324,7 @@ class SignalEngine:
             return MatchContext.TACTICAL_STALEMATE
 
     def _apply_realistic_xg_bounds(self, home_xg: float, away_xg: float, league: str) -> Tuple[float, float]:
-        """Apply realistic bounds to xG - More conservative"""
+        """Apply realistic bounds to xG"""
         league_bounds = {
             'premier_league': (0.2, 3.0),
             'la_liga': (0.15, 2.8),
@@ -341,7 +336,6 @@ class SignalEngine:
         
         min_xg, max_xg = league_bounds.get(league, (0.1, 2.8))
         
-        # Apply team-style specific adjustments
         home_profile = self.team_profiles.get(self.data['home_team'], self.team_profiles['default'])
         away_profile = self.team_profiles.get(self.data['away_team'], self.team_profiles['default'])
         
@@ -353,62 +347,51 @@ class SignalEngine:
         return max(min_xg, min(max_xg, home_xg)), max(min_xg, min(max_xg, away_xg))
 
     def _calculate_predictive_xg(self) -> Tuple[float, float]:
-        """CALCULATE PREDICTIVE xG - Focus on future performance"""
+        """CALCULATE PREDICTIVE xG"""
         league = self.data.get('league', 'serie_a')
         league_params = self.league_contexts.get(league, self.league_contexts['default'])
-        league_avg_goals = league_params['avg_goals'] / 2  # Per team average
+        league_avg_goals = league_params['avg_goals'] / 2
         
-        # Use xG data if available (MOST PREDICTIVE)
         home_base_xg = self.data.get('home_xg', self.data.get('home_goals', 0) / 6.0)
         away_base_xg = self.data.get('away_xg', self.data.get('away_goals', 0) / 6.0)
         
-        # Adjust for defensive quality using xG against if available
         home_xg_against = self.data.get('home_xg_against', self.data.get('home_conceded', 0) / 6.0)
         away_xg_against = self.data.get('away_xg_against', self.data.get('away_conceded', 0) / 6.0)
         
-        # Calculate defensive strength
         home_defensive_strength = 1 - (home_xg_against / league_avg_goals)
         away_defensive_strength = 1 - (away_xg_against / league_avg_goals)
         
-        # Apply defensive adjustments
         home_xg = home_base_xg * (1 - away_defensive_strength * 0.3)
         away_xg = away_base_xg * (1 - home_defensive_strength * 0.3)
         
-        # Apply home advantage
         home_xg *= league_params['home_advantage']
         
-        # Apply PREDICTIVE form factors
         home_form_factor = self._calculate_predictive_form_factor('home')
         away_form_factor = self._calculate_predictive_form_factor('away')
         
         home_xg *= home_form_factor
         away_xg *= away_form_factor
         
-        # Apply performance trends (KEY PREDICTIVE FEATURE)
         home_trend = self.data.get('home_trend', 0.0)
         away_trend = self.data.get('away_trend', 0.0)
         
         home_xg *= (1 + home_trend * self.calibration_params['trend_weight'])
         away_xg *= (1 + away_trend * self.calibration_params['trend_weight'])
         
-        # Apply consistency penalty (NEW PREDICTIVE FEATURE)
         home_consistency = self.data.get('home_consistency', 1.0)
         away_consistency = self.data.get('away_consistency', 1.0)
         
         home_xg *= (1 - (home_consistency - 0.7) * self.calibration_params['consistency_weight'])
         away_xg *= (1 - (away_consistency - 0.7) * self.calibration_params['consistency_weight'])
         
-        # Apply regression to mean (CRITICAL PREDICTIVE FEATURE)
         home_xg = (home_xg * self.calibration_params['regression_factor'] + 
                   league_avg_goals * (1 - self.calibration_params['regression_factor']))
         away_xg = (away_xg * self.calibration_params['regression_factor'] + 
                   league_avg_goals * (1 - self.calibration_params['regression_factor']))
         
-        # Apply surprise factor
         home_xg *= self.calibration_params['surprise_factor']
         away_xg *= self.calibration_params['surprise_factor']
         
-        # Enhanced motivation adjustments
         motivation = self.data.get('motivation', {})
         home_motivation_level = motivation.get('home', 'Normal')
         away_motivation_level = motivation.get('away', 'Normal')
@@ -419,7 +402,6 @@ class SignalEngine:
         home_motivation_factor = self._calculate_motivation_impact(home_motivation_level, temp_context.value)
         away_motivation_factor = self._calculate_motivation_impact(away_motivation_level, temp_context.value)
         
-        # Injury adjustments
         injuries = self.data.get('injuries', {})
         home_injuries = float(injuries.get('home', 0))
         away_injuries = float(injuries.get('away', 0))
@@ -430,12 +412,10 @@ class SignalEngine:
         home_xg *= home_injury_factor * home_motivation_factor
         away_xg *= away_injury_factor * away_motivation_factor
         
-        # Apply H2H adjustment if available (reduced weight)
         h2h_data = self.data.get('h2h_data', {})
         if h2h_data and h2h_data.get('matches', 0) >= 3:
             home_xg, away_xg = self._apply_bayesian_h2h_adjustment(home_xg, away_xg, h2h_data)
         
-        # Apply team style adjustments
         home_profile = self.team_profiles.get(self.data['home_team'], self.team_profiles['default'])
         away_profile = self.team_profiles.get(self.data['away_team'], self.team_profiles['default'])
         
@@ -453,7 +433,6 @@ class SignalEngine:
             away_xg *= 1.08
             home_xg *= 1.05
         
-        # Apply realistic bounds
         home_xg, away_xg = self._apply_realistic_xg_bounds(home_xg, away_xg, league)
         
         logger.info(f"PREDICTIVE xG Calculation - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
@@ -462,7 +441,7 @@ class SignalEngine:
         return round(home_xg, 3), round(away_xg, 3)
     
     def _calculate_predictive_form_factor(self, team: str) -> float:
-        """Calculate form factor with PREDICTIVE weighting"""
+        """Calculate form factor"""
         form = self.data.get(f'{team}_form', [])
         if not form or len(form) == 0:
             return 1.0
@@ -472,7 +451,6 @@ class SignalEngine:
         except (TypeError, ValueError):
             return 1.0
         
-        # Exponential decay with recent games weighted higher
         weights = [self.calibration_params['form_decay_rate'] ** i for i in range(len(form_scores))]
         weights = [w / sum(weights) for w in weights]
         
@@ -481,19 +459,18 @@ class SignalEngine:
         
         form_ratio = total_points / max_possible if max_possible > 0 else 0.5
         
-        # More realistic form impact
         return 0.85 + (form_ratio * 0.3)
     
     def _apply_bayesian_h2h_adjustment(self, home_xg: float, away_xg: float, h2h_data: Dict) -> Tuple[float, float]:
-        """Apply Bayesian H2H adjustment with reduced weight"""
+        """Apply Bayesian H2H adjustment"""
         matches = h2h_data.get('matches', 0)
         home_goals = h2h_data.get('home_goals', 0)
         away_goals = h2h_data.get('away_goals', 0)
         
-        if matches < 3:  # Increased minimum
+        if matches < 3:
             return home_xg, away_xg
         
-        h2h_weight = min(0.3, matches * 0.08)  # Reduced weight
+        h2h_weight = min(0.3, matches * 0.08)
         h2h_home_avg = home_goals / matches
         h2h_away_avg = away_goals / matches
         
@@ -503,16 +480,15 @@ class SignalEngine:
         return adjusted_home_xg, adjusted_away_xg
 
     def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
-        """Run Monte Carlo simulation with PREDICTIVE adjustments"""
+        """Run Monte Carlo simulation"""
         np.random.seed(42)
         
-        # Adjust correlation based on match context
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
             lambda3_alpha = self.calibration_params['bivariate_correlation'] * 0.5
         elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
             lambda3_alpha = self.calibration_params['bivariate_correlation'] * 1.3
         elif self.match_context == MatchContext.UNPREDICTABLE:
-            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 1.5  # Higher variance
+            lambda3_alpha = self.calibration_params['bivariate_correlation'] * 1.5
         else:
             lambda3_alpha = self.calibration_params['bivariate_correlation']
         
@@ -520,7 +496,6 @@ class SignalEngine:
         lambda1 = max(0.1, home_xg - lambda3)
         lambda2 = max(0.1, away_xg - lambda3)
         
-        # Bivariate Poisson simulation
         C = np.random.poisson(lambda3, iterations)
         A = np.random.poisson(lambda1, iterations)
         B = np.random.poisson(lambda2, iterations)
@@ -528,7 +503,6 @@ class SignalEngine:
         home_goals_sim = A + C
         away_goals_sim = B + C
         
-        # Calculate probabilities
         home_wins = np.sum(home_goals_sim > away_goals_sim) / iterations
         draws = np.sum(home_goals_sim == away_goals_sim) / iterations
         away_wins = np.sum(home_goals_sim < away_goals_sim) / iterations
@@ -537,7 +511,6 @@ class SignalEngine:
         over_25 = np.sum(total_goals > 2.5) / iterations
         btts = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / iterations
         
-        # Exact scores
         exact_scores = {}
         for i in range(6):
             for j in range(6):
@@ -548,7 +521,6 @@ class SignalEngine:
         
         exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:8])
         
-        # Confidence intervals
         def calculate_ci(probs, alpha=0.95):
             se = np.sqrt(probs * (1 - probs) / iterations)
             z_score = 1.96
@@ -561,7 +533,6 @@ class SignalEngine:
             'over_2.5': calculate_ci(over_25)
         }
         
-        # Probability volatility
         batch_size = 1000
         num_batches = iterations // batch_size
         
@@ -605,21 +576,16 @@ class SignalEngine:
         home_team = self.data['home_team']
         away_team = self.data['away_team']
         
-        # Calculate PREDICTIVE expected goals
         home_xg, away_xg = self._calculate_predictive_xg()
         
-        # Determine match context
         self.match_context = self._determine_match_context(home_xg, away_xg, home_team, away_team)
         
-        # Run Monte Carlo simulation
         mc_results = self.run_monte_carlo_simulation(home_xg, away_xg, mc_iterations)
         
-        # Calculate additional probabilities
         total_xg = home_xg + away_xg
         first_half_prob = 1 - poisson.pmf(0, total_xg * 0.46)
         second_half_prob = 1 - poisson.pmf(0, total_xg * 0.54)
         
-        # Calculate handicap probabilities
         handicap_probs = {}
         handicaps = [-0.5, 0, 0.5, 1.0]
         for handicap in handicaps:
@@ -631,14 +597,12 @@ class SignalEngine:
                 prob = 1 - skellam.cdf(abs(handicap), home_xg, away_xg)
             handicap_probs[f"handicap_{handicap}"] = round(prob * 100, 1)
         
-        # Corner predictions
         base_corners = 10.0
         attacking_bonus = (home_xg + away_xg - 2.7) * 1.2
         total_corners = max(6, min(14, base_corners + attacking_bonus))
         
-        # PREDICTIVE risk assessment
         confidence_score = self._calculate_predictive_confidence(mc_results)
-        risk_assessment = self._assess_predictive_risk(mc_results, confidence_score)
+        risk_assessment = self._assess_practical_risk(mc_results, confidence_score, home_xg, away_xg)
         
         return {
             'match': f"{home_team} vs {away_team}",
@@ -687,16 +651,14 @@ class SignalEngine:
         }
     
     def _calculate_predictive_confidence(self, mc_results: MonteCarloResults) -> int:
-        """Calculate confidence based on PREDICTIVE factors"""
+        """Calculate confidence"""
         base_confidence = self.data['data_quality_score'] * 0.6
         
-        # Bonus for advanced metrics
         if self.data.get('home_xg', 0) > 0:
             base_confidence += 10
         if self.data.get('away_xg', 0) > 0:
             base_confidence += 10
             
-        # Bonus for consistent teams
         home_consistency = self.data.get('home_consistency', 1.0)
         away_consistency = self.data.get('away_consistency', 1.0)
         
@@ -705,54 +667,47 @@ class SignalEngine:
         if away_consistency < 0.8:
             base_confidence += 8
         
-        # Penalty for high volatility
         avg_volatility = np.mean(list(mc_results.probability_volatility.values()))
         volatility_penalty = min(25, int(avg_volatility * 600))
         
-        # Penalty for unpredictability context
         if self.match_context == MatchContext.UNPREDICTABLE:
             base_confidence -= 15
         
         confidence = base_confidence - volatility_penalty
         return max(10, min(95, int(confidence)))
     
-    def _assess_predictive_risk(self, mc_results: MonteCarloResults, confidence: int) -> Dict[str, str]:
-        """PREDICTIVE risk assessment"""
+    def _assess_practical_risk(self, mc_results: MonteCarloResults, confidence: int, home_xg: float, away_xg: float) -> Dict[str, str]:
+        """PRACTICAL risk assessment - statistical evidence can override context"""
         home_win_prob = mc_results.home_win_prob
         draw_prob = mc_results.draw_prob
         away_win_prob = mc_results.away_win_prob
         
         highest_prob = max(home_win_prob, draw_prob, away_win_prob)
         
-        # Calculate entropy for uncertainty measurement
         probs = np.array([home_win_prob, draw_prob, away_win_prob])
         entropy = -np.sum(probs * np.log(probs + 1e-10))
         max_entropy = np.log(3)
         uncertainty_ratio = entropy / max_entropy
         
-        # Context-aware risk assessment
-        if self.match_context == MatchContext.DEFENSIVE_BATTLE:
-            risk_adjustment = 0.9
-        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
-            risk_adjustment = 1.1
-        elif self.match_context == MatchContext.UNPREDICTABLE:
-            risk_adjustment = 1.3
-        else:
-            risk_adjustment = 1.0
-            
-        adjusted_uncertainty = uncertainty_ratio * risk_adjustment
-        
-        if highest_prob > 0.65 and confidence > 75 and adjusted_uncertainty < 0.7:
-            risk_level = "LOW"
-            explanation = "Clear favorite with strong predictive signals"
-            recommendation = "CONSIDER BETTING"
-        elif highest_prob > 0.55 and confidence > 60 and adjusted_uncertainty < 0.85:
+        # PRACTICAL RULE 1: Clear statistical dominance overrides unpredictability
+        xg_difference = home_xg - away_xg
+        if (xg_difference > 0.8 and home_xg > 1.4 and 
+            home_win_prob > 0.58 and confidence > 60):
             risk_level = "MEDIUM"
-            explanation = "Moderate favorite with reasonable predictability"
+            explanation = "Clear statistical advantage despite unpredictable context"
+            recommendation = "CONSIDER BETTING"
+        
+        # PRACTICAL RULE 2: Strong probability with good data quality
+        elif (home_win_prob > 0.60 and confidence > 65 and 
+              self.data['data_quality_score'] > 75):
+            risk_level = "MEDIUM"
+            explanation = "Strong probability with high-quality data"
             recommendation = "SMALL STAKES ONLY"
+        
+        # PRACTICAL RULE 3: Everything else stays conservative
         else:
             risk_level = "HIGH"
-            explanation = f"High uncertainty - unpredictable match context"
+            explanation = f"High uncertainty - {self.match_context.value.replace('_', ' ')}"
             recommendation = "AVOID OR TINY STAKES"
         
         return {
@@ -764,10 +719,9 @@ class SignalEngine:
         }
     
     def _generate_predictive_insights(self) -> Dict[str, str]:
-        """Generate PREDICTIVE insights about the match"""
+        """Generate PREDICTIVE insights"""
         insights = {}
         
-        # Trend insights
         home_trend = self.data.get('home_trend', 0.0)
         away_trend = self.data.get('away_trend', 0.0)
         
@@ -781,7 +735,6 @@ class SignalEngine:
         elif away_trend < -0.1:
             insights['away_trend'] = f"Away team showing concerning decline"
         
-        # Consistency insights
         home_consistency = self.data.get('home_consistency', 1.0)
         away_consistency = self.data.get('away_consistency', 1.0)
         
@@ -790,7 +743,6 @@ class SignalEngine:
         if away_consistency > 0.9:
             insights['away_consistency'] = "Away team very inconsistent - high risk"
         
-        # Context insights
         if self.match_context == MatchContext.UNPREDICTABLE:
             insights['context'] = "High unpredictability detected - teams show inconsistent form"
         elif self.match_context == MatchContext.DEFENSIVE_BATTLE:
@@ -799,7 +751,7 @@ class SignalEngine:
         return insights
 
     def _generate_timing_predictions(self, home_xg: float, away_xg: float) -> Dict[str, str]:
-        """Generate timing predictions based on xG"""
+        """Generate timing predictions"""
         total_xg = home_xg + away_xg
         
         if total_xg < 1.8:
@@ -848,20 +800,19 @@ class SignalEngine:
 
 class ValueDetectionEngine:
     """
-    ENHANCED VALUE DETECTION ENGINE - Much stricter
-    Only compares pure probabilities to market odds
+    ENHANCED VALUE DETECTION ENGINE - More practical thresholds
     """
     
     def __init__(self):
-        # MUCH stricter thresholds
+        # MORE PRACTICAL thresholds
         self.value_thresholds = {
-            'EXCEPTIONAL': 12.0,  # Only clear mispricings
-            'HIGH': 8.0,          # Strong edge
-            'GOOD': 5.0,          # Solid edge
-            'MODERATE': 3.0,      # Minimum edge
+            'EXCEPTIONAL': 8.0,   # Reduced from 12.0
+            'HIGH': 5.0,          # Reduced from 8.0
+            'GOOD': 3.0,          # Reduced from 5.0
+            'MODERATE': 1.5,      # More accessible
             'LOW': 0.0
         }
-        self.min_confidence = 65   # Only bet on confident predictions
+        self.min_confidence = 60   # More reasonable
     
     def calculate_implied_probabilities(self, market_odds: Dict[str, float]) -> Dict[str, float]:
         """Convert decimal odds to implied probabilities"""
@@ -874,13 +825,11 @@ class ValueDetectionEngine:
         return implied_probs
     
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
-        """Detect value bets with ENHANCED strictness"""
+        """Detect value bets with PRACTICAL thresholds"""
         signals = []
         
-        # Convert market odds to probabilities
         market_probs = self.calculate_implied_probabilities(market_odds)
         
-        # Map between pure probability keys and market names
         probability_mapping = [
             ('probabilities.match_outcomes.home_win', '1x2 Home'),
             ('probabilities.match_outcomes.draw', '1x2 Draw'),
@@ -892,27 +841,23 @@ class ValueDetectionEngine:
         ]
         
         for prob_path, market_name in probability_mapping:
-            # Extract pure probability
             pure_prob = self._get_nested_value(pure_probabilities, prob_path) / 100.0
             
-            # Get market probability
             market_prob = market_probs.get(market_name, 0)
             
             if market_prob > 0 and pure_prob > 0:
                 edge = (pure_prob - market_prob) * 100
                 
-                # Enhanced edge calculation with market wisdom
                 adjusted_edge = self._apply_market_wisdom(edge, market_prob, pure_prob)
                 
-                # STRICT confidence requirement
                 confidence_score = pure_probabilities.get('confidence_score', 0)
                 if confidence_score < self.min_confidence:
-                    continue  # Skip if not confident enough
+                    continue
                 
                 if adjusted_edge >= self.value_thresholds['MODERATE']:
                     value_rating = self._get_value_rating(adjusted_edge)
                     confidence = self._calculate_bet_confidence(pure_prob, adjusted_edge, confidence_score)
-                    stake = self._calculate_conservative_stake(pure_prob, market_prob, confidence_score)
+                    stake = self._calculate_professional_stake(pure_prob, market_prob, confidence_score)
                     
                     signals.append(BettingSignal(
                         market=market_name,
@@ -924,19 +869,16 @@ class ValueDetectionEngine:
                         value_rating=value_rating
                     ))
         
-        # Sort by edge descending
         signals.sort(key=lambda x: x.edge, reverse=True)
         return signals
     
     def _apply_market_wisdom(self, edge: float, market_prob: float, pure_prob: float) -> float:
-        """Respect market efficiency - reduce edges in efficient markets"""
-        # Markets are most efficient around 30-70% probabilities
+        """Respect market efficiency"""
         if 0.3 < market_prob < 0.7:
-            return edge * 0.8  # Reduce edge in efficient ranges
+            return edge * 0.8
         
-        # Be very cautious with extreme probabilities
         if market_prob < 0.15 or market_prob > 0.85:
-            return edge * 0.6  # Markets are often right about extremes
+            return edge * 0.6
         
         return edge
     
@@ -959,48 +901,42 @@ class ValueDetectionEngine:
         return "LOW"
     
     def _calculate_bet_confidence(self, pure_prob: float, edge: float, model_confidence: int) -> str:
-        """Calculate betting confidence with enhanced strictness"""
-        if pure_prob > 0.65 and edge > 10 and model_confidence > 80:
+        """Calculate betting confidence"""
+        if pure_prob > 0.65 and edge > 8 and model_confidence > 75:
             return "HIGH"
-        elif pure_prob > 0.58 and edge > 6 and model_confidence > 70:
+        elif pure_prob > 0.58 and edge > 5 and model_confidence > 65:
             return "MEDIUM"
-        elif pure_prob > 0.52 and edge > 3 and model_confidence > 65:
+        elif pure_prob > 0.52 and edge > 2 and model_confidence > 60:
             return "LOW"
         else:
             return "SPECULATIVE"
     
-    def _calculate_conservative_stake(self, pure_prob: float, market_prob: float, confidence: int, kelly_fraction: float = 0.1) -> float:
-        """ULTRA-CONSERVATIVE staking"""
+    def _calculate_professional_stake(self, pure_prob: float, market_prob: float, confidence: int, kelly_fraction: float = 0.25) -> float:
+        """MORE PRACTICAL staking"""
         if market_prob <= 0 or pure_prob <= market_prob:
             return 0.0
         
         decimal_odds = 1 / market_prob
         kelly_stake = (pure_prob * decimal_odds - 1) / (decimal_odds - 1)
         
-        # Max 2% stake, reduced by confidence
         confidence_factor = confidence / 100
-        max_stake = 0.02 * confidence_factor
+        base_stake = kelly_stake * kelly_fraction * confidence_factor
         
-        return max(0.0, min(max_stake, kelly_stake * kelly_fraction))  # 1/10th Kelly
+        return max(0.005, min(0.05, base_stake))
 
 
-# Main orchestrator class - SAME STRUCTURE
 class AdvancedFootballPredictor:
     """
     ORCHESTRATOR: Coordinates predictive engine with value detection
-    Maintains strict separation of concerns
     """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
-        # Extract market data for separate processing
         self.market_odds = match_data.get('market_odds', {})
         
-        # Create pure football data (remove market influence)
         football_data = match_data.copy()
         if 'market_odds' in football_data:
             del football_data['market_odds']
         
-        # Initialize engines
         self.signal_engine = SignalEngine(football_data, calibration_data)
         self.value_engine = ValueDetectionEngine()
         self.prediction_history = []
@@ -1008,20 +944,15 @@ class AdvancedFootballPredictor:
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
         """Generate comprehensive analysis with strict separation"""
         
-        # Step 1: Generate PREDICTIVE football predictions
         football_predictions = self.signal_engine.generate_predictions(mc_iterations)
         
-        # Step 2: SEPARATELY detect value bets
         value_signals = self.value_engine.detect_value_bets(football_predictions, self.market_odds)
         
-        # Step 3: Combine results (no feedback between systems)
         comprehensive_result = football_predictions.copy()
         comprehensive_result['betting_signals'] = [signal.__dict__ for signal in value_signals]
         
-        # Add bias monitoring
         comprehensive_result['bias_monitoring'] = self._calculate_bias_metrics(football_predictions)
         
-        # Store prediction for historical tracking
         self._store_prediction_history(football_predictions)
         
         return comprehensive_result
@@ -1054,7 +985,6 @@ class AdvancedFootballPredictor:
         }
         self.prediction_history.append(prediction_record)
         
-        # Keep only last 100 predictions to manage memory
         if len(self.prediction_history) > 100:
             self.prediction_history = self.prediction_history[-100:]
     
@@ -1063,9 +993,8 @@ class AdvancedFootballPredictor:
         return self.prediction_history
 
 
-# Example usage demonstrating the separation
+# Example usage
 if __name__ == "__main__":
-    # Enhanced data for Bologna vs Torino with predictive features
     match_data = {
         'home_team': 'Bologna',
         'away_team': 'Torino', 
@@ -1074,14 +1003,14 @@ if __name__ == "__main__":
         'away_goals': 8,
         'home_conceded': 8,
         'away_conceded': 10,
-        'home_xg': 1.8,  # NEW: Expected goals
-        'away_xg': 1.2,  # NEW: Expected goals
-        'home_shots': 14,  # NEW: Predictive metric
-        'away_shots': 11,  # NEW: Predictive metric
+        'home_xg': 1.8,
+        'away_xg': 1.2,
+        'home_shots': 14,
+        'away_shots': 11,
         'home_goals_home': 7,
         'away_goals_away': 4,
-        'home_form': [8, 7, 9, 6, 8, 7],  # Performance ratings 1-10
-        'away_form': [6, 7, 5, 6, 7, 6],  # Performance ratings 1-10
+        'home_form': [8, 7, 9, 6, 8, 7],
+        'away_form': [6, 7, 5, 6, 7, 6],
         'h2h_data': {
             'matches': 6,
             'home_wins': 4,
@@ -1103,24 +1032,14 @@ if __name__ == "__main__":
         }
     }
     
-    # Use the orchestrator
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("PREDICTIVE ANALYSIS WITH ENHANCED ENGINE:")
+    print("PRACTICAL ANALYSIS WITH ENHANCED ENGINE:")
     print(f"Match: {results['match']}")
     print(f"Predictive xG: Home {results['expected_goals']['home']:.2f} - Away {results['expected_goals']['away']:.2f}")
     print(f"Match Context: {results['match_context']}")
     print(f"Predictive Probabilities: {results['probabilities']['match_outcomes']}")
     print(f"Confidence Score: {results['confidence_score']}%")
+    print(f"Risk Assessment: {results['risk_assessment']}")
     print(f"Betting Signals: {len(results['betting_signals'])} value bets detected")
-    
-    # Show predictive insights
-    insights = results.get('predictive_insights', {})
-    if insights:
-        print("\nPredictive Insights:")
-        for key, insight in insights.items():
-            print(f"  - {insight}")
-    
-    for signal in results['betting_signals']:
-        print(f"  {signal['market']}: +{signal['edge']}% edge (Stake: {signal['recommended_stake']*100:.1f}%)")

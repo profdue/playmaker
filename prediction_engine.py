@@ -286,7 +286,6 @@ class SignalEngine:
         xg_difference = home_xg - away_xg
         
         # PRACTICAL RULE: REALISTIC statistical dominance overrides inconsistency
-        # CHANGED: From 0.8 to 0.5 (realistic football threshold)
         if xg_difference > 0.5 and home_xg > 1.2:  # REALISTIC football thresholds
             # Strong statistical evidence - don't penalize for inconsistency
             if xg_difference > 0.5:
@@ -603,7 +602,7 @@ class SignalEngine:
         total_corners = max(6, min(14, base_corners + attacking_bonus))
         
         confidence_score = self._calculate_predictive_confidence(mc_results)
-        risk_assessment = self._assess_practical_risk(mc_results, confidence_score, home_xg, away_xg)
+        risk_assessment = self._assess_context_aware_risk(mc_results, confidence_score, home_xg, away_xg)
         
         return {
             'match': f"{home_team} vs {away_team}",
@@ -677,8 +676,8 @@ class SignalEngine:
         confidence = base_confidence - volatility_penalty
         return max(10, min(95, int(confidence)))
     
-    def _assess_practical_risk(self, mc_results: MonteCarloResults, confidence: int, home_xg: float, away_xg: float) -> Dict[str, str]:
-        """PRACTICAL risk assessment - REALISTIC football thresholds"""
+    def _assess_context_aware_risk(self, mc_results: MonteCarloResults, confidence: int, home_xg: float, away_xg: float) -> Dict[str, str]:
+        """CONTEXT-AWARE risk assessment - Properly considers match context"""
         home_win_prob = mc_results.home_win_prob
         draw_prob = mc_results.draw_prob
         away_win_prob = mc_results.away_win_prob
@@ -690,23 +689,30 @@ class SignalEngine:
         max_entropy = np.log(3)
         uncertainty_ratio = entropy / max_entropy
         
-        # PRACTICAL RULE 1: REALISTIC statistical dominance overrides unpredictability
-        # CHANGED: From 0.8 to 0.5 (realistic football threshold)
         xg_difference = home_xg - away_xg
-        if (xg_difference > 0.5 and home_xg > 1.2 and  # REALISTIC thresholds
-            home_win_prob > 0.55 and confidence > 60):  # MORE REASONABLE probability
+        
+        # TIER 1: Clear statistical dominance (override unpredictability)
+        if (xg_difference > 0.5 and home_xg > 1.2 and 
+            home_win_prob > 0.55 and confidence > 60):
             risk_level = "MEDIUM"
-            explanation = "Clear statistical advantage despite unpredictable context"
+            explanation = "Clear statistical advantage despite context"
             recommendation = "CONSIDER BETTING"
         
-        # PRACTICAL RULE 2: Strong probability with good data quality
-        elif (home_win_prob > 0.60 and confidence > 65 and 
-              self.data['data_quality_score'] > 75):
+        # NEW TIER 2: Home dominance context with reasonable probability
+        elif (self.match_context == MatchContext.HOME_DOMINANCE and 
+              home_win_prob > 0.50 and confidence > 65):
+            risk_level = "MEDIUM"
+            explanation = "Home advantage with statistical support"
+            recommendation = "SMALL STAKES ONLY"
+        
+        # NEW TIER 3: Strong probability with high confidence
+        elif (home_win_prob > 0.58 and confidence > 75 and 
+              self.data['data_quality_score'] > 80):
             risk_level = "MEDIUM"
             explanation = "Strong probability with high-quality data"
             recommendation = "SMALL STAKES ONLY"
         
-        # PRACTICAL RULE 3: Everything else stays conservative
+        # TIER 4: Everything else stays conservative
         else:
             risk_level = "HIGH"
             explanation = f"High uncertainty - {self.match_context.value.replace('_', ' ')}"
@@ -1037,7 +1043,7 @@ if __name__ == "__main__":
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("PRACTICAL ANALYSIS WITH REALISTIC THRESHOLDS:")
+    print("CONTEXT-AWARE ANALYSIS:")
     print(f"Match: {results['match']}")
     print(f"Predictive xG: Home {results['expected_goals']['home']:.2f} - Away {results['expected_goals']['away']:.2f}")
     print(f"Match Context: {results['match_context']}")

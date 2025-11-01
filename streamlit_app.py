@@ -1,3 +1,4 @@
+# streamlit_app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -18,13 +19,13 @@ except ImportError as e:
 
 # Page configuration
 st.set_page_config(
-    page_title="Advanced Football Predictor ⚽",
+    page_title="🌍 Advanced Football Predictor",
     page_icon="⚽", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS styling
+# Enhanced CSS styling with league badges
 st.markdown("""
 <style>
     .main-header { 
@@ -41,6 +42,32 @@ st.markdown("""
         color: #666;
         text-align: center;
         margin-bottom: 2rem;
+    }
+    .league-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+        display: inline-block;
+        margin: 0.2rem;
+    }
+    .premier-league { background: #3D195B; }
+    .la-liga { background: #FF0000; }
+    .serie-a { background: #008C45; }
+    .bundesliga { background: #DC052D; }
+    .ligue-1 { background: #DA291C; }
+    .liga-portugal { background: #006600; }
+    .brasileirao { background: #FFCC00; color: black; }
+    .liga-mx { background: #006847; }
+    .eredivisie { background: #FF6B00; }
+    
+    .betting-activity-rank {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
     }
     .prediction-card { 
         background: white;
@@ -227,48 +254,128 @@ def safe_get(dictionary, *keys, default=None):
             return default
     return current
 
-def create_input_form():
-    """Create input form"""
+def get_league_display_name(league_id: str) -> str:
+    """Get display name for league"""
+    league_names = {
+        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        'la_liga': 'La Liga 🇪🇸', 
+        'serie_a': 'Serie A 🇮🇹',
+        'bundesliga': 'Bundesliga 🇩🇪',
+        'ligue_1': 'Ligue 1 🇫🇷',
+        'liga_portugal': 'Liga Portugal 🇵🇹',
+        'brasileirao': 'Brasileirão 🇧🇷',
+        'liga_mx': 'Liga MX 🇲🇽',
+        'eredivisie': 'Eredivisie 🇳🇱'
+    }
+    return league_names.get(league_id, league_id)
+
+def get_league_badge(league_id: str) -> str:
+    """Get CSS class for league badge"""
+    league_classes = {
+        'premier_league': 'premier-league',
+        'la_liga': 'la-liga',
+        'serie_a': 'serie-a', 
+        'bundesliga': 'bundesliga',
+        'ligue_1': 'ligue-1',
+        'liga_portugal': 'liga-portugal',
+        'brasileirao': 'brasileirao',
+        'liga_mx': 'liga-mx',
+        'eredivisie': 'eredivisie'
+    }
+    return league_classes.get(league_id, 'premier-league')
+
+def display_betting_activity_ranking():
+    """Display betting activity ranking by league"""
+    st.markdown('<div class="betting-activity-rank">', unsafe_allow_html=True)
+    st.markdown("### 📊 Betting Activity Ranking")
     
-    st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Match Analysis with TIER-BASED CALIBRATION</p>', unsafe_allow_html=True)
+    # Professional betting activity ranking (based on liquidity, market depth, etc.)
+    ranking_data = {
+        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Liga MX', 'Eredivisie'],
+        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium', 'Medium'],
+        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good', 'Good'],
+        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
+    }
+    
+    df = pd.DataFrame(ranking_data)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def create_input_form():
+    """Create input form with multi-league support"""
+    
+    st.markdown('<p class="main-header">🌍 Advanced Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Multi-League Analysis with Tier-Based Calibration</p>', unsafe_allow_html=True)
+    
+    # Display betting activity ranking
+    display_betting_activity_ranking()
     
     # System Architecture Overview
     with st.expander("🏗️ System Architecture", expanded=True):
         st.markdown("""
-        ### 🎯 PROFESSIONAL TIER-CALIBRATED PREDICTOR
+        ### 🎯 PROFESSIONAL MULTI-LEAGUE PREDICTOR
         
-        **Team Tier System** 🏆
-        - **ELITE**: Arsenal, Man City, Liverpool, etc.
-        - **STRONG**: Tottenham, Chelsea, Newcastle, etc.  
-        - **MEDIUM**: West Ham, Brighton, Wolves, etc.
-        - **WEAK**: Burnley, Luton, Sheffield Utd, etc.
+        **Supported Leagues** 🌍
+        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿, **La Liga** 🇪🇸, **Serie A** 🇮🇹
+        - **Bundesliga** 🇩🇪, **Ligue 1** 🇫🇷, **Liga Portugal** 🇵🇹  
+        - **Brasileirão** 🇧🇷, **Liga MX** 🇲🇽, **Eredivisie** 🇳🇱
         
-        **Calibration Features** ⚡
-        - Tier-based xG baselines
-        - Contextual home advantage
-        - Form vs quality weighting
-        - Reality-checked probabilities
-        
-        **GUARANTEE**: Realistic probabilities that match football reality
+        **League-Specific Calibration** ⚡
+        - Different scoring profiles per league
+        - League-specific home advantage
+        - Tier-based team strength systems
+        - Contextual probability adjustments
         """)
+    
+    # League Selection
+    st.markdown("### 🌍 League Selection")
+    league_options = {
+        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        'la_liga': 'La Liga 🇪🇸',
+        'serie_a': 'Serie A 🇮🇹', 
+        'bundesliga': 'Bundesliga 🇩🇪',
+        'ligue_1': 'Ligue 1 🇫🇷',
+        'liga_portugal': 'Liga Portugal 🇵🇹',
+        'brasileirao': 'Brasileirão 🇧🇷',
+        'liga_mx': 'Liga MX 🇲🇽',
+        'eredivisie': 'Eredivisie 🇳🇱'
+    }
+    
+    selected_league = st.selectbox(
+        "Select League",
+        options=list(league_options.keys()),
+        format_func=lambda x: league_options[x],
+        key="league_selection"
+    )
+    
+    # Display league badge
+    league_badge_class = get_league_badge(selected_league)
+    league_display_name = get_league_display_name(selected_league)
+    st.markdown(f'<span class="league-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
     
     tab1, tab2, tab3 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Settings"])
 
     with tab1:
         st.markdown("### 🎯 Football Data Input")
         
+        # Initialize team calibrator
+        calibrator = TeamTierCalibrator()
+        league_teams = calibrator.get_league_teams(selected_league)
+        
+        if not league_teams:
+            st.error(f"❌ No teams found for {league_display_name}")
+            return None, None
+        
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader("🏠 Home Team")
-            home_team = st.selectbox("Team Name", 
-                options=['Arsenal', 'Man City', 'Liverpool', 'Tottenham', 'Aston Villa', 'Newcastle', 
-                        'Chelsea', 'Man United', 'West Ham', 'Brighton', 'Wolves', 'Crystal Palace',
-                        'Fulham', 'Bournemouth', 'Brentford', 'Everton', 'Nottingham Forest',
-                        'Luton', 'Burnley', 'Sheffield Utd'],
-                index=18,  # Default to Burnley
-                key="home_team")
+            home_team = st.selectbox(
+                "Team Name", 
+                options=league_teams,
+                index=min(5, len(league_teams) - 1),  # Default to a mid-table team
+                key="home_team"
+            )
             
             home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="home_goals")
             home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=14, key="home_conceded")
@@ -276,22 +383,20 @@ def create_input_form():
             
         with col2:
             st.subheader("✈️ Away Team")
-            away_team = st.selectbox("Team Name",
-                options=['Arsenal', 'Man City', 'Liverpool', 'Tottenham', 'Aston Villa', 'Newcastle',
-                        'Chelsea', 'Man United', 'West Ham', 'Brighton', 'Wolves', 'Crystal Palace',
-                        'Fulham', 'Bournemouth', 'Brentford', 'Everton', 'Nottingham Forest',
-                        'Luton', 'Burnley', 'Sheffield Utd'],
-                index=0,  # Default to Arsenal
-                key="away_team")
+            away_team = st.selectbox(
+                "Team Name",
+                options=league_teams,
+                index=0,  # Default to top team
+                key="away_team"
+            )
             
             away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=12, key="away_goals")
             away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="away_conceded")
             away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=7, key="away_goals_away")
         
         # Show team tiers
-        calibrator = TeamTierCalibrator()
-        home_tier = calibrator.get_team_tier(home_team)
-        away_tier = calibrator.get_team_tier(away_team)
+        home_tier = calibrator.get_team_tier(home_team, selected_league)
+        away_tier = calibrator.get_team_tier(away_team, selected_league)
         
         st.markdown(f"""
         **Team Tiers:** 
@@ -360,10 +465,6 @@ def create_input_form():
         model_col1, model_col2 = st.columns(2)
         
         with model_col1:
-            league = st.selectbox("League", [
-                "premier_league", "la_liga", "serie_a", "bundesliga", "ligue_1", "liga_portugal", "default"
-            ], index=0, key="league")
-            
             st.write("**Team Context**")
             home_injuries = st.slider("Home Key Absences", 0, 5, 1, key="home_injuries")
             away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="away_injuries")
@@ -404,11 +505,15 @@ def create_input_form():
             )
 
     # Submit button
-    submitted = st.button("🎯 GENERATE CALIBRATED ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE MULTI-LEAGUE ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
             st.error("❌ Please enter both team names")
+            return None, None
+        
+        if home_team == away_team:
+            st.error("❌ Home and away teams cannot be the same")
             return None, None
         
         # Convert form selections to points
@@ -444,7 +549,7 @@ def create_input_form():
         match_data = {
             'home_team': home_team,
             'away_team': away_team,
-            'league': league,
+            'league': selected_league,
             'home_goals': home_goals,
             'away_goals': away_goals,
             'home_conceded': home_conceded,
@@ -475,20 +580,6 @@ def create_input_form():
         return match_data, mc_iterations
     
     return None, None
-
-def display_analysis(predictions):
-    """Display analysis"""
-    
-    tab1, tab2, tab3 = st.tabs(["🎯 Predictions", "💰 Value Detection", "📈 Analytics"])
-    
-    with tab1:
-        display_predictions(predictions)
-    
-    with tab2:
-        display_value_detection(predictions)
-    
-    with tab3:
-        display_analytics(predictions)
 
 def display_goals_analysis(predictions):
     """Display goals analysis"""
@@ -602,22 +693,44 @@ def display_goals_analysis(predictions):
         </div>
         ''', unsafe_allow_html=True)
 
+def display_probability_bar(label: str, probability: float, color: str):
+    """Display a probability with a visual bar"""
+    st.markdown(f'''
+    <div style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span><strong>{label}</strong></span>
+            <span><strong>{probability:.1f}%</strong></span>
+        </div>
+        <div class="probability-bar">
+            <div class="probability-fill" style="width: {probability}%; background: {color};"></div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
 def display_predictions(predictions):
-    """Display football predictions"""
+    """Display football predictions with league context"""
     
     st.markdown('<p class="main-header">🎯 Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Professional Tier-Calibrated Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Professional Multi-League Tier-Calibrated Analysis</div>', unsafe_allow_html=True)
     
-    # Team tiers display
+    # League and team tiers display
     team_tiers = safe_get(predictions, 'team_tiers') or {}
     home_tier = team_tiers.get('home', 'MEDIUM')
     away_tier = team_tiers.get('away', 'MEDIUM')
+    
+    # Get league from predictions data
+    league = safe_get(predictions, 'league', default='premier_league')
+    league_display_name = get_league_display_name(league)
+    league_badge_class = get_league_badge(league)
     
     st.markdown(f'''
     <p style="text-align: center; font-size: 1.4rem; font-weight: 600;">
         {predictions["match"]} 
         <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
         <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
+    </p>
+    <p style="text-align: center; margin-top: 0.5rem;">
+        <span class="league-badge {league_badge_class}">{league_display_name}</span>
     </p>
     ''', unsafe_allow_html=True)
     
@@ -722,6 +835,7 @@ def display_value_detection(predictions):
     btts = safe_get(predictions, 'probabilities', 'both_teams_score') or {}
     over_under = safe_get(predictions, 'probabilities', 'over_under') or {}
     team_tiers = safe_get(predictions, 'team_tiers') or {}
+    league = safe_get(predictions, 'league', 'premier_league')
     
     primary_outcome = max(outcomes, key=outcomes.get) if outcomes else 'unknown'
     primary_btts = 'yes' if btts.get('yes', 0) > btts.get('no', 0) else 'no'
@@ -926,19 +1040,19 @@ def display_analytics(predictions):
         st.write(f"**Late Goals:** {timing.get('late_goals', 'N/A')}")
         st.write(f"**Match Rhythm:** {timing.get('most_action', 'N/A')}")
 
-def display_probability_bar(label: str, probability: float, color: str):
-    """Display a probability with a visual bar"""
-    st.markdown(f'''
-    <div style="margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span><strong>{label}</strong></span>
-            <span><strong>{probability:.1f}%</strong></span>
-        </div>
-        <div class="probability-bar">
-            <div class="probability-fill" style="width: {probability}%; background: {color};"></div>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
+def display_analysis(predictions):
+    """Display analysis"""
+    
+    tab1, tab2, tab3 = st.tabs(["🎯 Predictions", "💰 Value Detection", "📈 Analytics"])
+    
+    with tab1:
+        display_predictions(predictions)
+    
+    with tab2:
+        display_value_detection(predictions)
+    
+    with tab3:
+        display_analytics(predictions)
 
 def store_prediction_in_session(prediction):
     """Store prediction in session state for history tracking"""
@@ -948,6 +1062,7 @@ def store_prediction_in_session(prediction):
     prediction_record = {
         'timestamp': datetime.now().isoformat(),
         'match': prediction['match'],
+        'league': prediction.get('league', 'premier_league'),
         'expected_goals': prediction['expected_goals'],
         'team_tiers': prediction.get('team_tiers', {}),
         'probabilities': prediction['probabilities']['match_outcomes'],
@@ -988,6 +1103,7 @@ def main():
                     for i, pred in enumerate(st.session_state.prediction_history[-5:]):
                         with st.expander(f"Prediction {i+1}: {pred['match']}"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
+                            st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
                             st.write(f"Expected Goals: Home {pred['expected_goals']['home']:.2f} - Away {pred['expected_goals']['away']:.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
                             st.write(f"Probabilities: {pred['probabilities']}")
@@ -1001,10 +1117,13 @@ def main():
     match_data, mc_iterations = create_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running tier-calibrated engine analysis..."):
+        with st.spinner("🔍 Running multi-league calibrated analysis..."):
             try:
                 predictor = AdvancedFootballPredictor(match_data)
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
+                
+                # Add league information to predictions for display
+                predictions['league'] = match_data['league']
                 
                 st.session_state.predictions = predictions
                 store_prediction_in_session(predictions)

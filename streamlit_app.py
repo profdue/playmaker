@@ -147,26 +147,25 @@ st.markdown("""
     .confidence-medium { background: #FF9800; }
     .confidence-low { background: #f44336; }
     
-    .architecture-diagram {
-        background: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        border: 2px solid #e9ecef;
-    }
-    
-    .history-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        border-left: 4px solid #667eea;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
     .success-banner {
         background: #f8fff8;
         border-left: 4px solid #4CAF50;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .warning-banner {
+        background: #fffaf2;
+        border-left: 4px solid #FF9800;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .danger-banner {
+        background: #fff5f5;
+        border-left: 4px solid #f44336;
         padding: 1rem;
         border-radius: 8px;
         margin: 1rem 0;
@@ -175,7 +174,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def create_input_form():
-    """Create input form with clear separation between football data and market data"""
+    """Create input form"""
     
     st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Professional Match Analysis with Realistic Probabilities</p>', unsafe_allow_html=True)
@@ -183,26 +182,23 @@ def create_input_form():
     # System Architecture Overview
     with st.expander("🏗️ System Architecture", expanded=True):
         st.markdown("""
-        ### 🎯 Balanced Football Predictor
+        ### 🎯 Realistic Football Predictor
         
         **Signal Engine** 🟢 (Pure Football Analysis)
-        - Input: Only football data (goals, form, H2H, etc.)
-        - Process: Realistic xG calculation, Monte Carlo simulation
-        - Output: Balanced probabilities + Match Context
+        - **Team Strength Tiers**: Elite, Strong, Medium, Weak teams
+        - **Reality Checks**: No absurd probabilities
+        - **Context-Aware**: Home dominance properly recognized
         
         **Value Engine** 🟠 (Market Analysis)  
-        - Input: Pure probabilities + Market odds
-        - Process: Realistic value detection, Kelly criterion
-        - Output: Betting signals with proper stake sizing
-        
-        **No feedback loop between engines - Market never influences football predictions**
+        - **Football Reality Filters**: No betting against basic logic
+        - **Professional Staking**: Max 3% stake sizing
+        - **Sensible Edges**: No 147% edges on impossible outcomes
         """)
     
-    tab1, tab2, tab3, tab4 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Settings", "📊 Info"])
+    tab1, tab2, tab3 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Settings"])
 
     with tab1:
         st.markdown("### 🎯 Football Data Input")
-        st.info("This data goes ONLY to the Signal Engine for probability calculation")
         
         col1, col2 = st.columns(2)
         
@@ -255,7 +251,6 @@ def create_input_form():
 
     with tab2:
         st.markdown("### 💰 Market Data Input") 
-        st.info("This data goes ONLY to the Value Engine for betting signal generation")
         
         odds_col1, odds_col2, odds_col3 = st.columns(3)
         
@@ -325,25 +320,8 @@ def create_input_form():
                 key="mc_iterations"
             )
 
-    with tab4:
-        st.markdown("### 📊 System Information")
-        st.markdown("""
-        **Balanced Architecture:**
-        - 🛡️ **Bias Protection**: Market odds cannot influence football predictions
-        - 🔍 **Transparency**: Clear separation between analysis and betting
-        - 📈 **Realistic Outputs**: Balanced probabilities with football sanity checks
-        - 💰 **Professional Betting**: Realistic value detection with proper stake sizing
-        
-        **Key Features:**
-        - Realistic home advantage modeling
-        - Context-aware risk assessment  
-        - Professional stake sizing (max 3%)
-        - No absurd edges or probabilities
-        - Football reality checks applied
-        """)
-
     # Submit button
-    submitted = st.button("🎯 GENERATE ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE REALISTIC ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -426,9 +404,8 @@ def safe_get(dictionary, *keys, default=None):
     return current
 
 def display_analysis(predictions):
-    """Display analysis with clear separation between engines"""
+    """Display analysis"""
     
-    # Use tabs for different sections
     tab1, tab2, tab3 = st.tabs(["🎯 Predictions", "💰 Value Detection", "📈 Analytics"])
     
     with tab1:
@@ -556,7 +533,7 @@ def display_predictions(predictions):
     """Display football predictions"""
     
     st.markdown('<p class="main-header">🎯 Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Market-independent football analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Realistic probabilities with football intelligence</div>', unsafe_allow_html=True)
     
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
     
@@ -583,16 +560,17 @@ def display_predictions(predictions):
         confidence = safe_get(predictions, 'confidence_score', default=0)
         st.metric("Confidence Score", f"{confidence}%")
     
-    # Success banner for realistic outputs
-    outcomes = safe_get(predictions, 'probabilities', 'match_outcomes', default={'home_win': 0, 'draw': 0, 'away_win': 0})
-    home_prob = outcomes.get('home_win', 0)
-    
-    if home_prob >= 50:
-        st.markdown('<div class="success-banner">✅ <strong>REALISTIC OUTPUT:</strong> Home team properly favored with balanced probabilities</div>', unsafe_allow_html=True)
+    # System validation
+    system_validation = safe_get(predictions, 'system_validation', {})
+    if system_validation.get('status') == 'VALID':
+        st.markdown('<div class="success-banner">✅ <strong>SYSTEM VALIDATION PASSED:</strong> Realistic probabilities generated</div>', unsafe_allow_html=True)
+    elif system_validation.get('status') == 'WARNING':
+        st.markdown(f'<div class="warning-banner">⚠️ <strong>SYSTEM VALIDATION WARNING:</strong> {system_validation.get("issues", "Unknown")}</div>', unsafe_allow_html=True)
     
     # Match Outcomes
     st.markdown('<div class="section-title">📈 Match Outcome Probabilities</div>', unsafe_allow_html=True)
     
+    outcomes = safe_get(predictions, 'probabilities', 'match_outcomes', default={'home_win': 0, 'draw': 0, 'away_win': 0})
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -640,7 +618,7 @@ def display_value_detection(predictions):
     """Display value detection results"""
     
     st.markdown('<p class="main-header">💰 Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Realistic edge detection with professional stake sizing</div>', unsafe_allow_html=True)
+    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Football-aware value detection with reality checks</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals', default=[])
     
@@ -652,10 +630,16 @@ def display_value_detection(predictions):
         - Pure probabilities align with market expectations  
         - No significant edges above realistic thresholds
         - Market is efficient for this match
+        - **Football reality checks passed**
         
         **This is the expected behavior for a well-calibrated system!**
         """)
         return
+    
+    # Check for dangerous signals
+    dangerous_signals = [s for s in betting_signals if s.get('market') == '1x2 Away']
+    if dangerous_signals:
+        st.markdown('<div class="danger-banner">🚨 <strong>DANGEROUS SIGNAL DETECTED:</strong> Away win recommendation may indicate system issues</div>', unsafe_allow_html=True)
     
     # Value Bet Summary
     col1, col2, col3, col4 = st.columns(4)
@@ -698,12 +682,18 @@ def display_value_detection(predictions):
                     'SPECULATIVE': '⚪'
                 }.get(bet.get('confidence', 'SPECULATIVE'), '⚪')
                 
+                # Warning for away win bets
+                warning = ""
+                if bet.get('market') == '1x2 Away':
+                    warning = "🚨 **FOOTBALL REALITY WARNING**"
+                
                 st.markdown(f'''
                 <div class="bet-card {value_class}">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="flex: 2;">
                             <strong>{bet.get('market', 'Unknown')}</strong><br>
                             <small>Model: {bet.get('model_prob', 0)}% | Market: {bet.get('book_prob', 0)}%</small>
+                            {warning}
                         </div>
                         <div style="flex: 1; text-align: right;">
                             <strong style="color: #4CAF50; font-size: 1.1rem;">+{bet.get('edge', 0)}% Edge</strong><br>
@@ -867,7 +857,7 @@ def main():
     match_data, mc_iterations = create_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running engine analysis..."):
+        with st.spinner("🔍 Running realistic engine analysis..."):
             try:
                 predictor = AdvancedFootballPredictor(match_data)
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
@@ -875,7 +865,7 @@ def main():
                 st.session_state.predictions = predictions
                 store_prediction_in_session(predictions)
                 
-                st.success("✅ Analysis completed successfully!")
+                st.success("✅ Analysis completed with realistic probabilities!")
                 st.rerun()
                 
             except Exception as e:

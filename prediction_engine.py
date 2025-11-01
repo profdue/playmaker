@@ -808,65 +808,100 @@ class SignalEngine:
 
 class ValueDetectionEngine:
     """
-    ENHANCED VALUE DETECTION ENGINE - More practical thresholds
+    FIXED VALUE DETECTION ENGINE - Correct edge calculation and sanity checks
     """
     
     def __init__(self):
-        # MORE PRACTICAL thresholds
+        # REALISTIC thresholds for professional betting
         self.value_thresholds = {
-            'EXCEPTIONAL': 8.0,   # Reduced from 12.0
-            'HIGH': 5.0,          # Reduced from 8.0
-            'GOOD': 3.0,          # Reduced from 5.0
-            'MODERATE': 1.5,      # More accessible
-            'LOW': 0.0
+            'EXCEPTIONAL': 25.0,   # 25%+ edge - very rare
+            'HIGH': 15.0,          # 15%+ edge  
+            'GOOD': 8.0,           # 8%+ edge
+            'MODERATE': 4.0,       # 4%+ edge
+            'LOW': 2.0             # 2%+ edge
         }
-        self.min_confidence = 60   # More reasonable
-    
+        self.min_confidence = 60
+        self.min_probability = 0.10  # Minimum 10% probability for any bet
+        
     def calculate_implied_probabilities(self, market_odds: Dict[str, float]) -> Dict[str, float]:
-        """Convert decimal odds to implied probabilities"""
+        """Convert decimal odds to implied probabilities with sanity checks"""
         implied_probs = {}
         
         for market, odds in market_odds.items():
             if isinstance(odds, (int, float)) and odds > 1:
-                implied_probs[market] = 1 / odds
+                implied_prob = 1.0 / odds
+                
+                # Sanity check - reject absurd probabilities
+                if 0.01 <= implied_prob <= 0.95:
+                    implied_probs[market] = implied_prob
+                else:
+                    logger.warning(f"Implied probability {implied_prob:.3f} for {market} outside reasonable range")
+                    implied_probs[market] = 0.5  # Default to neutral
         
         return implied_probs
     
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
-        """Detect value bets with PRACTICAL thresholds"""
+        """Detect value bets with CORRECT edge calculation and mutual exclusivity"""
         signals = []
         
         market_probs = self.calculate_implied_probabilities(market_odds)
         
+        # CRITICAL FIX: Normalize 1X2 probabilities to sum to 1.0
+        home_win_pure = self._get_nested_value(pure_probabilities, 'probabilities.match_outcomes.home_win') / 100.0
+        draw_pure = self._get_nested_value(pure_probabilities, 'probabilities.match_outcomes.draw') / 100.0
+        away_win_pure = self._get_nested_value(pure_probabilities, 'probabilities.match_outcomes.away_win') / 100.0
+        
+        # Normalize to ensure they sum to 1.0
+        total_1x2 = home_win_pure + draw_pure + away_win_pure
+        if total_1x2 > 0:
+            home_win_pure /= total_1x2
+            draw_pure /= total_1x2
+            away_win_pure /= total_1x2
+        
         probability_mapping = [
-            ('probabilities.match_outcomes.home_win', '1x2 Home'),
-            ('probabilities.match_outcomes.draw', '1x2 Draw'),
-            ('probabilities.match_outcomes.away_win', '1x2 Away'),
+            ('1x2 Home', home_win_pure, '1x2 Home'),
+            ('1x2 Draw', draw_pure, '1x2 Draw'), 
+            ('1x2 Away', away_win_pure, '1x2 Away'),
             ('probabilities.over_under.over_25', 'Over 2.5 Goals'),
             ('probabilities.over_under.under_25', 'Under 2.5 Goals'),
             ('probabilities.both_teams_score.yes', 'BTTS Yes'),
             ('probabilities.both_teams_score.no', 'BTTS No')
         ]
         
+        # CRITICAL FIX: Use relative edge calculation
         for prob_path, market_name in probability_mapping:
-            pure_prob = self._get_nested_value(pure_probabilities, prob_path) / 100.0
+            if isinstance(prob_path, tuple):  # 1X2 markets with normalized probabilities
+                pure_prob = prob_path[1]
+                market_key = prob_path[2]
+            else:  # Other markets
+                pure_prob = self._get_nested_value(pure_probabilities, prob_path) / 100.0
+                market_key = market_name
             
-            market_prob = market_probs.get(market_name, 0)
+            market_prob = market_probs.get(market_key, 0)
             
-            if market_prob > 0 and pure_prob > 0:
-                edge = (pure_prob - market_prob) * 100
+            # Skip if invalid probabilities
+            if market_prob <= 0 or pure_prob <= 0 or pure_prob < self.min_probability:
+                continue
                 
-                adjusted_edge = self._apply_market_wisdom(edge, market_prob, pure_prob)
+            # CRITICAL FIX: Calculate relative edge correctly
+            edge = (pure_prob / market_prob) - 1.0
+            edge_percentage = edge * 100  # Convert to percentage
+            
+            # Apply market wisdom adjustments
+            adjusted_edge = self._apply_market_wisdom(edge_percentage, market_prob, pure_prob)
+            
+            confidence_score = pure_probabilities.get('confidence_score', 0)
+            if confidence_score < self.min_confidence:
+                continue
+            
+            # Only consider positive edges above minimum threshold
+            if adjusted_edge >= self.value_thresholds['LOW']:
+                value_rating = self._get_value_rating(adjusted_edge)
+                confidence = self._calculate_bet_confidence(pure_prob, adjusted_edge, confidence_score)
+                stake = self._calculate_professional_stake(pure_prob, market_prob, adjusted_edge, confidence_score)
                 
-                confidence_score = pure_probabilities.get('confidence_score', 0)
-                if confidence_score < self.min_confidence:
-                    continue
-                
-                if adjusted_edge >= self.value_thresholds['MODERATE']:
-                    value_rating = self._get_value_rating(adjusted_edge)
-                    confidence = self._calculate_bet_confidence(pure_prob, adjusted_edge, confidence_score)
-                    stake = self._calculate_professional_stake(pure_prob, market_prob, confidence_score)
-                    
+                # Only add if stake is meaningful
+                if stake > 0.001:  # At least 0.1% stake
                     signals.append(BettingSignal(
                         market=market_name,
                         model_prob=round(pure_prob * 100, 1),
@@ -877,16 +912,33 @@ class ValueDetectionEngine:
                         value_rating=value_rating
                     ))
         
+        # CRITICAL FIX: Enforce mutual exclusivity for 1X2 markets
+        signals = self._enforce_mutual_exclusivity(signals)
+        
         signals.sort(key=lambda x: x.edge, reverse=True)
         return signals
     
-    def _apply_market_wisdom(self, edge: float, market_prob: float, pure_prob: float) -> float:
-        """Respect market efficiency"""
-        if 0.3 < market_prob < 0.7:
-            return edge * 0.8
+    def _enforce_mutual_exclusivity(self, signals: List[BettingSignal]) -> List[BettingSignal]:
+        """Ensure only one 1X2 bet is recommended"""
+        one_x_two_signals = [s for s in signals if s.market in ['1x2 Home', '1x2 Draw', '1x2 Away']]
+        other_signals = [s for s in signals if s.market not in ['1x2 Home', '1x2 Draw', '1x2 Away']]
         
+        if len(one_x_two_signals) > 1:
+            # Keep only the 1X2 signal with highest edge
+            best_one_x_two = max(one_x_two_signals, key=lambda x: x.edge)
+            return [best_one_x_two] + other_signals
+        
+        return signals
+    
+    def _apply_market_wisdom(self, edge: float, market_prob: float, pure_prob: float) -> float:
+        """Respect market efficiency with realistic adjustments"""
+        # Reduce edge for extreme probabilities (market is more efficient at extremes)
         if market_prob < 0.15 or market_prob > 0.85:
-            return edge * 0.6
+            return edge * 0.6  # 40% reduction for extreme probabilities
+        
+        # Moderate reduction for medium probabilities
+        if market_prob < 0.25 or market_prob > 0.75:
+            return edge * 0.8  # 20% reduction
         
         return edge
     
@@ -909,28 +961,36 @@ class ValueDetectionEngine:
         return "LOW"
     
     def _calculate_bet_confidence(self, pure_prob: float, edge: float, model_confidence: int) -> str:
-        """Calculate betting confidence"""
-        if pure_prob > 0.65 and edge > 8 and model_confidence > 75:
+        """Calculate betting confidence with realistic thresholds"""
+        if pure_prob > 0.65 and edge > 20 and model_confidence > 75:
             return "HIGH"
-        elif pure_prob > 0.58 and edge > 5 and model_confidence > 65:
-            return "MEDIUM"
-        elif pure_prob > 0.52 and edge > 2 and model_confidence > 60:
+        elif pure_prob > 0.55 and edge > 12 and model_confidence > 65:
+            return "MEDIUM" 
+        elif pure_prob > 0.45 and edge > 6 and model_confidence > 60:
             return "LOW"
         else:
             return "SPECULATIVE"
     
-    def _calculate_professional_stake(self, pure_prob: float, market_prob: float, confidence: int, kelly_fraction: float = 0.25) -> float:
-        """MORE PRACTICAL staking"""
+    def _calculate_professional_stake(self, pure_prob: float, market_prob: float, edge: float, 
+                                   confidence: int, kelly_fraction: float = 0.25) -> float:
+        """Professional stake sizing with edge-based caps"""
         if market_prob <= 0 or pure_prob <= market_prob:
             return 0.0
         
+        # Kelly criterion
         decimal_odds = 1 / market_prob
         kelly_stake = (pure_prob * decimal_odds - 1) / (decimal_odds - 1)
         
+        # Confidence adjustment
         confidence_factor = confidence / 100
-        base_stake = kelly_stake * kelly_fraction * confidence_factor
         
-        return max(0.005, min(0.05, base_stake))
+        # Edge-based cap - never bet more than 5% regardless of Kelly
+        base_stake = kelly_stake * kelly_fraction * confidence_factor
+        edge_cap = min(0.05, edge / 500)  # Cap at 5%, scaled by edge
+        
+        final_stake = min(base_stake, edge_cap)
+        
+        return max(0.001, min(0.05, final_stake))  # Between 0.1% and 5%
 
 
 class AdvancedFootballPredictor:
@@ -1003,47 +1063,48 @@ class AdvancedFootballPredictor:
 
 # Example usage
 if __name__ == "__main__":
+    # Test with realistic odds
     match_data = {
-        'home_team': 'Bologna',
-        'away_team': 'Torino', 
-        'league': 'serie_a',
-        'home_goals': 12,
-        'away_goals': 8,
-        'home_conceded': 8,
-        'away_conceded': 10,
+        'home_team': 'Sporting CP',
+        'away_team': 'FC Alverca', 
+        'league': 'liga_portugal',
+        'home_goals': 15,
+        'away_goals': 6,
+        'home_conceded': 5,
+        'away_conceded': 12,
         'home_xg': 1.8,
-        'away_xg': 1.2,
-        'home_shots': 14,
-        'away_shots': 11,
-        'home_goals_home': 7,
-        'away_goals_away': 4,
-        'home_form': [8, 7, 9, 6, 8, 7],
-        'away_form': [6, 7, 5, 6, 7, 6],
+        'away_xg': 0.9,
+        'home_shots': 16,
+        'away_shots': 8,
+        'home_goals_home': 9,
+        'away_goals_away': 3,
+        'home_form': [3, 3, 3, 1, 3, 3],
+        'away_form': [0, 1, 0, 3, 1, 0],
         'h2h_data': {
-            'matches': 6,
-            'home_wins': 4,
-            'away_wins': 1, 
+            'matches': 4,
+            'home_wins': 3,
+            'away_wins': 0, 
             'draws': 1,
-            'home_goals': 9,
-            'away_goals': 4
+            'home_goals': 8,
+            'away_goals': 2
         },
-        'injuries': {'home': 1, 'away': 2},
+        'injuries': {'home': 0, 'away': 2},
         'motivation': {'home': 'High', 'away': 'Normal'},
         'market_odds': {
-            '1x2 Home': 2.10,
-            '1x2 Draw': 3.10,
-            '1x2 Away': 3.80,
-            'Over 2.5 Goals': 2.30,
-            'Under 2.5 Goals': 1.65,
-            'BTTS Yes': 1.95,
-            'BTTS No': 1.75
+            '1x2 Home': 1.33,    # Realistic odds for strong favorite
+            '1x2 Draw': 5.50,    # Realistic draw odds  
+            '1x2 Away': 11.00,   # Realistic underdog odds
+            'Over 2.5 Goals': 1.80,
+            'Under 2.5 Goals': 2.00,
+            'BTTS Yes': 2.25,
+            'BTTS No': 1.60
         }
     }
     
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("CONTEXT-AWARE ANALYSIS:")
+    print("FIXED ANALYSIS:")
     print(f"Match: {results['match']}")
     print(f"Predictive xG: Home {results['expected_goals']['home']:.2f} - Away {results['expected_goals']['away']:.2f}")
     print(f"Match Context: {results['match_context']}")
@@ -1051,3 +1112,6 @@ if __name__ == "__main__":
     print(f"Confidence Score: {results['confidence_score']}%")
     print(f"Risk Assessment: {results['risk_assessment']}")
     print(f"Betting Signals: {len(results['betting_signals'])} value bets detected")
+    
+    for signal in results['betting_signals']:
+        print(f"  - {signal['market']}: {signal['edge']:.1f}% edge, {signal['recommended_stake']*100:.1f}% stake")

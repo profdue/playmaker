@@ -1148,4 +1148,4 @@ def main():
                 st.info("💡 Check input parameters and try again")
 
 if __name__ == "__main__":
-    main()
+    main().

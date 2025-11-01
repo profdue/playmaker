@@ -11,8 +11,9 @@ from datetime import datetime
 # Import the UPDATED PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, SignalEngine, ValueDetectionEngine
-except ImportError:
-    st.error("❌ Could not import prediction_engine. Make sure prediction_engine.py is in the same directory.")
+    from prediction_orchestrator import ProfessionalPredictionOrchestrator
+except ImportError as e:
+    st.error(f"❌ Could not import prediction modules: {e}")
     st.stop()
 
 # Page configuration
@@ -188,6 +189,12 @@ def create_advanced_input_form():
         - Output: Betting signals
         - **NEW**: Practical thresholds and stake sizing
         
+        **Orchestrator** 🔵 (Professional Integration)
+        - Input: Core predictions + External patterns
+        - Process: Conservative pattern integration
+        - Output: Enhanced predictions
+        - **NEW**: Professional calibration
+        
         **No feedback loop between engines - Market never influences football predictions**
         """)
     
@@ -320,9 +327,15 @@ def create_advanced_input_form():
                 key="mc_iterations"
             )
             
-            # Performance quality (enhanced form)
-            st.write("**Form Quality Assessment**")
-            form_quality_note = st.info("💡 The model now uses context-aware risk assessment")
+            # Pattern influence setting
+            pattern_influence = st.slider(
+                "Pattern Influence Level",
+                min_value=5,
+                max_value=20,
+                value=12,
+                key="pattern_influence"
+            )
+            st.info(f"Pattern influence: {pattern_influence}% - Conservative professional weighting")
 
     with tab4:
         st.markdown("### 📊 Enhanced System Information")
@@ -332,17 +345,20 @@ def create_advanced_input_form():
         - 🔍 **Transparency**: Clear separation between analysis and betting
         - 📈 **Accuracy**: Pure football model focuses on match reality
         - 💰 **Value Detection**: Independent engine finds market inefficiencies
+        - 🎯 **Professional Orchestration**: Conservative pattern integration
         
         **CONTEXT-AWARE ENHANCEMENTS:**
         - 🎯 **Context-Aware Risk**: Home dominance + >50% probability = MEDIUM RISK
         - 📊 **Tiered Assessment**: 4-tier system for appropriate risk levels
         - 💰 **Practical Thresholds**: More accessible edge detection
         - 🎲 **Professional Stake Sizing**: Better capital allocation
+        - 🔄 **Conservative Pattern Integration**: Professional enhancement
         
         **Data Flow:**
         ```
         Football Data → Signal Engine → Pure Probabilities + Context
         Market Odds → Value Engine → Betting Signals
+        External Patterns → Orchestrator → Enhanced Predictions
         ```
         """)
 
@@ -370,7 +386,7 @@ def create_advanced_input_form():
     if submitted:
         if not home_team or not away_team:
             st.error("❌ Please enter both team names")
-            return None, None
+            return None, None, None
         
         # Convert form selections to points
         form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
@@ -433,9 +449,9 @@ def create_advanced_input_form():
             'market_odds': market_odds
         }
         
-        return match_data, mc_iterations
+        return match_data, mc_iterations, pattern_influence / 100.0
     
-    return None, None
+    return None, None, None
 
 def safe_get(dictionary, *keys, default=None):
     """Safely get nested dictionary keys"""
@@ -875,6 +891,22 @@ def display_system_health(predictions):
                             │   Stake Sizing  │
                             └─────────────────┘
         </pre>
+        
+        <h4>🎯 Professional Orchestrator Integration</h4>
+        <pre>
+        ┌─────────────────┐    ┌──────────────────┐
+        │ External Patterns│ ──▶│  Orchestrator    │
+        │ (H2H, Momentum)  │    │ (Conservative)   │
+        │                 │    │ + Professional  │
+        └─────────────────┘    │   Calibration   │
+                               └──────────────────┘
+                                      │
+                                      ▼
+                            ┌─────────────────┐
+                            │Enhanced Predictions│
+                            │  (Pattern-Aware)  │
+                            └─────────────────┘
+        </pre>
     </div>
     """, unsafe_allow_html=True)
     
@@ -898,9 +930,9 @@ def display_system_health(predictions):
         st.write("• No feedback to predictions")
     
     with col3:
-        st.info("**✅ Context-Aware System Integrity**")
-        st.write("• Home dominance properly rewarded")
-        st.write("• Unpredictable matches stay high risk")
+        st.info("**✅ Professional Orchestrator**")
+        st.write("• Conservative pattern integration")
+        st.write("• Professional calibration")
         st.write("• Architecture compliance: 100%")
         st.write("• Historical tracking enabled")
     
@@ -928,15 +960,14 @@ def display_system_health(predictions):
         match_context = predictions.get('match_context', 'unknown')
         st.metric("Match Context", match_context.replace('_', ' ').title())
     
-    # Additional metrics
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("Total Predictions Tracked", bias_monitoring.get('total_predictions_tracked', 0))
-    with col2:
-        if 'prediction_history' in st.session_state:
-            history_count = len(st.session_state.prediction_history)
-            st.metric("Session Predictions", history_count)
+    # Orchestration metadata
+    orchestration = safe_get(predictions, 'orchestration_metadata', {})
+    if orchestration:
+        st.markdown('<div class="section-title">🎯 Professional Orchestration Details</div>', unsafe_allow_html=True)
+        st.write(f"**Enhancement Type:** {orchestration.get('enhancement_type', 'None')}")
+        st.write(f"**Pattern Count:** {orchestration.get('pattern_count', 0)}")
+        st.write(f"**Enhancement Factor:** {orchestration.get('enhancement_factor', 0):.3f}")
+        st.write(f"**Notes:** {orchestration.get('notes', 'No orchestration applied')}")
 
 def display_probability_bar(label: str, probability: float, color: str):
     """Display a probability with a visual bar"""
@@ -1003,13 +1034,14 @@ def main():
         
         return
     
-    match_data, mc_iterations = create_advanced_input_form()
+    match_data, mc_iterations, pattern_influence = create_advanced_input_form()
     
     if match_data:
         with st.spinner("🔍 Running context-aware engine analysis..."):
             try:
-                predictor = AdvancedFootballPredictor(match_data)
-                predictions = predictor.generate_comprehensive_analysis(mc_iterations)
+                # Use orchestrator for professional pattern integration
+                orchestrator = ProfessionalPredictionOrchestrator(pattern_influence)
+                predictions = orchestrator.generate_all_predictions(match_data)
                 
                 st.session_state.predictions = predictions
                 store_prediction_in_session(predictions)

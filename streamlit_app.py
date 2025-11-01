@@ -173,6 +173,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def safe_get(dictionary, *keys, default=None):
+    """Safely get nested dictionary keys - FIXED VERSION"""
+    if dictionary is None:
+        return default
+        
+    current = dictionary
+    for key in keys:
+        try:
+            if isinstance(current, dict) and key in current:
+                current = current[key]
+            else:
+                return default
+        except (TypeError, KeyError):
+            return default
+    return current
+
 def create_input_form():
     """Create input form"""
     
@@ -393,19 +409,6 @@ def create_input_form():
     
     return None, None
 
-def safe_get(dictionary, *keys, default=None):
-    """Safely get nested dictionary keys"""
-    if dictionary is None:
-        return default
-        
-    current = dictionary
-    for key in keys:
-        if isinstance(current, dict) and key in current:
-            current = current[key]
-        else:
-            return default
-    return current
-
 def display_analysis(predictions):
     """Display analysis"""
     
@@ -425,14 +428,14 @@ def display_goals_analysis(predictions):
     st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
     
     # Get probabilities with safe defaults
-    btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes', default=0) or 0
-    btts_no = safe_get(predictions, 'probabilities', 'both_teams_score', 'no', default=0) or 0
+    btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes') or 0
+    btts_no = safe_get(predictions, 'probabilities', 'both_teams_score', 'no') or 0
     
-    over_25 = safe_get(predictions, 'probabilities', 'over_under', 'over_25', default=0) or 0
-    under_25 = safe_get(predictions, 'probabilities', 'over_under', 'under_25', default=0) or 0
+    over_25 = safe_get(predictions, 'probabilities', 'over_under', 'over_25') or 0
+    under_25 = safe_get(predictions, 'probabilities', 'over_under', 'under_25') or 0
     
-    first_half = safe_get(predictions, 'probabilities', 'goal_timing', 'first_half', default=0) or 0
-    second_half = safe_get(predictions, 'probabilities', 'goal_timing', 'second_half', default=0) or 0
+    first_half = safe_get(predictions, 'probabilities', 'goal_timing', 'first_half') or 0
+    second_half = safe_get(predictions, 'probabilities', 'goal_timing', 'second_half') or 0
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -541,10 +544,10 @@ def display_predictions(predictions):
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
     
     # Key metrics with safe defaults
-    xg = safe_get(predictions, 'expected_goals', default={'home': 0, 'away': 0}) or {'home': 0, 'away': 0}
-    match_context = safe_get(predictions, 'match_context', default='Unknown') or 'Unknown'
-    confidence_score = safe_get(predictions, 'confidence_score', default=0) or 0
-    data_quality = safe_get(predictions, 'data_quality_score', default=0) or 0
+    xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
+    match_context = safe_get(predictions, 'match_context') or 'Unknown'
+    confidence_score = safe_get(predictions, 'confidence_score') or 0
+    data_quality = safe_get(predictions, 'data_quality_score') or 0
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -566,7 +569,7 @@ def display_predictions(predictions):
         st.metric("Confidence Score", f"{confidence_score}%")
     
     # System validation
-    system_validation = safe_get(predictions, 'system_validation', {}) or {}
+    system_validation = safe_get(predictions, 'system_validation') or {}
     if system_validation.get('status') == 'VALID':
         st.markdown('<div class="success-banner">✅ <strong>SYSTEM VALIDATION PASSED:</strong> Realistic probabilities generated</div>', unsafe_allow_html=True)
     elif system_validation.get('status') == 'WARNING':
@@ -575,7 +578,7 @@ def display_predictions(predictions):
     # Match Outcomes
     st.markdown('<div class="section-title">📈 Match Outcome Probabilities</div>', unsafe_allow_html=True)
     
-    outcomes = safe_get(predictions, 'probabilities', 'match_outcomes', default={'home_win': 0, 'draw': 0, 'away_win': 0}) or {'home_win': 0, 'draw': 0, 'away_win': 0}
+    outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {'home_win': 0, 'draw': 0, 'away_win': 0}
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -591,7 +594,7 @@ def display_predictions(predictions):
     # Exact Scores
     st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
-    exact_scores = safe_get(predictions, 'probabilities', 'exact_scores', default={}) or {}
+    exact_scores = safe_get(predictions, 'probabilities', 'exact_scores') or {}
     top_scores = dict(list(exact_scores.items())[:6])
     
     if top_scores:
@@ -603,7 +606,7 @@ def display_predictions(predictions):
         st.info("No exact score data available")
     
     # Risk Assessment
-    risk = safe_get(predictions, 'risk_assessment', default={'risk_level': 'UNKNOWN', 'explanation': 'No data'}) or {'risk_level': 'UNKNOWN', 'explanation': 'No data'}
+    risk = safe_get(predictions, 'risk_assessment') or {'risk_level': 'UNKNOWN', 'explanation': 'No data'}
     risk_class = f"risk-{risk.get('risk_level', 'unknown').lower()}"
     
     st.markdown(f'''
@@ -619,7 +622,7 @@ def display_predictions(predictions):
     
     # Professional Summary
     st.markdown('<div class="section-title">📝 Football Summary</div>', unsafe_allow_html=True)
-    summary = safe_get(predictions, 'summary', default="No summary available.") or "No summary available."
+    summary = safe_get(predictions, 'summary') or "No summary available."
     st.info(summary)
 
 def display_value_detection(predictions):
@@ -628,7 +631,7 @@ def display_value_detection(predictions):
     st.markdown('<p class="main-header">💰 Value Betting Detection</p>', unsafe_allow_html=True)
     st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Football-aware value detection with reality checks</div>', unsafe_allow_html=True)
     
-    betting_signals = safe_get(predictions, 'betting_signals', default=[]) or []
+    betting_signals = safe_get(predictions, 'betting_signals') or []
     
     if not betting_signals:
         st.info("""
@@ -722,13 +725,13 @@ def display_analytics(predictions):
     st.markdown('<p class="main-header">📈 Advanced Analytics</p>', unsafe_allow_html=True)
     
     # Monte Carlo Results
-    mc_results = safe_get(predictions, 'monte_carlo_results', default={}) or {}
+    mc_results = safe_get(predictions, 'monte_carlo_results') or {}
     
     if mc_results:
         st.markdown('<div class="section-title">⚡ Monte Carlo Simulation</div>', unsafe_allow_html=True)
         
         # Confidence Intervals
-        confidence_intervals = safe_get(mc_results, 'confidence_intervals', default={}) or {}
+        confidence_intervals = safe_get(mc_results, 'confidence_intervals') or {}
         
         if confidence_intervals:
             markets = ['Home Win', 'Draw', 'Away Win', 'Over 2.5']
@@ -769,14 +772,14 @@ def display_analytics(predictions):
     with col1:
         st.markdown('<div class="section-title">📊 Model Performance</div>', unsafe_allow_html=True)
         
-        data_quality = safe_get(predictions, 'data_quality_score', default=0) or 0
-        confidence = safe_get(predictions, 'confidence_score', default=0) or 0
+        data_quality = safe_get(predictions, 'data_quality_score') or 0
+        confidence = safe_get(predictions, 'confidence_score') or 0
         
         st.metric("Data Quality Score", f"{data_quality:.1f}%")
         st.metric("Overall Confidence", f"{confidence}%")
         
         # Volatility metrics
-        probability_volatility = safe_get(mc_results, 'probability_volatility', default={}) or {}
+        probability_volatility = safe_get(mc_results, 'probability_volatility') or {}
         if probability_volatility:
             avg_volatility = np.mean(list(probability_volatility.values())) * 100
             st.metric("Probability Volatility", f"{avg_volatility:.2f}%")
@@ -784,8 +787,8 @@ def display_analytics(predictions):
     with col2:
         st.markdown('<div class="section-title">🎲 Additional Predictions</div>', unsafe_allow_html=True)
         
-        corners = safe_get(predictions, 'corner_predictions', default={}) or {}
-        timing = safe_get(predictions, 'timing_predictions', default={}) or {}
+        corners = safe_get(predictions, 'corner_predictions') or {}
+        timing = safe_get(predictions, 'timing_predictions') or {}
         
         st.write(f"**Total Corners:** {corners.get('total', 'N/A')}")
         st.write(f"**First Goal:** {timing.get('first_goal', 'N/A')}")

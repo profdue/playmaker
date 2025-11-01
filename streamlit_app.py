@@ -8,35 +8,17 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the FIXED PREDICTION ENGINE (using correct file name)
+# Import the COMPLETELY FIXED PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, SignalEngine, ValueDetectionEngine
 except ImportError as e:
-    st.error(f"❌ Could not import prediction modules: {e}")
+    st.error(f"❌ Could not import FIXED prediction modules: {e}")
     st.info("""
-    💡 Make sure you have prediction_engine.py in the same directory with:
+    💡 Make sure you have the fixed_prediction_engine.py file with:
     - Enhanced SignalEngine with football sanity checks
-    - Fixed ValueDetectionEngine with probability validation  
+    - Fixed ValueDetectionEngine with probability validation
     - Realistic probability outputs
     """)
-    
-    # Show what should be in the file
-    with st.expander("🔧 Required File Structure"):
-        st.code("""
-# prediction_engine.py should contain:
-class SignalEngine:
-    # With football sanity checks
-    def _apply_football_sanity_checks(self, home_xg, away_xg)
-    def _validate_probability_sanity(self, home_win, draw, away_win)
-
-class ValueDetectionEngine:
-    # With probability validation
-    def _validate_probability_sanity(self, pure_probabilities)
-    def detect_value_bets(self, pure_probabilities, market_odds)
-
-class AdvancedFootballPredictor:
-    def generate_comprehensive_analysis(self, mc_iterations=10000)
-        """)
     st.stop()
 
 # Page configuration
@@ -208,14 +190,6 @@ st.markdown("""
     .validation-warning {
         background: #fffaf2;
         border-left: 4px solid #FF9800;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-    }
-    
-    .validation-error {
-        background: #fff5f5;
-        border-left: 4px solid #f44336;
         padding: 1rem;
         border-radius: 8px;
         margin: 0.5rem 0;
@@ -681,7 +655,7 @@ def display_pure_predictions(predictions):
     elif home_prob >= 50:
         st.markdown('<div class="validation-warning">⚠️ <strong>PROBABILITY VALIDATION WARNING:</strong> Home probability lower than expected for favorite</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="validation-error">❌ <strong>PROBABILITY VALIDATION FAILED:</strong> Home probability unrealistically low - model correction applied</div>', unsafe_allow_html=True)
+        st.markdown('<div class="validation-warning">❌ <strong>PROBABILITY VALIDATION FAILED:</strong> Home probability unrealistically low - model correction applied</div>', unsafe_allow_html=True)
     
     # Match Outcomes
     st.markdown('<div class="section-title">📈 REALISTIC Match Outcome Probabilities</div>', unsafe_allow_html=True)
@@ -1110,7 +1084,6 @@ def main():
                 st.session_state.predictions = predictions
                 store_prediction_in_session(predictions)
                 
-                st.success("✅ Analysis completed with realistic probabilities!")
                 st.rerun()
                 
             except Exception as e:

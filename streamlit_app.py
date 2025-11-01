@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the IMPROVED PREDICTION ENGINE
+# Import the UPDATED PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, SignalEngine, ValueDetectionEngine
 except ImportError:
@@ -169,24 +169,24 @@ def create_advanced_input_form():
     """Create input form with clear separation between football data and market data"""
     
     st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Match Analysis with Strict Separation of Concerns</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Match Analysis with Practical Risk Assessment</p>', unsafe_allow_html=True)
     
     # System Architecture Overview
     with st.expander("🏗️ System Architecture Overview", expanded=True):
         st.markdown("""
-        ### 🎯 Project Purity v2.0 - Enhanced Separated Engines
+        ### 🎯 Project Purity v2.0 - Practical Risk Assessment
         
         **Signal Engine** 🟢 (Pure Football Analysis)
         - Input: Only football data (goals, form, H2H, etc.)
         - Process: Dixon-Coles xG, Monte Carlo simulation
         - Output: Pure probabilities
-        - **NEW**: Dynamic team profiles, context-aware motivation
+        - **NEW**: Statistical evidence can override "unpredictable" context
         
         **Value Engine** 🟠 (Market Analysis)  
         - Input: Pure probabilities + Market odds
         - Process: Value detection, Kelly criterion
         - Output: Betting signals
-        - **NEW**: Market confidence weighting, enhanced edge calculation
+        - **NEW**: More practical thresholds and stake sizing
         
         **No feedback loop between engines - Market never influences football predictions**
         """)
@@ -333,11 +333,11 @@ def create_advanced_input_form():
         - 📈 **Accuracy**: Pure football model focuses on match reality
         - 💰 **Value Detection**: Independent engine finds market inefficiencies
         
-        **NEW ENHANCEMENTS:**
-        - 🎯 **Dynamic Team Profiles**: Automatic style detection
-        - 🧠 **Context-Aware Motivation**: Match context affects motivation impact
-        - 📊 **Market Confidence Weighting**: Better edge detection
-        - 🏥 **Enhanced Absence Impact**: More granular injury modeling
+        **NEW PRACTICAL ENHANCEMENTS:**
+        - 🎯 **Statistical Evidence Override**: Clear xG dominance can override "unpredictable" context
+        - 📊 **Practical Risk Assessment**: Differentiates between 49% and 60% probabilities
+        - 💰 **Reasonable Value Thresholds**: More accessible edge detection
+        - 🎲 **Professional Stake Sizing**: Better capital allocation
         
         **Data Flow:**
         ```
@@ -365,7 +365,7 @@ def create_advanced_input_form():
             st.info("No prediction history yet. Generate some predictions to see historical data here!")
 
     # Submit button
-    submitted = st.button("🎯 GENERATE ENHANCED ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE PRACTICAL ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -581,7 +581,7 @@ def display_pure_predictions(predictions):
     """Display pure football predictions from Signal Engine"""
     
     st.markdown('<p class="main-header">🎯 Pure Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="pure-engine-card"><h3>🟢 Enhanced Signal Engine Output</h3>Market-independent football analysis with dynamic team profiling</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pure-engine-card"><h3>🟢 Enhanced Signal Engine Output</h3>Market-independent football analysis with practical risk assessment</div>', unsafe_allow_html=True)
     
     st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
     
@@ -601,7 +601,7 @@ def display_pure_predictions(predictions):
             'offensive_showdown': '🔥',
             'home_dominance': '🏠',
             'away_counter': '✈️',
-            'unknown': '❓'
+            'unpredictable': '❓'
         }.get(match_context, '❓')
         st.metric("Match Context", f"{context_emoji} {match_context.replace('_', ' ').title()}")
     with col4:
@@ -642,9 +642,10 @@ def display_pure_predictions(predictions):
     
     st.markdown(f'''
     <div class="prediction-card {risk_class}">
-        <h3>📊 Enhanced Risk Assessment</h3>
+        <h3>📊 Practical Risk Assessment</h3>
         <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
         <strong>Explanation:</strong> {risk.get("explanation", "No data available")}<br>
+        <strong>Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
         <strong>Certainty:</strong> {risk.get("certainty", "N/A")}<br>
         <strong>Uncertainty:</strong> {risk.get('uncertainty', 'N/A')}
     </div>
@@ -657,8 +658,8 @@ def display_pure_predictions(predictions):
 def display_value_detection(predictions):
     """Display value detection results from Value Engine"""
     
-    st.markdown('<p class="main-header">💰 Enhanced Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="value-engine-card"><h3>🟠 Enhanced Value Engine Output</h3>Market confidence-weighted edge detection</div>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">💰 Practical Value Betting Detection</p>', unsafe_allow_html=True)
+    st.markdown('<div class="value-engine-card"><h3>🟠 Enhanced Value Engine Output</h3>Market confidence-weighted edge detection with practical thresholds</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals', default=[])
     
@@ -669,7 +670,7 @@ def display_value_detection(predictions):
         - Pure probabilities align with market expectations  
         - Insufficient data for value detection
         - All edges below minimum threshold
-        - **NEW**: Market confidence weighting reduced edges
+        - **NEW**: More practical thresholds applied
         """)
         return
     
@@ -693,7 +694,7 @@ def display_value_detection(predictions):
         st.metric("Total Stake", f"{total_stake * 100:.1f}%")
     
     # Display value bets by rating
-    st.markdown('<div class="section-title">🎯 Enhanced Value Bet Recommendations</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🎯 Practical Value Bet Recommendations</div>', unsafe_allow_html=True)
     
     # Group by value rating
     exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
@@ -735,7 +736,7 @@ def display_value_detection(predictions):
     
     # Edge distribution visualization
     if betting_signals:
-        st.markdown('<div class="section-title">📈 Enhanced Edge Distribution Analysis</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📈 Practical Edge Distribution Analysis</div>', unsafe_allow_html=True)
         
         df_edges = pd.DataFrame(betting_signals)
         fig = px.bar(df_edges, x='market', y='edge', color='value_rating',
@@ -757,7 +758,7 @@ def display_value_detection(predictions):
 def display_advanced_analytics(predictions):
     """Display advanced analytics from both engines"""
     
-    st.markdown('<p class="main-header">📈 Enhanced Analytics</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">📈 Practical Analytics</p>', unsafe_allow_html=True)
     
     # Monte Carlo Results
     mc_results = safe_get(predictions, 'monte_carlo_results', default={})
@@ -839,72 +840,72 @@ def display_advanced_analytics(predictions):
         handicap_probs = safe_get(predictions, 'handicap_probabilities', default={})
         if handicap_probs:
             st.write("**Handicap Probabilities:**")
-            for handicap, prob in list(handicap_probs.items())[:3]:  # Show top 3
+            for handicap, prob in list(handicap_probs.items())[:3]:
                 st.write(f"- {handicap.replace('_', ' ').title()}: {prob}%")
 
 def display_system_health(predictions):
     """Display system health and bias monitoring"""
     
-    st.markdown('<p class="main-header">🏗️ Enhanced System Health Monitoring</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">🏗️ Practical System Health Monitoring</p>', unsafe_allow_html=True)
     
     # Architecture Diagram
     st.markdown("""
     <div class="architecture-diagram">
-        <h3>🔄 Enhanced Data Flow Architecture</h3>
+        <h3>🔄 Practical Data Flow Architecture</h3>
         <pre>
         ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
         │   Football Data │ ──▶│   Signal Engine  │ ──▶│ Pure Probabilities │
         │ (Goals, Form)   │    │  (No Market Bias)│    │   (Market-Free)   │
-        │    + Enhanced   │    │ + Dynamic Profiles│    │ + Context-Aware   │
-        │     Context     │    │ + Better Bounds  │    │   Summaries       │
+        │    + Enhanced   │    │ + Statistical    │    │ + Practical       │
+        │     Context     │    │ Evidence Override│    │   Risk Assessment │
         └─────────────────┘    └──────────────────┘    └─────────────────┘
                                                                   │
         ┌─────────────────┐    ┌──────────────────┐              │
         │   Market Odds   │ ──▶│  Value Engine    │ ◀─────────────┘
         │ (Bookmaker)     │    │ (Edge Detection) │    
-        │                 │    │ + Confidence     │    
-        └─────────────────┘    │   Weighting      │    
+        │                 │    │ + Practical      │    
+        └─────────────────┘    │   Thresholds     │    
                                └──────────────────┘    
                                       │
                                       ▼
                             ┌─────────────────┐
                             │ Betting Signals │
                             │   (Value Bets)  │
-                            │   + Enhanced    │
-                            │   Edge Calc     │
+                            │   + Professional│
+                            │   Stake Sizing  │
                             └─────────────────┘
         </pre>
     </div>
     """, unsafe_allow_html=True)
     
     # Bias Monitoring
-    st.markdown('<div class="section-title">🛡️ Enhanced Bias Protection Status</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🛡️ Practical Bias Protection Status</div>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.success("**✅ Enhanced Signal Engine**")
         st.write("• Pure football data only")
-        st.write("• No market influence")
-        st.write("• Dynamic team profiling")
+        st.write("• Statistical evidence override")
+        st.write("• Practical risk assessment")
         st.write("• Context-aware motivation")
     
     with col2:
         st.warning("**✅ Enhanced Value Engine**") 
         st.write("• Separate processing")
-        st.write("• Market confidence weighting")
-        st.write("• Enhanced edge detection")
+        st.write("• Practical thresholds")
+        st.write("• Professional stake sizing")
         st.write("• No feedback to predictions")
     
     with col3:
-        st.info("**✅ Enhanced System Integrity**")
-        st.write("• Strict separation maintained")
-        st.write("• Bias drift monitoring active")
+        st.info("**✅ Practical System Integrity**")
+        st.write("• Statistical dominance detection")
+        st.write("• Probability-tiered risk assessment")
         st.write("• Architecture compliance: 100%")
         st.write("• Historical tracking enabled")
     
     # Model Metrics
-    st.markdown('<div class="section-title">📈 Enhanced Model Quality Metrics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📈 Practical Model Quality Metrics</div>', unsafe_allow_html=True)
     
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes', default={'home_win': 0, 'draw': 0, 'away_win': 0})
     probs = np.array([v / 100 for v in outcomes.values()])
@@ -933,7 +934,6 @@ def display_system_health(predictions):
     with col1:
         st.metric("Total Predictions Tracked", bias_monitoring.get('total_predictions_tracked', 0))
     with col2:
-        # Show prediction history if available
         if 'prediction_history' in st.session_state:
             history_count = len(st.session_state.prediction_history)
             st.metric("Session Predictions", history_count)
@@ -969,21 +969,18 @@ def store_prediction_in_session(prediction):
     
     st.session_state.prediction_history.append(prediction_record)
     
-    # Keep only last 20 predictions to manage memory
     if len(st.session_state.prediction_history) > 20:
         st.session_state.prediction_history = st.session_state.prediction_history[-20:]
 
 def main():
     """Main application function"""
     
-    # Initialize session state
     if 'predictions' not in st.session_state:
         st.session_state.predictions = None
     
     if 'prediction_history' not in st.session_state:
         st.session_state.prediction_history = []
     
-    # Show predictions if available
     if st.session_state.predictions:
         display_separated_analysis(st.session_state.predictions)
         
@@ -1001,23 +998,19 @@ def main():
         
         with col3:
             if st.button("📈 View History", use_container_width=True):
-                # Switch to history tab
                 st.session_state.show_history = True
                 st.rerun()
         
         return
     
-    # Input form
     match_data, mc_iterations = create_advanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running enhanced engine analysis..."):
+        with st.spinner("🔍 Running practical engine analysis..."):
             try:
-                # Use the enhanced orchestrator with separated engines
                 predictor = AdvancedFootballPredictor(match_data)
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
                 
-                # Store in session state
                 st.session_state.predictions = predictions
                 store_prediction_in_session(predictions)
                 

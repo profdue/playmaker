@@ -5,14 +5,14 @@ MAINTAINS FULL COMPATIBILITY with existing streamlit_app.py
 """
 import logging
 from typing import Dict, Any, List, Optional
-from prediction_engine import ProfessionalPredictionEngine
+from prediction_engine import AdvancedFootballPredictor
 
 logger = logging.getLogger(__name__)
 
 class ProfessionalPredictionOrchestrator:
     def __init__(self, pattern_influence: float = 0.12):  # Conservative professional weighting
         self.pattern_influence = min(0.20, max(0.05, pattern_influence))  # 5-20% range
-        self.core_engine_class = ProfessionalPredictionEngine
+        self.core_engine_class = AdvancedFootballPredictor
         logger.info(f"🎯 Initialized ProfessionalPredictionOrchestrator with {pattern_influence*100:.1f}% pattern influence")
         
     def generate_all_predictions(self, match_data: Dict) -> Dict[str, Any]:
@@ -24,7 +24,7 @@ class ProfessionalPredictionOrchestrator:
             # Step 1: Generate core predictions with built-in pattern detection
             logger.info("📊 Generating institutional-grade predictions...")
             core_engine = self.core_engine_class(match_data)
-            core_predictions = core_engine.generate_all_predictions()
+            core_predictions = core_engine.generate_comprehensive_analysis()
             
             # Step 2: Check if core engine already detected patterns
             core_patterns = core_predictions.get('pattern_intelligence', {})
@@ -57,7 +57,7 @@ class ProfessionalPredictionOrchestrator:
             logger.error(f"❌ Orchestration failed: {e}")
             # Professional fallback - return core predictions without enhancement
             core_engine = self.core_engine_class(match_data)
-            return core_engine.generate_all_predictions()
+            return core_engine.generate_comprehensive_analysis()
     
     def _professionally_enhance_predictions(self, core_predictions: Dict, 
                                           core_patterns: Dict, 
@@ -76,13 +76,13 @@ class ProfessionalPredictionOrchestrator:
         enhancement_factor = self._calculate_enhancement_factor(core_patterns, match_data)
         
         # Apply CALIBRATED enhancement to 1X2 probabilities
-        if 'predictions' in enhanced and '1X2' in enhanced['predictions']:
-            pred_1x2 = enhanced['predictions']['1X2']
+        if 'probabilities' in enhanced and 'match_outcomes' in enhanced['probabilities']:
+            pred_1x2 = enhanced['probabilities']['match_outcomes']
             
             # Convert to probability space (0-1)
-            home_core = pred_1x2.get('Home Win', 33.3) / 100.0
-            draw_core = pred_1x2.get('Draw', 33.3) / 100.0
-            away_core = pred_1x2.get('Away Win', 33.3) / 100.0
+            home_core = pred_1x2.get('home_win', 33.3) / 100.0
+            draw_core = pred_1x2.get('draw', 33.3) / 100.0
+            away_core = pred_1x2.get('away_win', 33.3) / 100.0
             
             # Apply CALIBRATED pattern enhancement
             home_enhanced = home_core + (core_adjustment['home'] * enhancement_factor)
@@ -95,9 +95,9 @@ class ProfessionalPredictionOrchestrator:
             )
             
             # Update predictions
-            enhanced['predictions']['1X2']['Home Win'] = round(home_enhanced * 100, 1)
-            enhanced['predictions']['1X2']['Draw'] = round(draw_enhanced * 100, 1)
-            enhanced['predictions']['1X2']['Away Win'] = round(away_enhanced * 100, 1)
+            enhanced['probabilities']['match_outcomes']['home_win'] = round(home_enhanced * 100, 1)
+            enhanced['probabilities']['match_outcomes']['draw'] = round(draw_enhanced * 100, 1)
+            enhanced['probabilities']['match_outcomes']['away_win'] = round(away_enhanced * 100, 1)
             
             # ENHANCE confidence score based on pattern quality
             if pattern_count > 0:
@@ -169,41 +169,31 @@ class ProfessionalPredictionOrchestrator:
         """
         Adjust uncertainty intervals to reflect increased confidence from patterns
         """
-        if 'uncertainty' not in predictions:
+        if 'monte_carlo_results' not in predictions:
             return predictions
         
-        uncertainty = predictions['uncertainty']
+        mc_results = predictions['monte_carlo_results']
         
         # Reduce uncertainty intervals when patterns are present
         reduction_factor = max(0.7, 1.0 - (pattern_count * 0.08))  # 8% reduction per pattern
         
-        if 'home_win_68_interval' in uncertainty:
-            current_68 = uncertainty['home_win_68_interval']
-            if isinstance(current_68, list) and len(current_68) == 2:
-                width_68 = current_68[1] - current_68[0]
-                new_width_68 = width_68 * reduction_factor
-                center_68 = (current_68[0] + current_68[1]) / 2
-                uncertainty['home_win_68_interval'] = [
-                    round(center_68 - new_width_68/2, 1),
-                    round(center_68 + new_width_68/2, 1)
-                ]
+        if 'confidence_intervals' in mc_results:
+            for market, interval in mc_results['confidence_intervals'].items():
+                if isinstance(interval, list) and len(interval) == 2:
+                    width = interval[1] - interval[0]
+                    new_width = width * reduction_factor
+                    center = (interval[0] + interval[1]) / 2
+                    mc_results['confidence_intervals'][market] = [
+                        round(center - new_width/2, 3),
+                        round(center + new_width/2, 3)
+                    ]
         
-        if 'home_win_95_interval' in uncertainty:
-            current_95 = uncertainty['home_win_95_interval']
-            if isinstance(current_95, list) and len(current_95) == 2:
-                width_95 = current_95[1] - current_95[0]
-                new_width_95 = width_95 * reduction_factor
-                center_95 = (current_95[0] + current_95[1]) / 2
-                uncertainty['home_win_95_interval'] = [
-                    round(center_95 - new_width_95/2, 1),
-                    round(center_95 + new_width_95/2, 1)
-                ]
+        # Reduce probability volatility
+        if 'probability_volatility' in mc_results:
+            for market, volatility in mc_results['probability_volatility'].items():
+                mc_results['probability_volatility'][market] = round(volatility * reduction_factor, 4)
         
-        # Reduce standard error
-        if 'standard_error' in uncertainty:
-            uncertainty['standard_error'] = round(uncertainty['standard_error'] * reduction_factor, 2)
-        
-        predictions['uncertainty'] = uncertainty
+        predictions['monte_carlo_results'] = mc_results
         return predictions
     
     def _analyze_external_patterns(self, match_data: Dict, core_predictions: Dict) -> Dict:
@@ -213,7 +203,7 @@ class ProfessionalPredictionOrchestrator:
         patterns_detected = []
         
         # Only analyze if we have sufficient data
-        data_quality = match_data.get('data_quality_score', 50)
+        data_quality = core_predictions.get('data_quality_score', 50)
         if data_quality < 60:
             return {"patterns_detected": [], "pattern_count": 0, "net_adjustment": {"home": 0, "away": 0, "draw": 0}}
         
@@ -241,30 +231,30 @@ class ProfessionalPredictionOrchestrator:
     def _detect_conservative_h2h_dominance(self, match_data: Dict) -> Optional[Dict]:
         """Very conservative H2H pattern detection"""
         try:
-            h2h = match_data.get('head_to_head', [])
-            if len(h2h) < 6:  # Higher threshold for external detection
+            h2h_data = match_data.get('h2h_data', {})
+            matches = h2h_data.get('matches', 0)
+            home_wins = h2h_data.get('home_wins', 0)
+            away_wins = h2h_data.get('away_wins', 0)
+            
+            if matches < 6:  # Higher threshold for external detection
                 return None
             
-            home_wins = sum(1 for result in h2h if isinstance(result, list) and result[0] > result[1])
-            away_wins = sum(1 for result in h2h if isinstance(result, list) and result[0] < result[1])
-            total_matches = len(h2h)
-            
             # Very conservative thresholds for external patterns
-            if home_wins / total_matches >= 0.7:  # 70% home dominance
+            if home_wins / matches >= 0.7:  # 70% home dominance
                 return {
                     'type': 'external_h2h_home_dominance',
                     'direction': 'home',
-                    'strength': min(0.08, (home_wins/total_matches - 0.6)),  # Reduced strength
+                    'strength': min(0.08, (home_wins/matches - 0.6)),  # Reduced strength
                     'confidence': 0.6,  # Lower confidence for external patterns
-                    'evidence': f"Strong H2H: {home_wins}/{total_matches} home wins"
+                    'evidence': f"Strong H2H: {home_wins}/{matches} home wins"
                 }
-            elif away_wins / total_matches >= 0.7:
+            elif away_wins / matches >= 0.7:
                 return {
                     'type': 'external_h2h_away_dominance',
                     'direction': 'away',
-                    'strength': min(0.08, (away_wins/total_matches - 0.6)),
+                    'strength': min(0.08, (away_wins/matches - 0.6)),
                     'confidence': 0.6,
-                    'evidence': f"Strong H2H: {away_wins}/{total_matches} away wins"
+                    'evidence': f"Strong H2H: {away_wins}/{matches} away wins"
                 }
         except Exception:
             pass
@@ -304,53 +294,43 @@ class ProfessionalPredictionOrchestrator:
             home_standing = match_data.get('home_standing')
             away_standing = match_data.get('away_standing')
             
-            if not home_standing or not away_standing or len(home_standing) < 4 or len(away_standing) < 4:
+            if not home_standing or not away_standing:
                 return None
             
-            home_pos, home_pts, home_played, home_gd = home_standing[:4]
-            away_pos, away_pts, away_played, away_gd = away_standing[:4]
+            # For simplicity, assume standings are provided as position integers
+            home_pos = int(home_standing) if isinstance(home_standing, (int, str)) else 10
+            away_pos = int(away_standing) if isinstance(away_standing, (int, str)) else 10
             
-            # Calculate position gap and points per game gap
+            # Calculate position gap
             pos_gap = abs(home_pos - away_pos)
-            home_ppg = home_pts / home_played if home_played > 0 else 0
-            away_ppg = away_pts / away_played if away_played > 0 else 0
-            ppg_gap = abs(home_ppg - away_ppg)
             
             # Conservative thresholds
-            if pos_gap >= 8 and ppg_gap >= 0.5:  # Significant gap
-                direction = 'home' if home_ppg > away_ppg else 'away'
+            if pos_gap >= 8:  # Significant gap
+                direction = 'home' if home_pos < away_pos else 'away'  # Lower position = better
                 return {
                     'type': 'standings_gap',
                     'direction': direction,
-                    'strength': min(0.05, (pos_gap / 40 + ppg_gap / 2)),  # Very conservative
+                    'strength': min(0.05, pos_gap / 40),  # Very conservative
                     'confidence': 0.5,
-                    'evidence': f"Standings gap: {pos_gap} positions, {ppg_gap:.2f} PPG difference"
+                    'evidence': f"Standings gap: {pos_gap} positions"
                 }
         except Exception:
             pass
         return None
     
-    def _calculate_conservative_momentum(self, form: List[str]) -> float:
+    def _calculate_conservative_momentum(self, form: List) -> float:
         """Conservative momentum calculation"""
         if not form or len(form) < 3:
             return 0.5
         
-        # Weight recent matches more heavily but conservatively
-        weights = [1.0, 0.8, 0.6, 0.4, 0.2][:len(form)]
-        total_score = 0
-        total_weight = 0
+        # Convert form points to momentum score (assuming form is points per game)
+        recent_form = form[:3]  # Last 3 games
+        if len(recent_form) == 0:
+            return 0.5
         
-        for i, result in enumerate(form):
-            if result == 'W':
-                score = 1.0
-            elif result == 'D':
-                score = 0.5
-            else:
-                score = 0.0
-            total_score += score * weights[i]
-            total_weight += weights[i]
-        
-        return total_score / total_weight if total_weight > 0 else 0.5
+        avg_points = sum(recent_form) / len(recent_form)
+        # Normalize to 0-1 scale (0=0 points per game, 1=3 points per game)
+        return avg_points / 3.0
     
     def _calculate_conservative_adjustment(self, patterns: List[Dict]) -> Dict[str, float]:
         """Very conservative adjustment calculation for external patterns"""
@@ -382,13 +362,13 @@ class ProfessionalPredictionOrchestrator:
         """
         enhanced = core_predictions.copy()
         
-        if 'predictions' in enhanced and '1X2' in enhanced['predictions']:
-            pred_1x2 = enhanced['predictions']['1X2']
+        if 'probabilities' in enhanced and 'match_outcomes' in enhanced['probabilities']:
+            pred_1x2 = enhanced['probabilities']['match_outcomes']
             
             # Convert to probability space
-            home_core = pred_1x2.get('Home Win', 33.3) / 100.0
-            draw_core = pred_1x2.get('Draw', 33.3) / 100.0
-            away_core = pred_1x2.get('Away Win', 33.3) / 100.0
+            home_core = pred_1x2.get('home_win', 33.3) / 100.0
+            draw_core = pred_1x2.get('draw', 33.3) / 100.0
+            away_core = pred_1x2.get('away_win', 33.3) / 100.0
             
             # Apply VERY CONSERVATIVE external pattern adjustment
             adjustment = external_patterns['net_adjustment']
@@ -404,9 +384,9 @@ class ProfessionalPredictionOrchestrator:
             )
             
             # Update predictions
-            enhanced['predictions']['1X2']['Home Win'] = round(home_enhanced * 100, 1)
-            enhanced['predictions']['1X2']['Draw'] = round(draw_enhanced * 100, 1)
-            enhanced['predictions']['1X2']['Away Win'] = round(away_enhanced * 100, 1)
+            enhanced['probabilities']['match_outcomes']['home_win'] = round(home_enhanced * 100, 1)
+            enhanced['probabilities']['match_outcomes']['draw'] = round(draw_enhanced * 100, 1)
+            enhanced['probabilities']['match_outcomes']['away_win'] = round(away_enhanced * 100, 1)
             
             # Add external pattern metadata
             enhanced['orchestration_metadata'] = {

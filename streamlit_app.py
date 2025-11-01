@@ -10,7 +10,7 @@ from datetime import datetime
 
 # Import the PREDICTION ENGINE
 try:
-    from prediction_engine import AdvancedFootballPredictor, SignalEngine, ValueDetectionEngine
+    from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator
 except ImportError as e:
     st.error(f"❌ Could not import prediction_engine: {e}")
     st.info("💡 Make sure prediction_engine.py is in the same directory")
@@ -194,6 +194,20 @@ st.markdown("""
         border-radius: 8px;
         margin: 1rem 0;
     }
+    
+    .tier-badge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        color: white;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+    .tier-elite { background: #e74c3c; }
+    .tier-strong { background: #e67e22; }
+    .tier-medium { background: #f1c40f; color: black; }
+    .tier-weak { background: #95a5a6; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -217,24 +231,26 @@ def create_input_form():
     """Create input form"""
     
     st.markdown('<p class="main-header">⚽ Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Match Analysis with PERFECT Engine Alignment</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Match Analysis with TIER-BASED CALIBRATION</p>', unsafe_allow_html=True)
     
     # System Architecture Overview
     with st.expander("🏗️ System Architecture", expanded=True):
         st.markdown("""
-        ### 🎯 PERFECTLY ALIGNED FOOTBALL PREDICTOR
+        ### 🎯 PROFESSIONAL TIER-CALIBRATED PREDICTOR
         
-        **Signal Engine** 🟢 (Football Reality)
-        - **Team Strength Tiers**: Elite, Strong, Medium, Weak teams
-        - **Reality Checks**: No absurd probabilities
-        - **Context-Aware**: Home dominance properly recognized
+        **Team Tier System** 🏆
+        - **ELITE**: Arsenal, Man City, Liverpool, etc.
+        - **STRONG**: Tottenham, Chelsea, Newcastle, etc.  
+        - **MEDIUM**: West Ham, Brighton, Wolves, etc.
+        - **WEAK**: Burnley, Luton, Sheffield Utd, etc.
         
-        **Value Engine** 🟠 (Market Analysis)  
-        - **NO CONTRADICTIONS**: Never recommends against Signal Engine
-        - **Perfect Alignment**: Only confirms Signal Engine predictions
-        - **Football Reality**: No impossible value bets
+        **Calibration Features** ⚡
+        - Tier-based xG baselines
+        - Contextual home advantage
+        - Form vs quality weighting
+        - Reality-checked probabilities
         
-        **GUARANTEE**: Value Engine will NEVER contradict Signal Engine
+        **GUARANTEE**: Realistic probabilities that match football reality
         """)
     
     tab1, tab2, tab3 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Settings"])
@@ -246,30 +262,55 @@ def create_input_form():
         
         with col1:
             st.subheader("🏠 Home Team")
-            home_team = st.text_input("Team Name", value="Sporting CP", key="home_team")
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=11, key="home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=3, key="home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=7, key="home_goals_home")
+            home_team = st.selectbox("Team Name", 
+                options=['Arsenal', 'Man City', 'Liverpool', 'Tottenham', 'Aston Villa', 'Newcastle', 
+                        'Chelsea', 'Man United', 'West Ham', 'Brighton', 'Wolves', 'Crystal Palace',
+                        'Fulham', 'Bournemouth', 'Brentford', 'Everton', 'Nottingham Forest',
+                        'Luton', 'Burnley', 'Sheffield Utd'],
+                index=18,  # Default to Burnley
+                key="home_team")
+            
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=14, key="home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
-            away_team = st.text_input("Team Name", value="FC Alverca", key="away_team")
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="away_goals_away")
+            away_team = st.selectbox("Team Name",
+                options=['Arsenal', 'Man City', 'Liverpool', 'Tottenham', 'Aston Villa', 'Newcastle',
+                        'Chelsea', 'Man United', 'West Ham', 'Brighton', 'Wolves', 'Crystal Palace',
+                        'Fulham', 'Bournemouth', 'Brentford', 'Everton', 'Nottingham Forest',
+                        'Luton', 'Burnley', 'Sheffield Utd'],
+                index=0,  # Default to Arsenal
+                key="away_team")
+            
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=12, key="away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=7, key="away_goals_away")
+        
+        # Show team tiers
+        calibrator = TeamTierCalibrator()
+        home_tier = calibrator.get_team_tier(home_team)
+        away_tier = calibrator.get_team_tier(away_team)
+        
+        st.markdown(f"""
+        **Team Tiers:** 
+        <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
+        <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
+        """, unsafe_allow_html=True)
         
         # Head-to-head section
         with st.expander("📊 Head-to-Head History"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=6, key="h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3, key="h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=5, key="h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=1, key="h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=2, key="h2h_away_wins")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=3, key="h2h_away_wins")
                 h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=9, key="h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=7, key="h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=4, key="h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=9, key="h2h_away_goals")
 
         # Recent Form
         with st.expander("📈 Recent Form Analysis"):
@@ -279,7 +320,7 @@ def create_input_form():
                 home_form = st.multiselect(
                     f"{home_team} Recent Results",
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)", "Win (3 pts)"],
+                    default=["Win (3 pts)", "Loss (0 pts)", "Win (3 pts)", "Loss (0 pts)", "Loss (0 pts)", "Win (3 pts)"],
                     key="home_form"
                 )
             with form_col2:
@@ -287,7 +328,7 @@ def create_input_form():
                 away_form = st.multiselect(
                     f"{away_team} Recent Results", 
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Loss (0 pts)", "Draw (1 pt)"],
+                    default=["Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)", "Win (3 pts)", "Win (3 pts)"],
                     key="away_form"
                 )
 
@@ -298,20 +339,20 @@ def create_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.09, step=0.01, key="home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=9.00, step=0.01, key="draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=17.00, step=0.01, key="away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=6.50, step=0.01, key="home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=4.50, step=0.01, key="draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=1.50, step=0.01, key="away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.13, step=0.01, key="over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.44, step=0.01, key="over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=2.00, step=0.01, key="over_35_odds")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.25, step=0.01, key="over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01, key="over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=2.50, step=0.01, key="over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.25, step=0.01, key="btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.57, step=0.01, key="btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.90, step=0.01, key="btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01, key="btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Model Configuration")
@@ -321,10 +362,10 @@ def create_input_form():
         with model_col1:
             league = st.selectbox("League", [
                 "premier_league", "la_liga", "serie_a", "bundesliga", "ligue_1", "liga_portugal", "default"
-            ], index=5, key="league")
+            ], index=0, key="league")
             
             st.write("**Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 0, key="home_injuries")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 1, key="home_injuries")
             away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="away_injuries")
             
             home_absence_impact = st.select_slider(
@@ -363,7 +404,7 @@ def create_input_form():
             )
 
     # Submit button
-    submitted = st.button("🎯 GENERATE PERFECTLY ALIGNED ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE CALIBRATED ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -565,9 +606,20 @@ def display_predictions(predictions):
     """Display football predictions"""
     
     st.markdown('<p class="main-header">🎯 Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Football Reality & Probability Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Professional Tier-Calibrated Analysis</div>', unsafe_allow_html=True)
     
-    st.markdown(f'<p style="text-align: center; font-size: 1.4rem; font-weight: 600;">{predictions["match"]}</p>', unsafe_allow_html=True)
+    # Team tiers display
+    team_tiers = safe_get(predictions, 'team_tiers') or {}
+    home_tier = team_tiers.get('home', 'MEDIUM')
+    away_tier = team_tiers.get('away', 'MEDIUM')
+    
+    st.markdown(f'''
+    <p style="text-align: center; font-size: 1.4rem; font-weight: 600;">
+        {predictions["match"]} 
+        <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
+        <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
+    </p>
+    ''', unsafe_allow_html=True)
     
     # Key metrics with safe defaults
     xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
@@ -661,7 +713,7 @@ def display_value_detection(predictions):
     """Display value detection results"""
     
     st.markdown('<p class="main-header">💰 Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Perfectly aligned with Signal Engine - NO CONTRADICTIONS</div>', unsafe_allow_html=True)
+    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Perfectly aligned with Tier-Calibrated Signal Engine</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals') or []
     
@@ -669,6 +721,7 @@ def display_value_detection(predictions):
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {}
     btts = safe_get(predictions, 'probabilities', 'both_teams_score') or {}
     over_under = safe_get(predictions, 'probabilities', 'over_under') or {}
+    team_tiers = safe_get(predictions, 'team_tiers') or {}
     
     primary_outcome = max(outcomes, key=outcomes.get) if outcomes else 'unknown'
     primary_btts = 'yes' if btts.get('yes', 0) > btts.get('no', 0) else 'no'
@@ -763,13 +816,16 @@ def display_value_detection(predictions):
                     aligns_with_primary = False
                     alignment_emoji = "⚠️"
                 
+                # Tier-aware contradiction checks
+                home_tier = team_tiers.get('home', 'MEDIUM')
+                away_tier = team_tiers.get('away', 'MEDIUM')
+                
                 if (bet.get('market') in ['1x2 Draw', '1x2 Away'] and primary_outcome == 'home_win' and 
-                    outcomes.get('home_win', 0) > 65):
+                    home_tier == 'ELITE' and away_tier == 'WEAK' and outcomes.get('home_win', 0) > 65):
                     aligns_with_primary = False
                     alignment_emoji = "❌"
                 
                 alignment_text = "ALIGNS" if aligns_with_primary else "CONTRADICTS"
-                alignment_class = "aligns" if aligns_with_primary else "contradicts"
                 
                 st.markdown(f'''
                 <div class="bet-card {value_class}">
@@ -893,6 +949,7 @@ def store_prediction_in_session(prediction):
         'timestamp': datetime.now().isoformat(),
         'match': prediction['match'],
         'expected_goals': prediction['expected_goals'],
+        'team_tiers': prediction.get('team_tiers', {}),
         'probabilities': prediction['probabilities']['match_outcomes'],
         'match_context': prediction['match_context'],
         'confidence_score': prediction['confidence_score'],
@@ -932,6 +989,7 @@ def main():
                         with st.expander(f"Prediction {i+1}: {pred['match']}"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"Expected Goals: Home {pred['expected_goals']['home']:.2f} - Away {pred['expected_goals']['away']:.2f}")
+                            st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
                             st.write(f"Probabilities: {pred['probabilities']}")
                             st.write(f"Match Context: {pred['match_context']}")
                             st.write(f"Confidence: {pred['confidence_score']}%")
@@ -943,7 +1001,7 @@ def main():
     match_data, mc_iterations = create_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running perfectly aligned engine analysis..."):
+        with st.spinner("🔍 Running tier-calibrated engine analysis..."):
             try:
                 predictor = AdvancedFootballPredictor(match_data)
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)

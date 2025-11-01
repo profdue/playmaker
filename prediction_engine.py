@@ -278,19 +278,20 @@ class SignalEngine:
         return motivation_multiplier * adjustment
 
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str) -> MatchContext:
-        """PRACTICAL context determination - statistical evidence can override inconsistency"""
+        """PRACTICAL context determination - REALISTIC football thresholds"""
         home_profile = self.team_profiles.get(home_team, self.team_profiles['default'])
         away_profile = self.team_profiles.get(away_team, self.team_profiles['default'])
         
         total_xg = home_xg + away_xg
         xg_difference = home_xg - away_xg
         
-        # PRACTICAL RULE: Clear statistical dominance overrides inconsistency
-        if xg_difference > 0.8 and home_xg > 1.4:
+        # PRACTICAL RULE: REALISTIC statistical dominance overrides inconsistency
+        # CHANGED: From 0.8 to 0.5 (realistic football threshold)
+        if xg_difference > 0.5 and home_xg > 1.2:  # REALISTIC football thresholds
             # Strong statistical evidence - don't penalize for inconsistency
-            if xg_difference > 0.8:
+            if xg_difference > 0.5:
                 return MatchContext.HOME_DOMINANCE
-            elif xg_difference < -0.6:
+            elif xg_difference < -0.4:
                 return MatchContext.AWAY_COUNTER
         
         # Only check for unpredictability if no clear statistical dominance
@@ -304,9 +305,9 @@ class SignalEngine:
         if (home_profile['style'] == 'defensive' and away_profile['style'] == 'defensive' 
             and total_xg < 2.4):
             return MatchContext.DEFENSIVE_BATTLE
-        elif xg_difference > 0.8:
+        elif xg_difference > 0.5:  # CHANGED: More realistic threshold
             return MatchContext.HOME_DOMINANCE
-        elif xg_difference < -0.6:
+        elif xg_difference < -0.4:  # CHANGED: More realistic threshold
             return MatchContext.AWAY_COUNTER
         elif (home_profile['style'] == 'attacking' and away_profile['style'] == 'attacking'
               and total_xg > 3.0):
@@ -316,9 +317,9 @@ class SignalEngine:
         
         if total_xg > 3.2:
             return MatchContext.OFFENSIVE_SHOWDOWN
-        elif xg_difference > 0.5:
+        elif xg_difference > 0.4:  # CHANGED: More realistic
             return MatchContext.HOME_DOMINANCE
-        elif xg_difference < -0.4:
+        elif xg_difference < -0.3:  # CHANGED: More realistic
             return MatchContext.AWAY_COUNTER
         else:
             return MatchContext.TACTICAL_STALEMATE
@@ -677,7 +678,7 @@ class SignalEngine:
         return max(10, min(95, int(confidence)))
     
     def _assess_practical_risk(self, mc_results: MonteCarloResults, confidence: int, home_xg: float, away_xg: float) -> Dict[str, str]:
-        """PRACTICAL risk assessment - statistical evidence can override context"""
+        """PRACTICAL risk assessment - REALISTIC football thresholds"""
         home_win_prob = mc_results.home_win_prob
         draw_prob = mc_results.draw_prob
         away_win_prob = mc_results.away_win_prob
@@ -689,10 +690,11 @@ class SignalEngine:
         max_entropy = np.log(3)
         uncertainty_ratio = entropy / max_entropy
         
-        # PRACTICAL RULE 1: Clear statistical dominance overrides unpredictability
+        # PRACTICAL RULE 1: REALISTIC statistical dominance overrides unpredictability
+        # CHANGED: From 0.8 to 0.5 (realistic football threshold)
         xg_difference = home_xg - away_xg
-        if (xg_difference > 0.8 and home_xg > 1.4 and 
-            home_win_prob > 0.58 and confidence > 60):
+        if (xg_difference > 0.5 and home_xg > 1.2 and  # REALISTIC thresholds
+            home_win_prob > 0.55 and confidence > 60):  # MORE REASONABLE probability
             risk_level = "MEDIUM"
             explanation = "Clear statistical advantage despite unpredictable context"
             recommendation = "CONSIDER BETTING"
@@ -1035,7 +1037,7 @@ if __name__ == "__main__":
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("PRACTICAL ANALYSIS WITH ENHANCED ENGINE:")
+    print("PRACTICAL ANALYSIS WITH REALISTIC THRESHOLDS:")
     print(f"Match: {results['match']}")
     print(f"Predictive xG: Home {results['expected_goals']['home']:.2f} - Away {results['expected_goals']['away']:.2f}")
     print(f"Match Context: {results['match_context']}")

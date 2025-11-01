@@ -960,9 +960,9 @@ def display_system_health(predictions):
         match_context = predictions.get('match_context', 'unknown')
         st.metric("Match Context", match_context.replace('_', ' ').title())
     
-    # Orchestration metadata
-    orchestration = safe_get(predictions, 'orchestration_metadata', {})
-    if orchestration:
+    # Orchestration metadata - FIXED: Handle case where orchestration_metadata might be a dict
+    orchestration = predictions.get('orchestration_metadata', {})
+    if orchestration and isinstance(orchestration, dict) and orchestration:
         st.markdown('<div class="section-title">🎯 Professional Orchestration Details</div>', unsafe_allow_html=True)
         st.write(f"**Enhancement Type:** {orchestration.get('enhancement_type', 'None')}")
         st.write(f"**Pattern Count:** {orchestration.get('pattern_count', 0)}")

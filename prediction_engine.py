@@ -491,26 +491,25 @@ class SignalEngine:
         away_score_prob = 1 - math.exp(-away_xg)
         base_btts = home_score_prob * away_score_prob
         
-        # MINIMAL defensive adjustment only
-        home_tier = self.calibrator.get_team_tier(home_team, league)
-        away_tier = self.calibrator.get_team_tier(away_team, league)
-        
-        # Simple defense multiplier (don't overcomplicate)
-        defense_multiplier = 1.0
-        if home_tier == 'ELITE' and away_tier == 'ELITE':
-            defense_multiplier = 0.9  # Top defenses reduce BTTS
-        elif home_tier == 'WEAK' and away_tier == 'WEAK':
-            defense_multiplier = 1.1  # Weak defenses increase BTTS
-        
-        # Use historical BTTS rates as primary adjustment
+        # Get historical BTTS rates
         home_btts_rate = self.data.get('home_btts_rate', 0.5)
         away_btts_rate = self.data.get('away_btts_rate', 0.5)
         historical_factor = (home_btts_rate + away_btts_rate) / 2
         
-        # SIMPLE calculation - fewer variables = more accurate
-        adjusted_btts = base_btts * defense_multiplier * historical_factor
+        # CRITICAL FIX: Blend base probability with historical data
+        # 70% weight to mathematical probability, 30% to historical trend
+        adjusted_btts = (base_btts * 0.7) + (historical_factor * 0.3)
         
-        return max(0.15, min(0.85, adjusted_btts))
+        # Minimal tier-based adjustment (max ±10%)
+        home_tier = self.calibrator.get_team_tier(home_team, league)
+        away_tier = self.calibrator.get_team_tier(away_team, league)
+        
+        if home_tier == 'ELITE' and away_tier == 'ELITE':
+            adjusted_btts *= 0.9   # Slight reduction for top defenses
+        elif home_tier == 'WEAK' and away_tier == 'WEAK':
+            adjusted_btts *= 1.1   # Slight increase for weak defenses
+        
+        return max(0.20, min(0.80, adjusted_btts))
 
     def _calculate_enhanced_over_under(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> Dict[str, float]:
         """RESTORED ACCURATE OVER/UNDER LOGIC - Monte Carlo Based"""
@@ -521,20 +520,12 @@ class SignalEngine:
         over_25 = 1 - poisson.cdf(2, total_xg)
         under_25 = poisson.cdf(2, total_xg)
         
-        # Minimal context adjustment only
-        if self.match_context == MatchContext.DEFENSIVE_BATTLE:
-            over_25 *= 0.8
-            under_25 *= 1.2
-        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
-            over_25 *= 1.2
-            under_25 *= 0.8
-        
-        # Use historical Over/Under rates
+        # Get historical Over rates
         home_over_rate = self.data.get('home_over_25_rate', 0.5)
         away_over_rate = self.data.get('away_over_25_rate', 0.5)
         historical_factor = (home_over_rate + away_over_rate) / 2
         
-        # Apply historical factor
+        # FIX: Blend mathematical probability with historical data
         over_25 = (over_25 * 0.7) + (historical_factor * 0.3)
         under_25 = (under_25 * 0.7) + ((1 - historical_factor) * 0.3)
         

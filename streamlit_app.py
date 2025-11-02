@@ -264,7 +264,6 @@ def get_league_display_name(league_id: str) -> str:
         'ligue_1': 'Ligue 1 🇫🇷',
         'liga_portugal': 'Liga Portugal 🇵🇹',
         'brasileirao': 'Brasileirão 🇧🇷',
-        'liga_mx': 'Liga MX 🇲🇽',
         'eredivisie': 'Eredivisie 🇳🇱'
     }
     return league_names.get(league_id, league_id)
@@ -279,7 +278,6 @@ def get_league_badge(league_id: str) -> str:
         'ligue_1': 'ligue-1',
         'liga_portugal': 'liga-portugal',
         'brasileirao': 'brasileirao',
-        'liga_mx': 'liga-mx',
         'eredivisie': 'eredivisie'
     }
     return league_classes.get(league_id, 'premier-league')
@@ -291,10 +289,10 @@ def display_betting_activity_ranking():
     
     # Professional betting activity ranking (based on liquidity, market depth, etc.)
     ranking_data = {
-        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Liga MX', 'Eredivisie'],
-        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium', 'Medium'],
-        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good', 'Good'],
-        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
+        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Eredivisie'],
+        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium'],
+        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good'],
+        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
     }
     
     df = pd.DataFrame(ranking_data)
@@ -305,7 +303,7 @@ def create_input_form():
     """Create input form with multi-league support"""
     
     st.markdown('<p class="main-header">🌍 Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Multi-League Analysis with Tier-Based Calibration</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Multi-League Analysis with 2025/2026 Team Data</p>', unsafe_allow_html=True)
     
     # Display betting activity ranking
     display_betting_activity_ranking()
@@ -318,13 +316,12 @@ def create_input_form():
         **Supported Leagues** 🌍
         - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿, **La Liga** 🇪🇸, **Serie A** 🇮🇹
         - **Bundesliga** 🇩🇪, **Ligue 1** 🇫🇷, **Liga Portugal** 🇵🇹  
-        - **Brasileirão** 🇧🇷, **Liga MX** 🇲🇽, **Eredivisie** 🇳🇱
+        - **Brasileirão** 🇧🇷, **Eredivisie** 🇳🇱
         
-        **League-Specific Calibration** ⚡
-        - Different scoring profiles per league
-        - League-specific home advantage
-        - Tier-based team strength systems
-        - Contextual probability adjustments
+        **2025/2026 Season Data** 📊
+        - Updated team standings and tiers
+        - Restored accurate BTTS/Over-Under logic
+        - League-specific performance baselines
         """)
     
     # League Selection
@@ -337,7 +334,6 @@ def create_input_form():
         'ligue_1': 'Ligue 1 🇫🇷',
         'liga_portugal': 'Liga Portugal 🇵🇹',
         'brasileirao': 'Brasileirão 🇧🇷',
-        'liga_mx': 'Liga MX 🇲🇽',
         'eredivisie': 'Eredivisie 🇳🇱'
     }
     
@@ -408,8 +404,8 @@ def create_input_form():
         with st.expander("📊 Head-to-Head History"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=6, key="h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=5, key="h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=1, key="h2h_home_wins")
             with h2h_col2:
                 h2h_away_wins = st.number_input("Away Wins", min_value=0, value=3, key="h2h_away_wins")
                 h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
@@ -582,7 +578,7 @@ def create_input_form():
     return None, None
 
 def display_goals_analysis(predictions):
-    """Display goals analysis"""
+    """Display RESTORED ACCURATE goals analysis"""
     st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
     
     # Get probabilities with safe defaults
@@ -598,21 +594,28 @@ def display_goals_analysis(predictions):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # BTTS - Show the HIGHER probability as primary
-        if btts_no > btts_yes:
+        # BTTS - STRONGER RECOMMENDATION LOGIC (like before)
+        if btts_yes >= 55:
+            recommendation = "YES"
+            primary_prob = btts_yes
+            secondary_prob = btts_no
+            card_class = "recommendation-yes"
+            emoji = "✅"
+        elif btts_no >= 55:
             recommendation = "NO"
             primary_prob = btts_no
             secondary_prob = btts_yes
             card_class = "recommendation-no"
             emoji = "❌"
         else:
-            recommendation = "YES"
-            primary_prob = btts_yes
-            secondary_prob = btts_no
-            card_class = "recommendation-yes"
-            emoji = "✅"
+            recommendation = "UNCLEAR"
+            primary_prob = max(btts_yes, btts_no)
+            secondary_prob = min(btts_yes, btts_no)
+            card_class = ""
+            emoji = "⚪"
         
-        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        # HIGHER CONFIDENCE THRESHOLDS (like the golden version)
+        confidence = "HIGH" if abs(primary_prob - 50) > 15 else "MEDIUM" if abs(primary_prob - 50) > 8 else "LOW"
         
         st.markdown(f'''
         <div class="goals-card {card_class}">
@@ -630,21 +633,27 @@ def display_goals_analysis(predictions):
         ''', unsafe_allow_html=True)
     
     with col2:
-        # Over/Under 2.5 - Show the HIGHER probability as primary
-        if under_25 > over_25:
+        # Over/Under 2.5 - STRONGER RECOMMENDATION LOGIC
+        if over_25 >= 60:
+            recommendation = "OVER"
+            primary_prob = over_25
+            secondary_prob = under_25
+            card_class = "recommendation-yes"
+            emoji = "✅"
+        elif under_25 >= 60:
             recommendation = "UNDER"
             primary_prob = under_25
             secondary_prob = over_25
             card_class = "recommendation-no"
             emoji = "❌"
         else:
-            recommendation = "OVER"
-            primary_prob = over_25
-            secondary_prob = under_25
-            card_class = "recommendation-yes"
-            emoji = "✅"
+            recommendation = "UNCLEAR"
+            primary_prob = max(over_25, under_25)
+            secondary_prob = min(over_25, under_25)
+            card_class = ""
+            emoji = "⚪"
         
-        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        confidence = "HIGH" if abs(primary_prob - 50) > 15 else "MEDIUM" if abs(primary_prob - 50) > 8 else "LOW"
         
         st.markdown(f'''
         <div class="goals-card {card_class}">

@@ -264,7 +264,7 @@ class TeamTierCalibrator:
 
 class SignalEngine:
     """
-    REALISTIC PREDICTIVE ENGINE - With Multi-League Professional Calibration
+    REALISTIC PREDICTIVE ENGINE - With Enhanced BTTS and Over/Under Calibration
     """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
@@ -290,6 +290,12 @@ class SignalEngine:
             'away_goals': (0, 20, 1.5),
             'home_conceded': (0, 20, 1.5),
             'away_conceded': (0, 20, 1.5),
+            'home_clean_sheets': (0, 6, 1.0),
+            'away_clean_sheets': (0, 6, 1.0),
+            'home_btts_rate': (0.0, 1.0, 0.5),
+            'away_btts_rate': (0.0, 1.0, 0.5),
+            'home_over_25_rate': (0.0, 1.0, 0.5),
+            'away_over_25_rate': (0.0, 1.0, 0.5),
         }
         
         for field, (min_val, max_val, default) in predictive_fields.items():
@@ -458,6 +464,102 @@ class SignalEngine:
         except (TypeError, ValueError):
             return 1.0
 
+    def _calculate_enhanced_btts_probability(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> float:
+        """Enhanced BTTS probability with team-tier awareness"""
+        
+        # Base BTTS from independent probabilities
+        home_score_prob = 1 - math.exp(-home_xg)
+        away_score_prob = 1 - math.exp(-away_xg)
+        base_btts = home_score_prob * away_score_prob
+        
+        # Tier-based adjustments
+        home_tier = self.calibrator.get_team_tier(home_team, league)
+        away_tier = self.calibrator.get_team_tier(away_team, league)
+        
+        # Defensive quality adjustments
+        tier_defense_multiplier = {
+            'ELITE': 0.7, 'STRONG': 0.85, 'MEDIUM': 1.0, 'WEAK': 1.2
+        }
+        
+        defense_factor = (tier_defense_multiplier.get(home_tier, 1.0) + 
+                         tier_defense_multiplier.get(away_tier, 1.0)) / 2
+        
+        # Match context adjustments
+        context_adjustment = {
+            MatchContext.OFFENSIVE_SHOWDOWN: 1.25,
+            MatchContext.DEFENSIVE_BATTLE: 0.65,
+            MatchContext.TACTICAL_STALEMATE: 0.9,
+            MatchContext.HOME_DOMINANCE: 0.8,
+            MatchContext.AWAY_COUNTER: 0.8,
+            MatchContext.UNPREDICTABLE: 1.1
+        }.get(self.match_context, 1.0)
+        
+        # Recent form consideration (clean sheets data)
+        home_clean_sheets = self.data.get('home_clean_sheets', 1.0) / 6.0
+        away_clean_sheets = self.data.get('away_clean_sheets', 1.0) / 6.0
+        form_factor = 1.0 - ((home_clean_sheets + away_clean_sheets) * 0.3)
+        
+        # Historical BTTS rate
+        home_btts_rate = self.data.get('home_btts_rate', 0.5)
+        away_btts_rate = self.data.get('away_btts_rate', 0.5)
+        historical_factor = (home_btts_rate + away_btts_rate) / 2
+        
+        adjusted_btts = base_btts * defense_factor * context_adjustment * form_factor * historical_factor
+        
+        return max(0.15, min(0.85, adjusted_btts))
+
+    def _calculate_enhanced_over_under(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> Dict[str, float]:
+        """Enhanced Over/Under probabilities with tactical awareness"""
+        
+        total_xg = home_xg + away_xg
+        
+        # Base probabilities from Poisson
+        over_25_base = 1 - poisson.cdf(2, total_xg)
+        under_25_base = poisson.cdf(2, total_xg)
+        
+        # Tactical context adjustments
+        home_tier = self.calibrator.get_team_tier(home_team, league)
+        away_tier = self.calibrator.get_team_tier(away_team, league)
+        
+        # High-scoring vs low-scoring team tendencies
+        tier_scoring_profile = {
+            'ELITE': 1.15, 'STRONG': 1.05, 'MEDIUM': 1.0, 'WEAK': 0.9
+        }
+        
+        scoring_tendency = (tier_scoring_profile[home_tier] + tier_scoring_profile[away_tier]) / 2
+        
+        # Match situation awareness
+        if (home_tier == 'ELITE' and away_tier == 'WEAK') or (away_tier == 'ELITE' and home_tier == 'WEAK'):
+            # One-sided matches often have higher scoring
+            scoring_tendency *= 1.1
+        
+        # Recent goal trends
+        home_goals_avg = self.data.get('home_goals', 0) / 6.0
+        away_goals_avg = self.data.get('away_goals', 0) / 6.0
+        recent_scoring = (home_goals_avg + away_goals_avg) / 2.7  # Normalize to league average
+        
+        momentum_factor = min(1.3, max(0.7, recent_scoring))
+        
+        # Historical Over/Under rates
+        home_over_rate = self.data.get('home_over_25_rate', 0.5)
+        away_over_rate = self.data.get('away_over_25_rate', 0.5)
+        historical_factor = (home_over_rate + away_over_rate) / 2
+        
+        # Apply adjustments
+        over_25_adj = over_25_base * scoring_tendency * momentum_factor * historical_factor
+        under_25_adj = under_25_base / (scoring_tendency * momentum_factor * historical_factor)
+        
+        # Normalize to ensure they sum to ~1.0
+        total = over_25_adj + under_25_adj
+        if total > 0:
+            over_25_adj /= total
+            under_25_adj /= total
+        
+        return {
+            'over_25': max(0.1, min(0.9, over_25_adj)),
+            'under_25': max(0.1, min(0.9, under_25_adj))
+        }
+
     def _calculate_realistic_xg(self) -> Tuple[float, float]:
         """Calculate REALISTIC predictive xG with multi-league tier calibration"""
         league = self.data.get('league', 'premier_league')
@@ -550,7 +652,7 @@ class SignalEngine:
         return adjusted_home_xg, adjusted_away_xg
 
     def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
-        """Run Monte Carlo simulation"""
+        """Run Enhanced Monte Carlo simulation with better BTTS and Over/Under"""
         np.random.seed(42)
         
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
@@ -571,13 +673,24 @@ class SignalEngine:
         home_goals_sim = A + C
         away_goals_sim = B + C
         
+        # Use ENHANCED calculations for BTTS and Over/Under
+        home_team = self.data['home_team']
+        away_team = self.data['away_team']
+        league = self.data.get('league', 'premier_league')
+        
+        # Enhanced BTTS probability
+        btts_prob = self._calculate_enhanced_btts_probability(home_xg, away_xg, home_team, away_team, league)
+        
+        # Enhanced Over/Under probabilities
+        over_under_probs = self._calculate_enhanced_over_under(home_xg, away_xg, home_team, away_team, league)
+        
+        # Keep existing match outcome logic (which is working well)
         home_wins = np.sum(home_goals_sim > away_goals_sim) / iterations
         draws = np.sum(home_goals_sim == away_goals_sim) / iterations
         away_wins = np.sum(home_goals_sim < away_goals_sim) / iterations
         
-        total_goals = home_goals_sim + away_goals_sim
-        over_25 = np.sum(total_goals > 2.5) / iterations
-        btts = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / iterations
+        # Use enhanced values instead of simulation for BTTS and Over/Under
+        over_25 = over_under_probs['over_25']
         
         exact_scores = {}
         for i in range(6):
@@ -632,7 +745,7 @@ class SignalEngine:
             draw_prob=draws,
             away_win_prob=away_wins,
             over_25_prob=over_25,
-            btts_prob=btts,
+            btts_prob=btts_prob,
             exact_scores=exact_scores,
             confidence_intervals=confidence_intervals,
             probability_volatility=probability_volatility
@@ -692,7 +805,7 @@ class SignalEngine:
         }
 
     def generate_predictions(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate REALISTIC football predictions with calibration"""
+        """Generate REALISTIC football predictions with enhanced BTTS/Over-Under calibration"""
         
         home_team = self.data['home_team']
         away_team = self.data['away_team']
@@ -1220,11 +1333,11 @@ class AdvancedFootballPredictor:
 
 
 # =============================================================================
-# TEST THE CALIBRATION WITH BURNLEY VS ARSENAL
+# TEST THE ENHANCED CALIBRATION
 # =============================================================================
 
-def test_calibration():
-    """Test the calibration system with Burnley vs Arsenal"""
+def test_enhanced_calibration():
+    """Test the enhanced calibration system with Burnley vs Arsenal"""
     
     match_data = {
         'home_team': 'Burnley',
@@ -1234,8 +1347,12 @@ def test_calibration():
         'away_goals': 12,   # Last 6 games
         'home_conceded': 14,
         'away_conceded': 6,
-        'home_goals_home': 5,
-        'away_goals_away': 7,
+        'home_clean_sheets': 1,    # Enhanced BTTS data
+        'away_clean_sheets': 3,    # Enhanced BTTS data
+        'home_btts_rate': 0.67,    # BTTS in last 6 games
+        'away_btts_rate': 0.50,    # BTTS in last 6 games
+        'home_over_25_rate': 0.83, # Over 2.5 in last 6 games
+        'away_over_25_rate': 0.67, # Over 2.5 in last 6 games
         'home_form': [1, 0, 1, 0, 0, 1],  # Recent form points
         'away_form': [3, 3, 1, 3, 3, 3],  # Recent form points
         'h2h_data': {
@@ -1268,7 +1385,7 @@ def test_calibration():
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("🎯 CALIBRATED PREDICTION RESULTS")
+    print("🎯 ENHANCED CALIBRATED PREDICTION RESULTS")
     print("=" * 50)
     print(f"Match: {results['match']}")
     print(f"League: {results.get('league', 'premier_league')}")
@@ -1278,14 +1395,14 @@ def test_calibration():
     print(f"Confidence: {results['confidence_score']}%")
     print()
     
-    print("📊 PROBABILITIES:")
+    print("📊 ENHANCED PROBABILITIES:")
     outcomes = results['probabilities']['match_outcomes']
     print(f"Home Win: {outcomes['home_win']}%")
     print(f"Draw: {outcomes['draw']}%") 
     print(f"Away Win: {outcomes['away_win']}%")
     print()
     
-    print("⚽ GOALS ANALYSIS:")
+    print("⚽ ENHANCED GOALS ANALYSIS:")
     print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']}%")
     print(f"Over 2.5: {results['probabilities']['over_under']['over_25']}%")
     print()
@@ -1300,4 +1417,4 @@ def test_calibration():
     print(f"Alignment: {results['system_validation']['alignment']}")
 
 if __name__ == "__main__":
-    test_calibration()
+    test_enhanced_calibration()

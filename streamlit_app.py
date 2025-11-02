@@ -408,8 +408,8 @@ def create_input_form():
         with st.expander("📊 Head-to-Head History"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=5, key="h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=1, key="h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=6, key="h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="h2h_home_wins")
             with h2h_col2:
                 h2h_away_wins = st.number_input("Away Wins", min_value=0, value=3, key="h2h_away_wins")
                 h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")

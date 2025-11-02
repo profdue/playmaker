@@ -377,9 +377,9 @@ def create_input_form():
                 key="home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Season)", min_value=0, value=18, key="home_goals")
-            home_conceded = st.number_input("Total Conceded (Season)", min_value=0, value=3, key="home_conceded")
-            home_position = st.number_input("League Position", min_value=1, max_value=20, value=1, key="home_position")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=14, key="home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -390,9 +390,9 @@ def create_input_form():
                 key="away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Season)", min_value=0, value=7, key="away_goals")
-            away_conceded = st.number_input("Total Conceded (Season)", min_value=0, value=22, key="away_conceded")
-            away_position = st.number_input("League Position", min_value=1, max_value=20, value=20, key="away_position")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=12, key="away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=7, key="away_goals_away")
         
         # Show team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
@@ -404,26 +404,6 @@ def create_input_form():
         <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
         """, unsafe_allow_html=True)
         
-        # Recent Form (using W/D/L format)
-        with st.expander("📈 Recent Form Analysis (Last 5 Games)"):
-            form_col1, form_col2 = st.columns(2)
-            with form_col1:
-                st.write(f"**{home_team} Last 5 Matches**")
-                home_form = st.multiselect(
-                    f"{home_team} Recent Results",
-                    options=["W", "D", "L"],
-                    default=["W", "W", "W", "W", "W"],
-                    key="home_form"
-                )
-            with form_col2:
-                st.write(f"**{away_team} Last 5 Matches**")
-                away_form = st.multiselect(
-                    f"{away_team} Recent Results", 
-                    options=["W", "D", "L"],
-                    default=["D", "D", "L", "L", "L"],
-                    key="away_form"
-                )
-
         # Head-to-head section
         with st.expander("📊 Head-to-Head History"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
@@ -437,6 +417,26 @@ def create_input_form():
                 h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=4, key="h2h_home_goals")
                 h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=9, key="h2h_away_goals")
 
+        # Recent Form
+        with st.expander("📈 Recent Form Analysis"):
+            form_col1, form_col2 = st.columns(2)
+            with form_col1:
+                st.write(f"**{home_team} Last 6 Matches**")
+                home_form = st.multiselect(
+                    f"{home_team} Recent Results",
+                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
+                    default=["Win (3 pts)", "Loss (0 pts)", "Win (3 pts)", "Loss (0 pts)", "Loss (0 pts)", "Win (3 pts)"],
+                    key="home_form"
+                )
+            with form_col2:
+                st.write(f"**{away_team} Last 6 Matches**")
+                away_form = st.multiselect(
+                    f"{away_team} Recent Results", 
+                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
+                    default=["Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)", "Win (3 pts)", "Win (3 pts)"],
+                    key="away_form"
+                )
+
     with tab2:
         st.markdown("### 💰 Market Data Input") 
         
@@ -444,20 +444,20 @@ def create_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.25, step=0.01, key="home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=6.50, step=0.01, key="draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=12.00, step=0.01, key="away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=6.50, step=0.01, key="home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=4.50, step=0.01, key="draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=1.50, step=0.01, key="away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
             over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.25, step=0.01, key="over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.70, step=0.01, key="over_25_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01, key="over_25_odds")
             over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=2.50, step=0.01, key="over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.20, step=0.01, key="btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.65, step=0.01, key="btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.90, step=0.01, key="btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01, key="btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Model Configuration")
@@ -466,20 +466,20 @@ def create_input_form():
         
         with model_col1:
             st.write("**Team Context**")
-            weeks_remaining = st.slider("Weeks Remaining in Season", 1, 38, 28, key="weeks_remaining")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 1, key="home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="away_injuries")
             
-            # Simplified injury impact
-            home_injury_impact = st.select_slider(
-                "Home Team Injury Impact",
-                options=["None", "Minor", "Moderate", "Significant", "Critical"],
-                value="Minor",
-                key="home_injury_impact"
+            home_absence_impact = st.select_slider(
+                "Home Team Absence Impact",
+                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
+                value="Rotation Player",
+                key="home_absence_impact"
             )
-            away_injury_impact = st.select_slider(
-                "Away Team Injury Impact",
-                options=["None", "Minor", "Moderate", "Significant", "Critical"],
-                value="Moderate",
-                key="away_injury_impact"
+            away_absence_impact = st.select_slider(
+                "Away Team Absence Impact",
+                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
+                value="Regular Starter",
+                key="away_absence_impact"
             )
             
         with model_col2:
@@ -516,20 +516,21 @@ def create_input_form():
             st.error("❌ Home and away teams cannot be the same")
             return None, None
         
-        # Convert form selections to W/D/L format
-        home_form_wdl = home_form if home_form else ["W", "W", "W", "W", "W"]
-        away_form_wdl = away_form if away_form else ["D", "D", "L", "L", "L"]
+        # Convert form selections to points
+        form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
+        home_form_points = [form_map[result] for result in home_form]
+        away_form_points = [form_map[result] for result in away_form]
         
         # Convert motivation
         motivation_map = {"Low": "Low", "Normal": "Normal", "High": "High", "Very High": "Very High"}
         
-        # Convert injury impact to numeric
-        injury_impact_map = {
-            "None": 0,
-            "Minor": 1,
-            "Moderate": 2,
-            "Significant": 3,
-            "Critical": 4
+        # Convert absence impact to numeric
+        absence_impact_map = {
+            "Rotation Player": 1,
+            "Regular Starter": 2,
+            "Key Player": 3, 
+            "Star Player": 4,
+            "Multiple Key Players": 5
         }
         
         # Market odds
@@ -544,7 +545,7 @@ def create_input_form():
             'BTTS No': btts_no_odds,
         }
         
-        # Complete match data for 2025/2026 engine
+        # Complete match data
         match_data = {
             'home_team': home_team,
             'away_team': away_team,
@@ -553,11 +554,10 @@ def create_input_form():
             'away_goals': away_goals,
             'home_conceded': home_conceded,
             'away_conceded': away_conceded,
-            'home_position': home_position,
-            'away_position': away_position,
-            'home_form': home_form_wdl,  # Using W/D/L format
-            'away_form': away_form_wdl,  # Using W/D/L format
-            'weeks_remaining': weeks_remaining,
+            'home_goals_home': home_goals_home,
+            'away_goals_away': away_goals_away,
+            'home_form': home_form_points,
+            'away_form': away_form_points,
             'h2h_data': {
                 'matches': h2h_matches,
                 'home_wins': h2h_home_wins,
@@ -567,8 +567,8 @@ def create_input_form():
                 'away_goals': h2h_away_goals
             },
             'injuries': {
-                'home': {'impact': injury_impact_map[home_injury_impact]},
-                'away': {'impact': injury_impact_map[away_injury_impact]}
+                'home': absence_impact_map[home_absence_impact],
+                'away': absence_impact_map[away_absence_impact]
             },
             'motivation': {
                 'home': motivation_map[home_motivation],

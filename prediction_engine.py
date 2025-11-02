@@ -526,7 +526,7 @@ class SignalEngine:
         historical_factor = (home_over_rate + away_over_rate) / 2
         
         # FIX: Blend mathematical probability with historical data
-        over_25 = (over_25 * 0.7) + (historical_factor * 0.3)
+        over_25 = (over_25 * 0.8) + (historical_factor * 0.2)
         under_25 = (under_25 * 0.7) + ((1 - historical_factor) * 0.3)
         
         # Normalize

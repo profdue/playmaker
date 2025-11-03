@@ -1,18 +1,15 @@
-# streamlit_app.py - PRODUCTION GRADE WITH ALL ENHANCEMENTS
+# streamlit_app.py - PRODUCTION GRADE WITH ALL ENHANCEMENTS (FIXED)
 import streamlit as st
-st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import json
 from typing import Dict, Any
 from datetime import datetime
 
 # Import the ENHANCED PREDICTION ENGINE
 try:
-    from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator, BettingSignal
+    from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator
 except ImportError as e:
     st.error(f"❌ Could not import prediction_engine: {str(e)}")
     st.info("💡 Make sure prediction_engine.py is in the same directory")
@@ -360,7 +357,7 @@ def create_input_form():
         - **League-Specific Calibration** - Different models per league
         - **Dixon-Coles Simulation** - Realistic score correlation modeling  
         - **Bayesian Team Strength** - Dynamic strength with uncertainty
-        - **SHAP Explanations** - Transparent prediction reasoning
+        - **Enhanced Explanations** - Transparent prediction reasoning
         - **Kelly Criterion** - Professional bankroll management
         
         **Supported Leagues** 🌍
@@ -989,7 +986,7 @@ def display_value_detection(predictions):
     
     with col4:
         total_stake = np.sum([s.get('recommended_stake', 0) for s in betting_signals])
-        st.metric("Total Stake", f"{total_stake:.2f}")
+        st.metric("Total Stake", f"${total_stake:.2f}")
     
     # Display enhanced value bets with explanations
     st.markdown('<div class="section-title">🎯 Enhanced Value Bet Recommendations</div>', unsafe_allow_html=True)
@@ -1180,7 +1177,7 @@ def main():
                 - League-Specific Calibration ✅
                 - Dixon-Coles Simulation ✅  
                 - Bayesian Team Strength ✅
-                - SHAP Explanations ✅
+                - Enhanced Explanations ✅
                 - Kelly Criterion ✅
                 
                 **Model Version:** 1.2.0_production

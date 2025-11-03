@@ -9,7 +9,6 @@ import logging
 from datetime import datetime
 import json
 from enum import Enum
-import sqlite3
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -46,148 +45,24 @@ class MonteCarloResults:
     confidence_intervals: Dict[str, Tuple[float, float]]
     probability_volatility: Dict[str, float]
 
-class DateTimeEncoder(json.JSONEncoder):
-    """Custom JSON encoder for datetime objects"""
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
-
-class PredictionLogger:
-    """Professional-grade prediction logger with database support"""
-    
-    def __init__(self, use_database: bool = False):
-        self.use_database = use_database
-        if use_database:
-            self._init_database()
-    
-    def _init_database(self):
-        """Initialize SQLite database for prediction logging"""
-        try:
-            conn = sqlite3.connect('predictions.db')
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS prediction_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
-                    match_id TEXT NOT NULL,
-                    league TEXT NOT NULL,
-                    home_team TEXT NOT NULL,
-                    away_team TEXT NOT NULL,
-                    home_tier TEXT NOT NULL,
-                    away_tier TEXT NOT NULL,
-                    home_xg REAL NOT NULL,
-                    away_xg REAL NOT NULL,
-                    total_xg REAL NOT NULL,
-                    poisson_over25 REAL NOT NULL,
-                    historical_over25 REAL NOT NULL,
-                    final_over25 REAL NOT NULL,
-                    base_btts REAL NOT NULL,
-                    historical_btts REAL NOT NULL,
-                    final_btts_yes REAL NOT NULL,
-                    match_context TEXT NOT NULL,
-                    confidence_score INTEGER NOT NULL,
-                    data_quality REAL NOT NULL,
-                    actual_goals_home INTEGER,
-                    actual_goals_away INTEGER,
-                    actual_over25 INTEGER,
-                    actual_btts INTEGER,
-                    created_at TEXT NOT NULL
-                )
-            ''')
-            
-            conn.commit()
-            conn.close()
-            logger.info("✅ Prediction database initialized")
-        except Exception as e:
-            logger.warning(f"❌ Database initialization failed: {e}. Using JSONL only.")
-    
-    def log_prediction(self, debug_data: Dict, actual_result: Dict = None):
-        """Log prediction with optional actual results"""
-        
-        # Always log to JSONL for immediate analysis
-        self._log_to_jsonl(debug_data, actual_result)
-        
-        # Optionally log to database
-        if self.use_database:
-            self._log_to_database(debug_data, actual_result)
-    
-    def _log_to_jsonl(self, debug_data: Dict, actual_result: Dict = None):
-        """Log to JSONL file for immediate analysis"""
-        try:
-            log_entry = {
-                'debug_data': debug_data,
-                'actual_result': actual_result,
-                'log_timestamp': datetime.now().isoformat()
-            }
-            
-            with open('prediction_debug_log.jsonl', 'a') as f:
-                f.write(json.dumps(log_entry, cls=DateTimeEncoder) + '\n')
-        except Exception as e:
-            logger.error(f"Failed to write JSONL log: {e}")
-    
-    def _log_to_database(self, debug_data: Dict, actual_result: Dict = None):
-        """Log to SQLite database"""
-        try:
-            conn = sqlite3.connect('predictions.db')
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO prediction_logs (
-                    timestamp, match_id, league, home_team, away_team, home_tier, away_tier,
-                    home_xg, away_xg, total_xg, poisson_over25, historical_over25, final_over25,
-                    base_btts, historical_btts, final_btts_yes, match_context, confidence_score,
-                    data_quality, actual_goals_home, actual_goals_away, actual_over25, actual_btts, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                debug_data['timestamp'],
-                f"{debug_data['match'].replace(' ', '_')}",
-                debug_data['league'],
-                debug_data['match'].split(' vs ')[0],
-                debug_data['match'].split(' vs ')[1],
-                debug_data['team_tiers']['home'],
-                debug_data['team_tiers']['away'],
-                debug_data['expected_goals']['home'],
-                debug_data['expected_goals']['away'],
-                debug_data['expected_goals']['total'],
-                debug_data['poisson_probabilities']['over_25'],
-                debug_data['historical_factors']['over_25'],
-                debug_data['final_probabilities']['over_25'],
-                debug_data['poisson_probabilities']['btts_base'],
-                debug_data['historical_factors']['btts'],
-                debug_data['final_probabilities']['btts_yes'],
-                debug_data['match_context'],
-                debug_data['confidence_score'],
-                debug_data['data_quality'],
-                actual_result.get('home_goals') if actual_result else None,
-                actual_result.get('away_goals') if actual_result else None,
-                actual_result.get('over_25') if actual_result else None,
-                actual_result.get('btts') if actual_result else None,
-                datetime.now().isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            logger.error(f"Failed to write to database: {e}")
-
 class TeamTierCalibrator:
-    """PROFESSIONAL MULTI-LEAGUE TIER-BASED CALIBRATION SYSTEM"""
+    """
+    PROFESSIONAL MULTI-LEAGUE TIER-BASED CALIBRATION SYSTEM
+    """
     
     def __init__(self):
-        # Enhanced league-specific baselines with 2025/2026 data
+        # Enhanced league-specific baselines
         self.league_baselines = {
-            'premier_league': {'avg_goals': 2.93, 'home_win_rate': 0.51, 'scoring_profile': 'high'},
-            'la_liga': {'avg_goals': 2.62, 'home_win_rate': 0.48, 'scoring_profile': 'medium'},
-            'serie_a': {'avg_goals': 2.56, 'home_win_rate': 0.38, 'scoring_profile': 'low'},
-            'bundesliga': {'avg_goals': 3.14, 'home_win_rate': 0.42, 'scoring_profile': 'very_high'},
-            'ligue_1': {'avg_goals': 2.96, 'home_win_rate': 0.52, 'scoring_profile': 'high'},
-            'liga_portugal': {'avg_goals': 2.57, 'home_win_rate': 0.36, 'scoring_profile': 'medium'},
-            'brasileirao': {'avg_goals': 2.44, 'home_win_rate': 0.50, 'scoring_profile': 'low'},
-            'liga_mx': {'avg_goals': 2.68, 'home_win_rate': 0.46, 'scoring_profile': 'high'},
-            'eredivisie': {'avg_goals': 2.98, 'home_win_rate': 0.48, 'scoring_profile': 'very_high'},
-            'default': {'avg_goals': 2.70, 'home_win_rate': 0.45, 'scoring_profile': 'medium'}
+            'premier_league': {'avg_goals': 2.8, 'home_advantage': 0.35, 'scoring_profile': 'high'},
+            'la_liga': {'avg_goals': 2.6, 'home_advantage': 0.32, 'scoring_profile': 'medium'},
+            'serie_a': {'avg_goals': 2.7, 'home_advantage': 0.38, 'scoring_profile': 'medium'},
+            'bundesliga': {'avg_goals': 3.1, 'home_advantage': 0.28, 'scoring_profile': 'very_high'},
+            'ligue_1': {'avg_goals': 2.5, 'home_advantage': 0.34, 'scoring_profile': 'low'},
+            'liga_portugal': {'avg_goals': 2.6, 'home_advantage': 0.42, 'scoring_profile': 'medium'},
+            'brasileirao': {'avg_goals': 2.4, 'home_advantage': 0.45, 'scoring_profile': 'medium'},
+            'liga_mx': {'avg_goals': 2.7, 'home_advantage': 0.40, 'scoring_profile': 'high'},
+            'eredivisie': {'avg_goals': 3.0, 'home_advantage': 0.30, 'scoring_profile': 'very_high'},
+            'default': {'avg_goals': 2.7, 'home_advantage': 0.35, 'scoring_profile': 'medium'}
         }
         
         # Tier-based calibration
@@ -214,107 +89,89 @@ class TeamTierCalibrator:
             }
         }
         
-        # Multi-league team databases - UPDATED WITH 2025/2026 STANDINGS
+        # Multi-league team databases
         self.team_databases = self._initialize_multi_league_teams()
     
     def _initialize_multi_league_teams(self) -> Dict[str, Dict[str, str]]:
-        """Initialize comprehensive multi-league team databases for 2025/2026"""
+        """Initialize comprehensive multi-league team databases"""
         return {
             'premier_league': {
-                # Elite (Title Contenders)
                 'Arsenal': 'ELITE', 'Man City': 'ELITE', 'Liverpool': 'ELITE',
-                # Strong (European Places)
-                'Bournemouth': 'STRONG', 'Tottenham': 'STRONG', 'Chelsea': 'STRONG',
-                'Sunderland': 'STRONG', 'Man United': 'STRONG', 'Crystal Palace': 'STRONG',
-                'Brighton': 'STRONG', 'Aston Villa': 'STRONG',
-                # Medium (Mid-table)
-                'Brentford': 'MEDIUM', 'Newcastle': 'MEDIUM', 'Fulham': 'MEDIUM',
-                'Everton': 'MEDIUM', 'Leeds': 'MEDIUM', 'Burnley': 'MEDIUM',
-                # Weak (Relegation Battlers)
-                'West Ham': 'WEAK', 'Nottingham Forest': 'WEAK', 'Wolves': 'WEAK'
-            },
-            'bundesliga': {
-                # Elite
-                'Bayern': 'ELITE', 'Leipzig': 'ELITE', 'Dortmund': 'ELITE',
-                # Strong
-                'Stuttgart': 'STRONG', 'Leverkusen': 'STRONG', 'Hoffenheim': 'STRONG',
-                'Köln': 'STRONG', 'Frankfurt': 'STRONG',
-                # Medium
-                'Bremen': 'MEDIUM', 'Union Berlin': 'MEDIUM', 'Freiburg': 'MEDIUM',
-                'Wolfsburg': 'MEDIUM', 'HSV': 'MEDIUM', 'Augsburg': 'MEDIUM',
-                # Weak
-                'St. Pauli': 'WEAK', 'M\'gladbach': 'WEAK', 'Mainz 05': 'WEAK', 'Heidenheim': 'WEAK'
-            },
-            'serie_a': {
-                # Elite
-                'Napoli': 'ELITE', 'Inter': 'ELITE', 'Milan': 'ELITE', 'Roma': 'ELITE',
-                # Strong
-                'Bologna': 'STRONG', 'Juventus': 'STRONG', 'Como': 'STRONG', 'Udinese': 'STRONG',
-                'Cremonese': 'STRONG',
-                # Medium
-                'Atalanta': 'MEDIUM', 'Sassuolo': 'MEDIUM', 'Torino': 'MEDIUM', 'Lazio': 'MEDIUM',
-                'Cagliari': 'MEDIUM', 'Lecce': 'MEDIUM',
-                # Weak
-                'Parma': 'WEAK', 'Pisa': 'WEAK', 'Verona': 'WEAK', 'Fiorentina': 'WEAK', 'Genoa': 'WEAK'
+                'Tottenham': 'STRONG', 'Aston Villa': 'STRONG', 'Newcastle': 'STRONG',
+                'Chelsea': 'STRONG', 'Man United': 'STRONG',
+                'West Ham': 'MEDIUM', 'Brighton': 'MEDIUM', 'Wolves': 'MEDIUM',
+                'Crystal Palace': 'MEDIUM', 'Fulham': 'MEDIUM', 'Bournemouth': 'MEDIUM',
+                'Brentford': 'MEDIUM', 'Everton': 'MEDIUM', 'Nottingham Forest': 'MEDIUM',
+                'Luton': 'WEAK', 'Burnley': 'WEAK', 'Sheffield Utd': 'WEAK',
             },
             'la_liga': {
-                # Elite
-                'Real Madrid': 'ELITE', 'Barcelona': 'ELITE', 'Villarreal': 'ELITE',
-                # Strong
-                'Atl. Madrid': 'STRONG', 'Real Betis': 'STRONG', 'Espanyol': 'STRONG',
-                'Getafe': 'STRONG', 'Alavés': 'STRONG', 'Elche': 'STRONG',
-                # Medium
-                'Rayo Vallecano': 'MEDIUM', 'Athletic Club': 'MEDIUM', 'Celta': 'MEDIUM',
-                'Sevilla': 'MEDIUM', 'Real Sociedad': 'MEDIUM', 'Osasuna': 'MEDIUM',
-                # Weak
-                'Levante': 'WEAK', 'Mallorca': 'WEAK', 'Valencia': 'WEAK', 'Real Oviedo': 'WEAK', 'Girona': 'WEAK'
+                'Real Madrid': 'ELITE', 'Barcelona': 'ELITE', 'Atletico Madrid': 'ELITE',
+                'Athletic Bilbao': 'STRONG', 'Real Sociedad': 'STRONG', 'Sevilla': 'STRONG',
+                'Valencia': 'STRONG', 'Villarreal': 'STRONG',
+                'Real Betis': 'MEDIUM', 'Getafe': 'MEDIUM', 'Osasuna': 'MEDIUM',
+                'Las Palmas': 'MEDIUM', 'Girona': 'MEDIUM', 'Rayo Vallecano': 'MEDIUM',
+                'Mallorca': 'MEDIUM', 'Celta Vigo': 'MEDIUM', 'Cadiz': 'MEDIUM',
+                'Alaves': 'WEAK', 'Granada': 'WEAK', 'Almeria': 'WEAK',
+            },
+            'serie_a': {
+                'Inter': 'ELITE', 'Juventus': 'ELITE', 'AC Milan': 'ELITE',
+                'Napoli': 'STRONG', 'Atalanta': 'STRONG', 'Roma': 'STRONG',
+                'Lazio': 'STRONG', 'Fiorentina': 'STRONG',
+                'Bologna': 'MEDIUM', 'Monza': 'MEDIUM', 'Torino': 'MEDIUM',
+                'Genoa': 'MEDIUM', 'Lecce': 'MEDIUM', 'Frosinone': 'MEDIUM',
+                'Udinese': 'MEDIUM', 'Verona': 'MEDIUM', 'Empoli': 'MEDIUM',
+                'Cagliari': 'WEAK', 'Sassuolo': 'WEAK', 'Salernitana': 'WEAK',
+            },
+            'bundesliga': {
+                'Bayern Munich': 'ELITE', 'Bayer Leverkusen': 'ELITE', 'Borussia Dortmund': 'ELITE',
+                'RB Leipzig': 'STRONG', 'Eintracht Frankfurt': 'STRONG', 'Wolfsburg': 'STRONG',
+                'Freiburg': 'STRONG', 'Hoffenheim': 'STRONG',
+                'Augsburg': 'MEDIUM', 'Werder Bremen': 'MEDIUM', 'Heidenheim': 'MEDIUM',
+                'Borussia Monchengladbach': 'MEDIUM', 'Stuttgart': 'MEDIUM', 'Mainz': 'MEDIUM',
+                'Koln': 'MEDIUM', 'Bochum': 'MEDIUM', 'Union Berlin': 'MEDIUM',
+                'Darmstadt': 'WEAK', 'Greuther Furth': 'WEAK',
             },
             'ligue_1': {
-                # Elite
-                'PSG': 'ELITE', 'Marseille': 'STRONG', 'Lens': 'STRONG',
-                # Strong
-                'Lille': 'STRONG', 'AS Monaco': 'STRONG', 'Lyon': 'STRONG',
-                'Strasbourg': 'STRONG', 'Nice': 'STRONG', 'Toulouse': 'STRONG',
-                # Medium
-                'Rennes': 'MEDIUM', 'Paris': 'MEDIUM', 'Le Havre': 'MEDIUM',
-                'Brest': 'MEDIUM', 'Angers': 'MEDIUM', 'Nantes': 'MEDIUM',
-                # Weak
-                'Lorient': 'WEAK', 'Metz': 'WEAK', 'Auxerre': 'WEAK'
+                'PSG': 'ELITE', 'Monaco': 'STRONG', 'Marseille': 'STRONG',
+                'Lille': 'STRONG', 'Lyon': 'STRONG', 'Rennes': 'STRONG',
+                'Nice': 'STRONG', 'Lens': 'STRONG',
+                'Reims': 'MEDIUM', 'Montpellier': 'MEDIUM', 'Toulouse': 'MEDIUM',
+                'Strasbourg': 'MEDIUM', 'Nantes': 'MEDIUM', 'Le Havre': 'MEDIUM',
+                'Brest': 'MEDIUM', 'Lorient': 'MEDIUM', 'Metz': 'MEDIUM',
+                'Clermont Foot': 'WEAK', 'Troyes': 'WEAK',
             },
             'liga_portugal': {
-                # Elite
-                'Porto': 'ELITE', 'Sporting': 'ELITE', 'Benfica': 'ELITE',
-                # Strong
-                'Gil Vicente': 'STRONG', 'Famalicão': 'STRONG', 'Moreirense': 'STRONG',
-                # Medium
-                'Braga': 'MEDIUM', 'Santa Clara': 'MEDIUM', 'Nacional': 'MEDIUM',
-                'Rio Ave': 'MEDIUM', 'Vitória': 'MEDIUM', 'Estoril': 'MEDIUM',
-                # Weak
-                'Estrela Amadora': 'WEAK', 'Alverca': 'WEAK', 'Arouca': 'WEAK', 'Casa Pia': 'WEAK', 'Tondela': 'WEAK', 'AVS': 'WEAK'
-            },
-            'eredivisie': {
-                # Elite
-                'Feyenoord': 'ELITE', 'PSV': 'ELITE', 'AZ': 'ELITE',
-                # Strong
-                'Ajax': 'STRONG', 'Groningen': 'STRONG', 'Utrecht': 'STRONG',
-                'Sparta': 'STRONG', 'NEC': 'STRONG', 'Twente': 'STRONG',
-                # Medium
-                'Heerenveen': 'MEDIUM', 'GA Eagles': 'MEDIUM', 'Fortuna': 'MEDIUM',
-                'NAC Breda': 'MEDIUM', 'Volendam': 'MEDIUM', 'Excelsior': 'MEDIUM',
-                # Weak
-                'Zwolle': 'WEAK', 'Telstar': 'WEAK', 'Heracles': 'WEAK'
+                'Sporting CP': 'ELITE', 'Porto': 'ELITE', 'Benfica': 'ELITE',
+                'Braga': 'STRONG', 
+                'Vitoria Guimaraes': 'MEDIUM', 'Boavista': 'MEDIUM', 'Famalicao': 'MEDIUM',
+                'Casa Pia': 'WEAK', 'Rio Ave': 'WEAK', 'Estoril': 'WEAK', 
+                'Gil Vicente': 'WEAK', 'FC Alverca': 'WEAK', 'AVS': 'WEAK', 'Leiria': 'WEAK',
             },
             'brasileirao': {
-                # Elite
-                'Flamengo': 'ELITE', 'Palmeiras': 'ELITE', 'Cruzeiro': 'ELITE',
-                # Strong
-                'Mirassol': 'STRONG', 'Bahia': 'STRONG', 'Botafogo': 'STRONG',
-                'Fluminense': 'STRONG', 'Vasco': 'STRONG', 'Corinthians': 'STRONG',
-                # Medium
-                'São Paulo': 'MEDIUM', 'Grêmio': 'MEDIUM', 'Ceará': 'MEDIUM',
-                'Atlético-MG': 'MEDIUM', 'RB Bragantino': 'MEDIUM', 'Internacional': 'MEDIUM',
-                # Weak
-                'Santos': 'WEAK', 'Vitória': 'WEAK', 'Fortaleza': 'WEAK', 'Juventude': 'WEAK', 'Sport': 'WEAK'
+                'Flamengo': 'ELITE', 'Palmeiras': 'ELITE', 'Sao Paulo': 'ELITE',
+                'Atletico Mineiro': 'STRONG', 'Gremio': 'STRONG', 'Fluminense': 'STRONG',
+                'Corinthians': 'STRONG', 'Internacional': 'STRONG',
+                'Fortaleza': 'MEDIUM', 'Cruzeiro': 'MEDIUM', 'Bahia': 'MEDIUM',
+                'Botafogo': 'MEDIUM', 'Vasco da Gama': 'MEDIUM', 'Athletico Paranaense': 'MEDIUM',
+                'Santos': 'MEDIUM', 'Bragantino': 'MEDIUM', 'Cuiaba': 'MEDIUM',
+                'Goias': 'WEAK', 'Coritiba': 'WEAK', 'America MG': 'WEAK',
+            },
+            'liga_mx': {
+                'America': 'ELITE', 'Monterrey': 'ELITE', 'Tigres': 'ELITE',
+                'Cruz Azul': 'STRONG', 'Guadalajara': 'STRONG', 'Pumas': 'STRONG',
+                'Santos Laguna': 'STRONG', 'Toluca': 'STRONG',
+                'Pachuca': 'MEDIUM', 'Leon': 'MEDIUM', 'Juarez': 'MEDIUM',
+                'Mazatlan': 'MEDIUM', 'Necaxa': 'MEDIUM', 'Atlas': 'MEDIUM',
+                'Queretaro': 'MEDIUM', 'Tijuana': 'MEDIUM', 'Puebla': 'MEDIUM',
+                'San Luis': 'WEAK', 'FC Juarez': 'WEAK',
+            },
+            'eredivisie': {
+                'Ajax': 'ELITE', 'PSV': 'ELITE', 'Feyenoord': 'ELITE',
+                'AZ Alkmaar': 'STRONG', 'FC Twente': 'STRONG', 'Utrecht': 'STRONG',
+                'Heerenveen': 'MEDIUM', 'Vitesse': 'MEDIUM', 'Groningen': 'MEDIUM',
+                'NEC Nijmegen': 'MEDIUM', 'Sparta Rotterdam': 'MEDIUM', 'Heracles': 'MEDIUM',
+                'Fortuna Sittard': 'WEAK', 'RKC Waalwijk': 'WEAK', 'PEC Zwolle': 'WEAK',
+                'Excelsior': 'WEAK', 'Go Ahead Eagles': 'WEAK',
             }
         }
     
@@ -332,7 +189,7 @@ class TeamTierCalibrator:
         tier = self.get_team_tier(team, league)
         baselines = self.tier_calibration.get(tier, self.tier_calibration['MEDIUM'])
         
-        # Adjust for league scoring profile using 2025/2026 data
+        # Adjust for league scoring profile
         league_profile = self.league_baselines.get(league, self.league_baselines['default'])['scoring_profile']
         profile_multiplier = {
             'very_high': 1.15,
@@ -348,17 +205,17 @@ class TeamTierCalibrator:
     
     def get_contextual_home_advantage(self, home_team: str, away_team: str, league: str) -> float:
         """Get contextual home advantage based on team tiers and league"""
-        base_advantage = self.league_baselines.get(league, self.league_baselines['default'])['home_win_rate']
+        base_advantage = self.league_baselines.get(league, self.league_baselines['default'])['home_advantage']
         home_tier = self.get_team_tier(home_team, league)
         away_tier = self.get_team_tier(away_team, league)
         
         # Adjust home advantage based on tier matchup
         if home_tier == 'WEAK' and away_tier == 'ELITE':
-            return base_advantage * 0.5  # Reduced advantage for weak teams vs elite
+            return base_advantage * 0.6  # Reduced advantage for weak teams vs elite
         elif home_tier == 'ELITE' and away_tier == 'WEAK':
-            return base_advantage * 1.3  # Increased advantage for elite vs weak
+            return base_advantage * 1.2  # Increased advantage for elite vs weak
         elif home_tier == 'WEAK' and away_tier == 'STRONG':
-            return base_advantage * 0.7  # Slightly reduced
+            return base_advantage * 0.8  # Slightly reduced
         
         return base_advantage
     
@@ -379,10 +236,10 @@ class TeamTierCalibrator:
         home_xg = max(home_xg_min, min(home_xg_max, home_xg))
         away_xg = max(away_xg_min, min(away_xg_max, away_xg))
         
-        # Apply tier matchup logic - CRITICAL FIX
-        if home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK']:
+        # Apply tier matchup logic
+        if home_tier == 'ELITE' and away_tier == 'WEAK':
             home_xg = max(home_xg, away_xg + 0.8)  # Elite should have significant advantage
-        elif away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK']:
+        elif home_tier == 'WEAK' and away_tier == 'ELITE':
             away_xg = max(away_xg, home_xg + 0.8)  # Elite should have significant advantage
         
         return round(home_xg, 3), round(away_xg, 3)
@@ -406,13 +263,14 @@ class TeamTierCalibrator:
         return True
 
 class SignalEngine:
-    """FIXED PREDICTIVE ENGINE - With Proper Tier Calibration"""
+    """
+    REALISTIC PREDICTIVE ENGINE - With Enhanced BTTS and Over/Under Calibration
+    """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.data = self._validate_and_enhance_data(match_data)
         self.calibration_data = calibration_data or {}
         self.calibrator = TeamTierCalibrator()
-        self.logger = PredictionLogger(use_database=True)
         self._setup_realistic_parameters()
         self.match_context = MatchContext.UNPREDICTABLE
         
@@ -540,7 +398,7 @@ class SignalEngine:
             'injury_impact': 0.08,
             'motivation_impact': 0.10,
             'bivariate_correlation': 0.12,
-            'defensive_impact_multiplier': 0.6,  # Increased defensive impact
+            'defensive_impact_multiplier': 0.4,
         }
         
         if self.calibration_data:
@@ -589,10 +447,10 @@ class SignalEngine:
             
             # Tier-based form impact - weaker teams get more form volatility
             form_weight = {
-                'ELITE': 0.2,    # 20% form, 80% baseline quality (ELITE less affected by form)
-                'STRONG': 0.3,   # 30% form, 70% baseline quality  
+                'ELITE': 0.3,    # 30% form, 70% baseline quality
+                'STRONG': 0.4,   # 40% form, 60% baseline quality  
                 'MEDIUM': 0.5,   # 50% form, 50% baseline quality
-                'WEAK': 0.7      # 70% form, 30% baseline quality (WEAK more affected by form)
+                'WEAK': 0.6      # 60% form, 40% baseline quality
             }.get(team_tier, 0.5)
             
             form_ratio = avg_form / 3.0
@@ -607,115 +465,140 @@ class SignalEngine:
             return 1.0
 
     def _calculate_enhanced_btts_probability(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> float:
-        """FIXED BTTS LOGIC - Proper tier calibration"""
+        """Enhanced BTTS probability with team-tier awareness"""
         
         # Base BTTS from independent probabilities
         home_score_prob = 1 - math.exp(-home_xg)
         away_score_prob = 1 - math.exp(-away_xg)
         base_btts = home_score_prob * away_score_prob
         
-        # Get historical BTTS rates
+        # Tier-based adjustments
+        home_tier = self.calibrator.get_team_tier(home_team, league)
+        away_tier = self.calibrator.get_team_tier(away_team, league)
+        
+        # Defensive quality adjustments
+        tier_defense_multiplier = {
+            'ELITE': 0.7, 'STRONG': 0.85, 'MEDIUM': 1.0, 'WEAK': 1.2
+        }
+        
+        defense_factor = (tier_defense_multiplier.get(home_tier, 1.0) + 
+                         tier_defense_multiplier.get(away_tier, 1.0)) / 2
+        
+        # Match context adjustments
+        context_adjustment = {
+            MatchContext.OFFENSIVE_SHOWDOWN: 1.25,
+            MatchContext.DEFENSIVE_BATTLE: 0.65,
+            MatchContext.TACTICAL_STALEMATE: 0.9,
+            MatchContext.HOME_DOMINANCE: 0.8,
+            MatchContext.AWAY_COUNTER: 0.8,
+            MatchContext.UNPREDICTABLE: 1.1
+        }.get(self.match_context, 1.0)
+        
+        # Recent form consideration (clean sheets data)
+        home_clean_sheets = self.data.get('home_clean_sheets', 1.0) / 6.0
+        away_clean_sheets = self.data.get('away_clean_sheets', 1.0) / 6.0
+        form_factor = 1.0 - ((home_clean_sheets + away_clean_sheets) * 0.3)
+        
+        # Historical BTTS rate
         home_btts_rate = self.data.get('home_btts_rate', 0.5)
         away_btts_rate = self.data.get('away_btts_rate', 0.5)
         historical_factor = (home_btts_rate + away_btts_rate) / 2
         
-        # FIXED: Blend base probability with historical data
-        adjusted_btts = (base_btts * 0.7) + (historical_factor * 0.3)
-        
-        # STRONGER tier-based adjustment
-        home_tier = self.calibrator.get_team_tier(home_team, league)
-        away_tier = self.calibrator.get_team_tier(away_team, league)
-        
-        # Elite defenses significantly reduce BTTS probability
-        if home_tier == 'ELITE' and away_tier == 'ELITE':
-            adjusted_btts *= 0.7   # Strong reduction for top defenses
-        elif home_tier == 'ELITE' or away_tier == 'ELITE':
-            adjusted_btts *= 0.85  # Moderate reduction when one team is elite
-        elif home_tier == 'WEAK' and away_tier == 'WEAK':
-            adjusted_btts *= 1.2   # Increase for weak defenses
+        adjusted_btts = base_btts * defense_factor * context_adjustment * form_factor * historical_factor
         
         return max(0.15, min(0.85, adjusted_btts))
 
     def _calculate_enhanced_over_under(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> Dict[str, float]:
-        """FIXED OVER/UNDER LOGIC"""
+        """Enhanced Over/Under probabilities with tactical awareness"""
         
         total_xg = home_xg + away_xg
         
-        # USE POISSON DIRECTLY
-        over_25 = 1 - poisson.cdf(2, total_xg)
-        under_25 = poisson.cdf(2, total_xg)
+        # Base probabilities from Poisson
+        over_25_base = 1 - poisson.cdf(2, total_xg)
+        under_25_base = poisson.cdf(2, total_xg)
         
-        # Get historical Over rates
+        # Tactical context adjustments
+        home_tier = self.calibrator.get_team_tier(home_team, league)
+        away_tier = self.calibrator.get_team_tier(away_team, league)
+        
+        # High-scoring vs low-scoring team tendencies
+        tier_scoring_profile = {
+            'ELITE': 1.15, 'STRONG': 1.05, 'MEDIUM': 1.0, 'WEAK': 0.9
+        }
+        
+        scoring_tendency = (tier_scoring_profile[home_tier] + tier_scoring_profile[away_tier]) / 2
+        
+        # Match situation awareness
+        if (home_tier == 'ELITE' and away_tier == 'WEAK') or (away_tier == 'ELITE' and home_tier == 'WEAK'):
+            # One-sided matches often have higher scoring
+            scoring_tendency *= 1.1
+        
+        # Recent goal trends
+        home_goals_avg = self.data.get('home_goals', 0) / 6.0
+        away_goals_avg = self.data.get('away_goals', 0) / 6.0
+        recent_scoring = (home_goals_avg + away_goals_avg) / 2.7  # Normalize to league average
+        
+        momentum_factor = min(1.3, max(0.7, recent_scoring))
+        
+        # Historical Over/Under rates
         home_over_rate = self.data.get('home_over_25_rate', 0.5)
         away_over_rate = self.data.get('away_over_25_rate', 0.5)
         historical_factor = (home_over_rate + away_over_rate) / 2
         
-        # FIXED: Blend mathematical probability with historical data
-        over_25 = (over_25 * 0.7) + (historical_factor * 0.3)
-        under_25 = (under_25 * 0.7) + ((1 - historical_factor) * 0.3)
+        # Apply adjustments
+        over_25_adj = over_25_base * scoring_tendency * momentum_factor * historical_factor
+        under_25_adj = under_25_base / (scoring_tendency * momentum_factor * historical_factor)
         
-        # Normalize
-        total = over_25 + under_25
+        # Normalize to ensure they sum to ~1.0
+        total = over_25_adj + under_25_adj
         if total > 0:
-            over_25 /= total
-            under_25 /= total
+            over_25_adj /= total
+            under_25_adj /= total
         
         return {
-            'over_25': max(0.1, min(0.9, over_25)),
-            'under_25': max(0.1, min(0.9, under_25))
+            'over_25': max(0.1, min(0.9, over_25_adj)),
+            'under_25': max(0.1, min(0.9, under_25_adj))
         }
 
     def _calculate_realistic_xg(self) -> Tuple[float, float]:
-        """FIXED: Realistic xG with PROPER tier calibration"""
+        """Calculate REALISTIC predictive xG with multi-league tier calibration"""
         league = self.data.get('league', 'premier_league')
         
-        # Get team tiers
-        home_tier = self.calibrator.get_team_tier(self.data['home_team'], league)
-        away_tier = self.calibrator.get_team_tier(self.data['away_team'], league)
-        
-        # Get tier baselines
+        # Get tier-based baselines with league context
         home_baseline, home_def_baseline = self.calibrator.get_tier_baselines(self.data['home_team'], league)
         away_baseline, away_def_baseline = self.calibrator.get_tier_baselines(self.data['away_team'], league)
         
-        # FIXED: TIER-AWARE WEIGHTING
-        # Elite teams: 90% baseline quality, 10% recent form
-        # Weak teams: 30% baseline quality, 70% recent form
-        if home_tier == 'ELITE':
-            home_attack = (self.data.get('home_goals', 0)/6.0 * 0.1) + (home_baseline * 0.9)
-        elif home_tier == 'WEAK':
-            home_attack = (self.data.get('home_goals', 0)/6.0 * 0.7) + (home_baseline * 0.3)
-        else:
-            home_attack = (self.data.get('home_goals', 0)/6.0 * 0.4) + (home_baseline * 0.6)
+        # Start from tier baselines instead of raw data
+        home_goals_avg = self.data.get('home_goals', 0) / 6.0
+        away_goals_avg = self.data.get('away_goals', 0) / 6.0
         
-        if away_tier == 'ELITE':
-            away_attack = (self.data.get('away_goals', 0)/6.0 * 0.1) + (away_baseline * 0.9)
-        elif away_tier == 'WEAK':
-            away_attack = (self.data.get('away_goals', 0)/6.0 * 0.7) + (away_baseline * 0.3)
-        else:
-            away_attack = (self.data.get('away_goals', 0)/6.0 * 0.4) + (away_baseline * 0.6)
+        # Blend recent performance with tier baseline
+        home_attack = (home_goals_avg * 0.4) + (home_baseline * 0.6)
+        away_attack = (away_goals_avg * 0.4) + (away_baseline * 0.6)
         
-        # FIXED: DEFENSIVE ADJUSTMENTS
-        # Use ACTUAL conceded data more heavily for defense
         home_conceded_avg = self.data.get('home_conceded', 0) / 6.0
         away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
         
-        home_defense = (home_conceded_avg * 0.7) + (home_def_baseline * 0.3)
-        away_defense = (away_conceded_avg * 0.7) + (away_def_baseline * 0.3)
+        # Blend defensive performance with tier baseline
+        home_defense = (home_conceded_avg * 0.4) + (home_def_baseline * 0.6)
+        away_defense = (away_conceded_avg * 0.4) + (away_def_baseline * 0.6)
         
+        # Calculate xG using blended values
         league_avg = self.calibrator.league_baselines.get(league, self.calibrator.league_baselines['default'])['avg_goals']
         
-        # FIXED: STRONGER DEFENSIVE IMPACT
-        home_xg = home_attack * (1 - (away_defense / league_avg) * 0.8)
-        away_xg = away_attack * (1 - (home_defense / league_avg) * 0.8)
+        home_xg = home_attack * (1 - (away_defense / league_avg) * self.calibration_params['defensive_impact_multiplier'])
+        away_xg = away_attack * (1 - (home_defense / league_avg) * self.calibration_params['defensive_impact_multiplier'])
         
-        # FIXED: REALISTIC HOME ADVANTAGE
+        # Apply contextual home advantage with league context
         home_advantage = self.calibrator.get_contextual_home_advantage(
             self.data['home_team'], self.data['away_team'], league
         )
-        
         home_xg *= (1 + home_advantage)
         
         # Apply weighted form impact
+        home_tier = self.calibrator.get_team_tier(self.data['home_team'], league)
+        away_tier = self.calibrator.get_team_tier(self.data['away_team'], league)
+        
         home_form = self._calculate_weighted_form_impact('home', home_tier, league)
         away_form = self._calculate_weighted_form_impact('away', away_tier, league)
         
@@ -744,7 +627,9 @@ class SignalEngine:
             home_xg, away_xg, self.data['home_team'], self.data['away_team'], league
         )
         
-        logger.info(f"🚀 FIXED xG - {self.data['home_team']}({home_tier}): {home_xg:.3f} vs {self.data['away_team']}({away_tier}): {away_xg:.3f}")
+        logger.info(f"Calibrated xG - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
+        logger.info(f"Team Tiers - Home: {home_tier}, Away: {away_tier}")
+        logger.info(f"League: {league}")
         
         return home_xg, away_xg
     
@@ -766,44 +651,8 @@ class SignalEngine:
         
         return adjusted_home_xg, adjusted_away_xg
 
-    def _log_prediction_debug(self, home_xg: float, away_xg: float, home_team: str, away_team: str, 
-                            league: str, final_predictions: Dict) -> Dict:
-        """Enhanced debug logging for model analysis"""
-        
-        total_xg = home_xg + away_xg
-        poisson_over25 = 1 - poisson.cdf(2, total_xg)
-        
-        debug_data = {
-            'timestamp': datetime.now().isoformat(),
-            'match': f"{home_team} vs {away_team}",
-            'league': league,
-            'team_tiers': {
-                'home': self.calibrator.get_team_tier(home_team, league),
-                'away': self.calibrator.get_team_tier(away_team, league)
-            },
-            'expected_goals': {'home': home_xg, 'away': away_xg, 'total': total_xg},
-            'poisson_probabilities': {
-                'over_25': poisson_over25,
-                'btts_base': (1 - math.exp(-home_xg)) * (1 - math.exp(-away_xg))
-            },
-            'historical_factors': {
-                'over_25': (self.data.get('home_over_25_rate', 0.5) + self.data.get('away_over_25_rate', 0.5)) / 2,
-                'btts': (self.data.get('home_btts_rate', 0.5) + self.data.get('away_btts_rate', 0.5)) / 2
-            },
-            'final_probabilities': {
-                'over_25': final_predictions['probabilities']['over_under']['over_25'] / 100.0,
-                'btts_yes': final_predictions['probabilities']['both_teams_score']['yes'] / 100.0,
-                'home_win': final_predictions['probabilities']['match_outcomes']['home_win'] / 100.0
-            },
-            'match_context': final_predictions['match_context'],
-            'confidence_score': final_predictions['confidence_score'],
-            'data_quality_score': final_predictions['data_quality_score']
-        }
-        
-        return debug_data
-
     def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
-        """Run Enhanced Monte Carlo simulation with FIXED BTTS and Over/Under"""
+        """Run Enhanced Monte Carlo simulation with better BTTS and Over/Under"""
         np.random.seed(42)
         
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
@@ -824,7 +673,7 @@ class SignalEngine:
         home_goals_sim = A + C
         away_goals_sim = B + C
         
-        # Use FIXED calculations for BTTS and Over/Under
+        # Use ENHANCED calculations for BTTS and Over/Under
         home_team = self.data['home_team']
         away_team = self.data['away_team']
         league = self.data.get('league', 'premier_league')
@@ -835,17 +684,13 @@ class SignalEngine:
         # Enhanced Over/Under probabilities
         over_under_probs = self._calculate_enhanced_over_under(home_xg, away_xg, home_team, away_team, league)
         
-        # Match outcomes from simulation
+        # Keep existing match outcome logic (which is working well)
         home_wins = np.sum(home_goals_sim > away_goals_sim) / iterations
         draws = np.sum(home_goals_sim == away_goals_sim) / iterations
         away_wins = np.sum(home_goals_sim < away_goals_sim) / iterations
         
-        # For Over 2.5, use BOTH Monte Carlo AND enhanced logic
-        mc_over_25 = np.sum((home_goals_sim + away_goals_sim) > 2.5) / iterations
-        enhanced_over_25 = over_under_probs['over_25']
-        
-        # BLEND them for best accuracy (70% Monte Carlo, 30% enhanced)
-        final_over_25 = (mc_over_25 * 0.7) + (enhanced_over_25 * 0.3)
+        # Use enhanced values instead of simulation for BTTS and Over/Under
+        over_25 = over_under_probs['over_25']
         
         exact_scores = {}
         for i in range(6):
@@ -866,7 +711,7 @@ class SignalEngine:
             'home_win': calculate_ci(home_wins),
             'draw': calculate_ci(draws),
             'away_win': calculate_ci(away_wins),
-            'over_2.5': calculate_ci(final_over_25)
+            'over_2.5': calculate_ci(over_25)
         }
         
         batch_size = 1000
@@ -899,7 +744,7 @@ class SignalEngine:
             home_win_prob=home_wins,
             draw_prob=draws,
             away_win_prob=away_wins,
-            over_25_prob=final_over_25,
+            over_25_prob=over_25,
             btts_prob=btts_prob,
             exact_scores=exact_scores,
             confidence_intervals=confidence_intervals,
@@ -960,7 +805,7 @@ class SignalEngine:
         }
 
     def generate_predictions(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate REALISTIC football predictions with FIXED tier calibration"""
+        """Generate REALISTIC football predictions with enhanced BTTS/Over-Under calibration"""
         
         home_team = self.data['home_team']
         away_team = self.data['away_team']
@@ -983,12 +828,12 @@ class SignalEngine:
             away_tier = self.calibrator.get_team_tier(away_team, league)
             
             # Apply tier-based probability corrections
-            if home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK']:
+            if home_tier == 'ELITE' and away_tier == 'WEAK':
                 mc_results.home_win_prob = max(mc_results.home_win_prob, 0.65)
-                mc_results.away_win_prob = min(mc_results.away_win_prob, 0.20)
-            elif away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK']:
+                mc_results.away_win_prob = min(mc_results.away_win_prob, 0.15)
+            elif away_tier == 'ELITE' and home_tier == 'WEAK':
                 mc_results.away_win_prob = max(mc_results.away_win_prob, 0.65)
-                mc_results.home_win_prob = min(mc_results.home_win_prob, 0.20)
+                mc_results.home_win_prob = min(mc_results.home_win_prob, 0.15)
             
             # Normalize probabilities
             total = mc_results.home_win_prob + mc_results.draw_prob + mc_results.away_win_prob
@@ -1068,10 +913,6 @@ class SignalEngine:
             }
         }
         
-        # Enhanced logging
-        debug_data = self._log_prediction_debug(home_xg, away_xg, home_team, away_team, league, predictions)
-        self.logger.log_prediction(debug_data)
-        
         return predictions
 
     def _generate_timing_predictions(self, home_xg: float, away_xg: float) -> Dict[str, str]:
@@ -1102,10 +943,10 @@ class SignalEngine:
         home_tier = self.calibrator.get_team_tier(home_team, league)
         away_tier = self.calibrator.get_team_tier(away_team, league)
         
-        if home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and home_win_prob > 0.70:
+        if home_tier == 'ELITE' and away_tier == 'WEAK' and home_win_prob > 0.70:
             return f"{home_team} are overwhelming favorites with {home_xg:.1f} expected goals. Their superior quality and home advantage should see them comfortably overcome {away_team}."
         
-        elif away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK'] and home_win_prob < 0.25:
+        elif away_tier == 'ELITE' and home_tier == 'WEAK' and home_win_prob < 0.25:
             return f"{away_team} demonstrate clear superiority with {away_xg:.1f} expected goals. Their quality should overcome {home_team}'s home advantage."
         
         elif self.match_context == MatchContext.HOME_DOMINANCE and home_win_prob > 0.60:
@@ -1125,7 +966,9 @@ class SignalEngine:
 
 
 class ValueDetectionEngine:
-    """FIXED VALUE DETECTION ENGINE - Proper tier alignment"""
+    """
+    PERFECTLY ALIGNED VALUE DETECTION ENGINE - MULTI-LEAGUE SUPPORT
+    """
     
     def __init__(self):
         # Realistic thresholds
@@ -1153,6 +996,12 @@ class ValueDetectionEngine:
         
         # Multi-league team strength tiers
         self.calibrator = TeamTierCalibrator()
+
+    def _get_team_strength(self, team: str, league: str) -> int:
+        """Get team strength tier"""
+        tier = self.calibrator.get_team_tier(team, league)
+        tier_strength = {'ELITE': 5, 'STRONG': 4, 'MEDIUM': 3, 'WEAK': 2}
+        return tier_strength.get(tier, 3)
 
     def calculate_implied_probabilities(self, market_odds: Dict[str, float]) -> Dict[str, float]:
         """Convert decimal odds to implied probabilities"""
@@ -1212,13 +1061,13 @@ class ValueDetectionEngine:
         league = primary_prediction.get('league', 'premier_league')
         
         # NEVER allow contradictory outcomes in tier mismatches
-        if (home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and 
+        if (home_tier == 'ELITE' and away_tier == 'WEAK' and 
             primary_prediction['outcome'] == 'HOME'):
             
             if signal.market in ['1x2 Draw', '1x2 Away']:
                 return True
         
-        if (away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK'] and 
+        if (away_tier == 'ELITE' and home_tier == 'WEAK' and 
             primary_prediction['outcome'] == 'AWAY'):
             
             if signal.market in ['1x2 Draw', '1x2 Home']:
@@ -1241,7 +1090,7 @@ class ValueDetectionEngine:
         return False
 
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
-        """FIXED value bet detection - NO CONTRADICTIONS"""
+        """PERFECTLY ALIGNED value bet detection - NO CONTRADICTIONS"""
         
         signals = []
         
@@ -1383,7 +1232,9 @@ class ValueDetectionEngine:
 
 
 class AdvancedFootballPredictor:
-    """FIXED ORCHESTRATOR: Proper Tier Calibration"""
+    """
+    PERFECTLY ALIGNED ORCHESTRATOR: Multi-League Support
+    """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.market_odds = match_data.get('market_odds', {})
@@ -1397,7 +1248,7 @@ class AdvancedFootballPredictor:
         self.prediction_history = []
     
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate comprehensive analysis with FIXED alignment"""
+        """Generate comprehensive analysis with PERFECT alignment"""
         
         football_predictions = self.signal_engine.generate_predictions(mc_iterations)
         
@@ -1413,7 +1264,7 @@ class AdvancedFootballPredictor:
         return comprehensive_result
     
     def _validate_system_output(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> Dict[str, str]:
-        """Validate system output for proper alignment"""
+        """Validate system output for perfect alignment"""
         
         issues = []
         
@@ -1437,11 +1288,11 @@ class AdvancedFootballPredictor:
             away_tier = team_tiers.get('away', 'MEDIUM')
             
             if (signal_dict['market'] == '1x2 Draw' and primary_outcome == 'home_win' and 
-                home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and outcomes['home_win'] > 65):
+                home_tier == 'ELITE' and away_tier == 'WEAK' and outcomes['home_win'] > 65):
                 issues.append("Draw value bet contradicts strong home win prediction for elite vs weak")
             
             if (signal_dict['market'] == '1x2 Away' and primary_outcome == 'home_win' and 
-                home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and outcomes['home_win'] > 65):
+                home_tier == 'ELITE' and away_tier == 'WEAK' and outcomes['home_win'] > 65):
                 issues.append("Away win value bet contradicts strong home win prediction for elite vs weak")
             
             # Check BTTS contradictions
@@ -1482,74 +1333,76 @@ class AdvancedFootballPredictor:
 
 
 # =============================================================================
-# TEST THE FIXED CALIBRATION
+# TEST THE ENHANCED CALIBRATION
 # =============================================================================
 
-def test_fixed_calibration():
-    """Test the fixed calibration system"""
+def test_enhanced_calibration():
+    """Test the enhanced calibration system with Burnley vs Arsenal"""
     
     match_data = {
-        'home_team': 'Burnley',  # MEDIUM tier
-        'away_team': 'Arsenal',   # ELITE tier
+        'home_team': 'Burnley',
+        'away_team': 'Arsenal', 
         'league': 'premier_league',
         'home_goals': 8,    # Last 6 games
-        'away_goals': 10,   # Last 6 games
-        'home_conceded': 13,
-        'away_conceded': 2,
-        'home_clean_sheets': 1,
-        'away_clean_sheets': 4,
-        'home_btts_rate': 0.67,
-        'away_btts_rate': 0.33,
-        'home_over_25_rate': 0.50,
-        'away_over_25_rate': 0.67,
-        'home_form': [1, 0, 1, 0, 0, 1],
-        'away_form': [3, 3, 1, 3, 3, 3],
+        'away_goals': 12,   # Last 6 games
+        'home_conceded': 14,
+        'away_conceded': 6,
+        'home_clean_sheets': 1,    # Enhanced BTTS data
+        'away_clean_sheets': 3,    # Enhanced BTTS data
+        'home_btts_rate': 0.67,    # BTTS in last 6 games
+        'away_btts_rate': 0.50,    # BTTS in last 6 games
+        'home_over_25_rate': 0.83, # Over 2.5 in last 6 games
+        'away_over_25_rate': 0.67, # Over 2.5 in last 6 games
+        'home_form': [1, 0, 1, 0, 0, 1],  # Recent form points
+        'away_form': [3, 3, 1, 3, 3, 3],  # Recent form points
         'h2h_data': {
-            'matches': 6,
+            'matches': 5,
             'home_wins': 1,
             'away_wins': 3, 
-            'draws': 2,
-            'home_goals': 3,
-            'away_goals': 10
+            'draws': 1,
+            'home_goals': 4,
+            'away_goals': 9
         },
         'injuries': {
-            'home': 1,
-            'away': 0
+            'home': 1,  # Minor absences
+            'away': 2   # Regular starters out
         },
         'motivation': {
-            'home': 'High',
-            'away': 'Normal'
+            'home': 'High',    # Fighting relegation
+            'away': 'Normal'   # Title challenge
         },
         'market_odds': {
-            '1x2 Home': 13.00,
-            '1x2 Draw': 6.25,
-            '1x2 Away': 1.22,
-            'Over 2.5 Goals': 1.91,
-            'Under 2.5 Goals': 1.90,
-            'BTTS Yes': 2.63,
-            'BTTS No': 1.44
+            '1x2 Home': 6.50,   # ~15.4% implied
+            '1x2 Draw': 4.50,   # ~22.2% implied  
+            '1x2 Away': 1.50,   # ~66.7% implied
+            'Over 2.5 Goals': 1.80,
+            'Under 2.5 Goals': 2.00,
+            'BTTS Yes': 1.90,
+            'BTTS No': 1.90
         }
     }
     
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("🎯 FIXED CALIBRATION PREDICTION RESULTS")
+    print("🎯 ENHANCED CALIBRATED PREDICTION RESULTS")
     print("=" * 50)
     print(f"Match: {results['match']}")
+    print(f"League: {results.get('league', 'premier_league')}")
     print(f"Team Tiers: {results['team_tiers']['home']} vs {results['team_tiers']['away']}")
     print(f"Expected Goals: {results['expected_goals']['home']} - {results['expected_goals']['away']}")
     print(f"Match Context: {results['match_context']}")
+    print(f"Confidence: {results['confidence_score']}%")
     print()
     
-    print("📊 FIXED PROBABILITIES:")
+    print("📊 ENHANCED PROBABILITIES:")
     outcomes = results['probabilities']['match_outcomes']
     print(f"Home Win: {outcomes['home_win']}%")
     print(f"Draw: {outcomes['draw']}%") 
     print(f"Away Win: {outcomes['away_win']}%")
     print()
     
-    print("⚽ FIXED GOALS ANALYSIS:")
+    print("⚽ ENHANCED GOALS ANALYSIS:")
     print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']}%")
     print(f"Over 2.5: {results['probabilities']['over_under']['over_25']}%")
     print()
@@ -1564,4 +1417,4 @@ def test_fixed_calibration():
     print(f"Alignment: {results['system_validation']['alignment']}")
 
 if __name__ == "__main__":
-    test_fixed_calibration()
+    test_enhanced_calibration()

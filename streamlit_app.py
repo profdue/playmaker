@@ -1,36 +1,30 @@
-# streamlit_app.py - COMPLETE WORKING VERSION
+# streamlit_app.py - COMPLETE PRODUCTION-READY DASHBOARD
 import streamlit as st
-st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-import json
-from typing import Dict, Any
 from datetime import datetime
+import json
 
-# Import the PREDICTION ENGINE
-try:
-    from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator
-except ImportError as e:
-    st.error(f"❌ Could not import prediction_engine: {str(e)}")
-    st.info("💡 Make sure prediction_engine.py is in the same directory")
-    st.stop()
+# Import our engines
+from prediction_engine import PredictionEngine, TeamData, MatchContext, test_prediction_engine
+from betting_engine import BettingDecisionEngine, test_betting_engine
 
 # Page configuration
 st.set_page_config(
-    page_title="🌍 Advanced Football Predictor",
-    page_icon="⚽", 
+    page_title="⚽ Advanced Football Predictor Pro",
+    page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS styling with league badges
+# Custom CSS for professional styling
 st.markdown("""
 <style>
-    .main-header { 
-        font-size: 2.5rem !important; 
+    .main-header {
+        font-size: 2.8rem !important;
         font-weight: 800;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
@@ -39,38 +33,12 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     .sub-header {
-        font-size: 1.3rem !important;
+        font-size: 1.4rem !important;
         color: #666;
         text-align: center;
         margin-bottom: 2rem;
     }
-    .league-badge {
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        color: white;
-        display: inline-block;
-        margin: 0.2rem;
-    }
-    .premier-league { background: #3D195B; }
-    .la-liga { background: #FF0000; }
-    .serie-a { background: #008C45; }
-    .bundesliga { background: #DC052D; }
-    .ligue-1 { background: #DA291C; }
-    .liga-portugal { background: #006600; }
-    .brasileirao { background: #FFCC00; color: black; }
-    .liga-mx { background: #006847; }
-    .eredivisie { background: #FF6B00; }
-    
-    .betting-activity-rank {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-    }
-    .prediction-card { 
+    .prediction-card {
         background: white;
         padding: 1.5rem;
         border-radius: 12px;
@@ -78,72 +46,41 @@ st.markdown("""
         border-left: 5px solid #4CAF50;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+    .betting-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        border-left: 5px solid #FF9800;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
     .risk-low { border-left-color: #4CAF50 !important; }
     .risk-medium { border-left-color: #FF9800 !important; }
     .risk-high { border-left-color: #f44336 !important; }
-    
-    .system-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        text-align: center;
+    .confidence-high { background: #4CAF50; color: white; }
+    .confidence-medium { background: #FF9800; color: white; }
+    .confidence-low { background: #f44336; color: white; }
+    .value-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 0.2rem;
     }
-    
-    .pure-engine-card {
-        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-    }
-    
-    .value-engine-card {
-        background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
-        color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-    }
-    
-    .probability-bar {
-        height: 8px;
-        background: #e0e0e0;
-        border-radius: 4px;
-        margin: 0.5rem 0;
-        overflow: hidden;
-    }
-    .probability-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #4CAF50, #45a049);
-        border-radius: 4px;
-    }
-    
-    .bet-card {
-        background: white;
-        padding: 1.2rem;
-        border-radius: 10px;
-        margin: 0.8rem 0;
-        border-left: 4px solid;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .value-exceptional { border-left-color: #4CAF50 !important; background: #f8fff8; }
-    .value-high { border-left-color: #8BC34A !important; background: #f9fff9; }
-    .value-good { border-left-color: #FFC107 !important; background: #fffdf6; }
-    .value-moderate { border-left-color: #FF9800 !important; background: #fffaf2; }
-    
+    .value-exceptional { background: #4CAF50; color: white; }
+    .value-high { background: #8BC34A; color: white; }
+    .value-good { background: #FFC107; color: white; }
+    .value-moderate { background: #FF9800; color: white; }
     .section-title {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         font-weight: 600;
         color: #333;
-        margin: 1.5rem 0 1rem 0;
+        margin: 2rem 0 1rem 0;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #f0f2f6;
     }
-    
-    .goals-card {
+    .metric-card {
         background: white;
         padding: 1.2rem;
         border-radius: 10px;
@@ -151,962 +88,554 @@ st.markdown("""
         border-left: 4px solid #667eea;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    
-    .recommendation-yes {
-        border-left-color: #4CAF50 !important;
-        background: #f8fff8;
-    }
-    
-    .recommendation-no {
-        border-left-color: #f44336 !important;
-        background: #fff5f5;
-    }
-    
-    .confidence-badge {
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        color: white;
-        display: inline-block;
-        margin-top: 0.5rem;
-    }
-    .confidence-high { background: #4CAF50; }
-    .confidence-medium { background: #FF9800; }
-    .confidence-low { background: #f44336; }
-    
-    .success-banner {
-        background: #f8fff8;
-        border-left: 4px solid #4CAF50;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
-    .warning-banner {
-        background: #fffaf2;
-        border-left: 4px solid #FF9800;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
-    .danger-banner {
-        background: #fff5f5;
-        border-left: 4px solid #f44336;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
-    .alignment-perfect {
-        background: #f8fff8;
-        border-left: 4px solid #4CAF50;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
-    .alignment-warning {
-        background: #fffaf2;
-        border-left: 4px solid #FF9800;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
-    .alignment-danger {
-        background: #fff5f5;
-        border-left: 4px solid #f44336;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
-    .tier-badge {
-        padding: 0.2rem 0.6rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        color: white;
-        display: inline-block;
-        margin-left: 0.5rem;
-    }
-    .tier-elite { background: #e74c3c; }
-    .tier-strong { background: #e67e22; }
-    .tier-medium { background: #f1c40f; color: black; }
-    .tier-weak { background: #95a5a6; }
 </style>
 """, unsafe_allow_html=True)
 
-def safe_get(dictionary, *keys, default=None):
-    """Safely get nested dictionary keys"""
-    if dictionary is None:
-        return default
-        
-    current = dictionary
-    for key in keys:
-        try:
-            if isinstance(current, dict) and key in current:
-                current = current[key]
-            else:
-                return default
-        except (TypeError, KeyError):
-            return default
-    return current
+def initialize_session_state():
+    """Initialize session state variables"""
+    if 'predictions' not in st.session_state:
+        st.session_state.predictions = None
+    if 'betting_recommendations' not in st.session_state:
+        st.session_state.betting_recommendations = None
+    if 'bankroll' not in st.session_state:
+        st.session_state.bankroll = 1000.0
 
-def get_league_display_name(league_id: str) -> str:
-    """Get display name for league"""
-    league_names = {
-        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-        'la_liga': 'La Liga 🇪🇸', 
-        'serie_a': 'Serie A 🇮🇹',
-        'bundesliga': 'Bundesliga 🇩🇪',
-        'ligue_1': 'Ligue 1 🇫🇷',
-        'liga_portugal': 'Liga Portugal 🇵🇹',
-        'brasileirao': 'Brasileirão 🇧🇷',
-        'liga_mx': 'Liga MX 🇲🇽',
-        'eredivisie': 'Eredivisie 🇳🇱'
-    }
-    return league_names.get(league_id, league_id)
-
-def get_league_badge(league_id: str) -> str:
-    """Get CSS class for league badge"""
-    league_classes = {
-        'premier_league': 'premier-league',
-        'la_liga': 'la-liga',
-        'serie_a': 'serie-a', 
-        'bundesliga': 'bundesliga',
-        'ligue_1': 'ligue-1',
-        'liga_portugal': 'liga-portugal',
-        'brasileirao': 'brasileirao',
-        'liga_mx': 'liga-mx',
-        'eredivisie': 'eredivisie'
-    }
-    return league_classes.get(league_id, 'premier-league')
-
-def display_betting_activity_ranking():
-    """Display betting activity ranking by league"""
-    st.markdown('<div class="betting-activity-rank">', unsafe_allow_html=True)
-    st.markdown("### 📊 Betting Activity Ranking")
+def create_team_inputs(team_type: str):
+    """Create team data input form"""
+    st.subheader(f"🏠 {team_type} Team Data" if team_type == "Home" else f"✈️ {team_type} Team Data")
     
-    # Professional betting activity ranking (based on liquidity, market depth, etc.)
-    ranking_data = {
-        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Liga MX', 'Eredivisie'],
-        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium', 'Medium'],
-        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good', 'Good'],
-        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
-    }
+    col1, col2, col3 = st.columns(3)
     
-    df = pd.DataFrame(ranking_data)
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-def create_input_form():
-    """Create input form with multi-league support"""
+    with col1:
+        name = st.text_input(f"{team_type} Team Name", value="Liverpool" if team_type == "Home" else "Arsenal")
+        xg_for = st.number_input(f"{team_type} xG For", min_value=0.5, max_value=4.0, value=2.1 if team_type == "Home" else 1.9, step=0.1)
+        xg_against = st.number_input(f"{team_type} xG Against", min_value=0.5, max_value=4.0, value=1.2 if team_type == "Home" else 1.1, step=0.1)
     
-    st.markdown('<p class="main-header">🌍 Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Multi-League Analysis with Tier-Based Calibration</p>', unsafe_allow_html=True)
+    with col2:
+        xg_home = st.number_input(f"{team_type} xG Home", min_value=0.5, max_value=4.0, value=2.3 if team_type == "Home" else 2.0, step=0.1)
+        xg_away = st.number_input(f"{team_type} xG Away", min_value=0.5, max_value=4.0, value=1.9 if team_type == "Home" else 1.8, step=0.1)
+        form_attack = st.number_input(f"{team_type} Form Attack", min_value=0.5, max_value=3.0, value=1.8 if team_type == "Home" else 1.7, step=0.1)
     
-    # Display betting activity ranking
-    display_betting_activity_ranking()
+    with col3:
+        form_defense = st.number_input(f"{team_type} Form Defense", min_value=0.5, max_value=3.0, value=1.1 if team_type == "Home" else 1.0, step=0.1)
+        avg_possession = st.number_input(f"{team_type} Avg Possession %", min_value=30.0, max_value=80.0, value=58.5 if team_type == "Home" else 55.2, step=0.1)
+        pressures_p90 = st.number_input(f"{team_type} Pressures p90", min_value=100.0, max_value=250.0, value=185.0 if team_type == "Home" else 192.0, step=1.0)
     
-    # System Architecture Overview
-    with st.expander("🏗️ System Architecture", expanded=True):
-        st.markdown("""
-        ### 🎯 PROFESSIONAL MULTI-LEAGUE PREDICTOR
-        
-        **Supported Leagues** 🌍
-        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿, **La Liga** 🇪🇸, **Serie A** 🇮🇹
-        - **Bundesliga** 🇩🇪, **Ligue 1** 🇫🇷, **Liga Portugal** 🇵🇹  
-        - **Brasileirão** 🇧🇷, **Liga MX** 🇲🇽, **Eredivisie** 🇳🇱
-        
-        **League-Specific Calibration** ⚡
-        - Different scoring profiles per league
-        - League-specific home advantage
-        - Tier-based team strength systems
-        - Contextual probability adjustments
-        """)
-    
-    # League Selection
-    st.markdown("### 🌍 League Selection")
-    league_options = {
-        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-        'la_liga': 'La Liga 🇪🇸',
-        'serie_a': 'Serie A 🇮🇹', 
-        'bundesliga': 'Bundesliga 🇩🇪',
-        'ligue_1': 'Ligue 1 🇫🇷',
-        'liga_portugal': 'Liga Portugal 🇵🇹',
-        'brasileirao': 'Brasileirão 🇧🇷',
-        'liga_mx': 'Liga MX 🇲🇽',
-        'eredivisie': 'Eredivisie 🇳🇱'
-    }
-    
-    selected_league = st.selectbox(
-        "Select League",
-        options=list(league_options.keys()),
-        format_func=lambda x: league_options[x],
-        key="league_selection"
+    return TeamData(
+        name=name,
+        xg_for=xg_for,
+        xg_against=xg_against,
+        xg_home=xg_home,
+        xg_away=xg_away,
+        form_attack=form_attack,
+        form_defense=form_defense,
+        avg_possession=avg_possession,
+        pressures_p90=pressures_p90,
+        shots_p90=16.2 if team_type == "Home" else 14.8,
+        conversion_rate=0.12 if team_type == "Home" else 0.11
     )
-    
-    # Display league badge
-    league_badge_class = get_league_badge(selected_league)
-    league_display_name = get_league_display_name(selected_league)
-    st.markdown(f'<span class="league-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
-    
-    tab1, tab2, tab3 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Settings"])
 
-    with tab1:
-        st.markdown("### 🎯 Football Data Input")
-        
-        # Initialize team calibrator
-        calibrator = TeamTierCalibrator()
-        league_teams = calibrator.get_league_teams(selected_league)
-        
-        if not league_teams:
-            st.error(f"❌ No teams found for {league_display_name}")
-            return None, None
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("🏠 Home Team")
-            home_team = st.selectbox(
-                "Team Name", 
-                options=league_teams,
-                index=min(5, len(league_teams) - 1),  # Default to a mid-table team
-                key="home_team"
-            )
-            
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=14, key="home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="home_goals_home")
-            
-        with col2:
-            st.subheader("✈️ Away Team")
-            away_team = st.selectbox(
-                "Team Name",
-                options=league_teams,
-                index=0,  # Default to top team
-                key="away_team"
-            )
-            
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=12, key="away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=7, key="away_goals_away")
-        
-        # Show team tiers
-        home_tier = calibrator.get_team_tier(home_team, selected_league)
-        away_tier = calibrator.get_team_tier(away_team, selected_league)
-        
-        st.markdown(f"""
-        **Team Tiers:** 
-        <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
-        <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
-        """, unsafe_allow_html=True)
-        
-        # Head-to-head section
-        with st.expander("📊 Head-to-Head History"):
-            h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
-            with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=5, key="h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=1, key="h2h_home_wins")
-            with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=3, key="h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
-            with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=4, key="h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=9, key="h2h_away_goals")
-
-        # Recent Form
-        with st.expander("📈 Recent Form Analysis"):
-            form_col1, form_col2 = st.columns(2)
-            with form_col1:
-                st.write(f"**{home_team} Last 6 Matches**")
-                home_form = st.multiselect(
-                    f"{home_team} Recent Results",
-                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Loss (0 pts)", "Win (3 pts)", "Loss (0 pts)", "Loss (0 pts)", "Win (3 pts)"],
-                    key="home_form"
-                )
-            with form_col2:
-                st.write(f"**{away_team} Last 6 Matches**")
-                away_form = st.multiselect(
-                    f"{away_team} Recent Results", 
-                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)", "Win (3 pts)", "Win (3 pts)"],
-                    key="away_form"
-                )
-
-    with tab2:
-        st.markdown("### 💰 Market Data Input") 
-        
-        odds_col1, odds_col2, odds_col3 = st.columns(3)
-        
-        with odds_col1:
-            st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=6.50, step=0.01, key="home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=4.50, step=0.01, key="draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=1.50, step=0.01, key="away_odds")
-        
-        with odds_col2:
-            st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.25, step=0.01, key="over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01, key="over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=2.50, step=0.01, key="over_35_odds")
-        
-        with odds_col3:
-            st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.90, step=0.01, key="btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01, key="btts_no_odds")
-
-    with tab3:
-        st.markdown("### ⚙️ Model Configuration")
-        
-        model_col1, model_col2 = st.columns(2)
-        
-        with model_col1:
-            st.write("**Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 1, key="home_injuries")
-            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="away_injuries")
-            
-            home_absence_impact = st.select_slider(
-                "Home Team Absence Impact",
-                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Rotation Player",
-                key="home_absence_impact"
-            )
-            away_absence_impact = st.select_slider(
-                "Away Team Absence Impact",
-                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Regular Starter",
-                key="away_absence_impact"
-            )
-            
-        with model_col2:
-            st.write("**Motivation Factors**")
-            home_motivation = st.select_slider(
-                "Home Team Motivation",
-                options=["Low", "Normal", "High", "Very High"],
-                value="High",
-                key="home_motivation"
-            )
-            away_motivation = st.select_slider(
-                "Away Team Motivation", 
-                options=["Low", "Normal", "High", "Very High"],
-                value="Normal", 
-                key="away_motivation"
-            )
-            
-            mc_iterations = st.select_slider(
-                "Monte Carlo Iterations",
-                options=[1000, 5000, 10000, 25000],
-                value=10000,
-                key="mc_iterations"
-            )
-
-    # Submit button
-    submitted = st.button("🎯 GENERATE MULTI-LEAGUE ANALYSIS", type="primary", use_container_width=True)
+def create_context_inputs():
+    """Create match context input form"""
+    st.subheader("🎭 Match Context")
     
-    if submitted:
-        if not home_team or not away_team:
-            st.error("❌ Please enter both team names")
-            return None, None
-        
-        if home_team == away_team:
-            st.error("❌ Home and away teams cannot be the same")
-            return None, None
-        
-        # Convert form selections to points
-        form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
-        home_form_points = [form_map[result] for result in home_form]
-        away_form_points = [form_map[result] for result in away_form]
-        
-        # Convert motivation
-        motivation_map = {"Low": "Low", "Normal": "Normal", "High": "High", "Very High": "Very High"}
-        
-        # Convert absence impact to numeric
-        absence_impact_map = {
-            "Rotation Player": 1,
-            "Regular Starter": 2,
-            "Key Player": 3, 
-            "Star Player": 4,
-            "Multiple Key Players": 5
-        }
-        
-        # Market odds
-        market_odds = {
-            '1x2 Home': home_odds,
-            '1x2 Draw': draw_odds,
-            '1x2 Away': away_odds,
-            'Over 1.5 Goals': over_15_odds,
-            'Over 2.5 Goals': over_25_odds,
-            'Over 3.5 Goals': over_35_odds,
-            'BTTS Yes': btts_yes_odds,
-            'BTTS No': btts_no_odds,
-        }
-        
-        # Complete match data
-        match_data = {
-            'home_team': home_team,
-            'away_team': away_team,
-            'league': selected_league,
-            'home_goals': home_goals,
-            'away_goals': away_goals,
-            'home_conceded': home_conceded,
-            'away_conceded': away_conceded,
-            'home_goals_home': home_goals_home,
-            'away_goals_away': away_goals_away,
-            'home_form': home_form_points,
-            'away_form': away_form_points,
-            'h2h_data': {
-                'matches': h2h_matches,
-                'home_wins': h2h_home_wins,
-                'away_wins': h2h_away_wins,
-                'draws': h2h_draws,
-                'home_goals': h2h_home_goals,
-                'away_goals': h2h_away_goals
-            },
-            'injuries': {
-                'home': absence_impact_map[home_absence_impact],
-                'away': absence_impact_map[away_absence_impact]
-            },
-            'motivation': {
-                'home': motivation_map[home_motivation],
-                'away': motivation_map[away_motivation]
-            },
-            'market_odds': market_odds
-        }
-        
-        return match_data, mc_iterations
-    
-    return None, None
-
-def display_goals_analysis(predictions):
-    """Display goals analysis"""
-    st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
-    
-    # Get probabilities with safe defaults
-    btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes') or 0
-    btts_no = safe_get(predictions, 'probabilities', 'both_teams_score', 'no') or 0
-    
-    over_25 = safe_get(predictions, 'probabilities', 'over_under', 'over_25') or 0
-    under_25 = safe_get(predictions, 'probabilities', 'over_under', 'under_25') or 0
-    
-    first_half = safe_get(predictions, 'probabilities', 'goal_timing', 'first_half') or 0
-    second_half = safe_get(predictions, 'probabilities', 'goal_timing', 'second_half') or 0
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        # BTTS - Show the HIGHER probability as primary
-        if btts_no > btts_yes:
-            recommendation = "NO"
-            primary_prob = btts_no
-            secondary_prob = btts_yes
-            card_class = "recommendation-no"
-            emoji = "❌"
-        else:
-            recommendation = "YES"
-            primary_prob = btts_yes
-            secondary_prob = btts_no
-            card_class = "recommendation-yes"
-            emoji = "✅"
-        
-        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
-        
-        st.markdown(f'''
-        <div class="goals-card {card_class}">
-            <h4>{emoji} Both Teams Score</h4>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #333; margin: 0.5rem 0;">
-                {recommendation}: {primary_prob:.1f}%
-            </div>
-            <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
-                {('NO' if recommendation == 'YES' else 'YES')}: {secondary_prob:.1f}%
-            </div>
-            <span class="confidence-badge confidence-{confidence.lower()}">
-                {confidence} CONFIDENCE
-            </span>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col2:
-        # Over/Under 2.5 - Show the HIGHER probability as primary
-        if under_25 > over_25:
-            recommendation = "UNDER"
-            primary_prob = under_25
-            secondary_prob = over_25
-            card_class = "recommendation-no"
-            emoji = "❌"
-        else:
-            recommendation = "OVER"
-            primary_prob = over_25
-            secondary_prob = under_25
-            card_class = "recommendation-yes"
-            emoji = "✅"
-        
-        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
-        
-        st.markdown(f'''
-        <div class="goals-card {card_class}">
-            <h4>{emoji} Over/Under 2.5</h4>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #333; margin: 0.5rem 0;">
-                {recommendation}: {primary_prob:.1f}%
-            </div>
-            <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
-                {('OVER' if recommendation == 'UNDER' else 'UNDER')}: {secondary_prob:.1f}%
-            </div>
-            <span class="confidence-badge confidence-{confidence.lower()}">
-                {confidence} CONFIDENCE
-            </span>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col3:
-        confidence = "HIGH" if first_half > 60 else "MEDIUM" if first_half > 40 else "LOW"
-        emoji = "🟢" if first_half > 60 else "🟡" if first_half > 40 else "🔴"
-        
-        st.markdown(f'''
-        <div class="goals-card">
-            <h4>🎯 First Half Goal</h4>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #667eea; margin: 0.5rem 0;">
-                {first_half:.1f}%
-            </div>
-            <span class="confidence-badge confidence-{confidence.lower()}">
-                {emoji} {confidence} CONFIDENCE
-            </span>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col4:
-        confidence = "HIGH" if second_half > 60 else "MEDIUM" if second_half > 40 else "LOW"
-        emoji = "🟢" if second_half > 60 else "🟡" if second_half > 40 else "🔴"
-        
-        st.markdown(f'''
-        <div class="goals-card">
-            <h4>🎯 Second Half Goal</h4>
-            <div style="font-size: 1.8rem; font-weight: bold; color: #667eea; margin: 0.5rem 0;">
-                {second_half:.1f}%
-            </div>
-            <span class="confidence-badge confidence-{confidence.lower()}">
-                {emoji} {confidence} CONFIDENCE
-            </span>
-        </div>
-        ''', unsafe_allow_html=True)
-
-def display_probability_bar(label: str, probability: float, color: str):
-    """Display a probability with a visual bar"""
-    st.markdown(f'''
-    <div style="margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span><strong>{label}</strong></span>
-            <span><strong>{probability:.1f}%</strong></span>
-        </div>
-        <div class="probability-bar">
-            <div class="probability-fill" style="width: {probability}%; background: {color};"></div>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-def display_predictions(predictions):
-    """Display football predictions with league context"""
-    
-    st.markdown('<p class="main-header">🎯 Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Professional Multi-League Tier-Calibrated Analysis</div>', unsafe_allow_html=True)
-    
-    # League and team tiers display
-    team_tiers = safe_get(predictions, 'team_tiers') or {}
-    home_tier = team_tiers.get('home', 'MEDIUM')
-    away_tier = team_tiers.get('away', 'MEDIUM')
-    
-    # Get league from predictions data
-    league = safe_get(predictions, 'league', default='premier_league')
-    league_display_name = get_league_display_name(league)
-    league_badge_class = get_league_badge(league)
-    
-    st.markdown(f'''
-    <p style="text-align: center; font-size: 1.4rem; font-weight: 600;">
-        {predictions["match"]} 
-        <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
-        <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
-    </p>
-    <p style="text-align: center; margin-top: 0.5rem;">
-        <span class="league-badge {league_badge_class}">{league_display_name}</span>
-    </p>
-    ''', unsafe_allow_html=True)
-    
-    # Key metrics with safe defaults
-    xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
-    match_context = safe_get(predictions, 'match_context') or 'Unknown'
-    confidence_score = safe_get(predictions, 'confidence_score') or 0
-    data_quality = safe_get(predictions, 'data_quality_score') or 0
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("🏠 Expected Goals", f"{xg.get('home', 0):.2f}")
-    with col2:
-        st.metric("✈️ Expected Goals", f"{xg.get('away', 0):.2f}")
-    with col3:
-        context_emoji = {
-            'defensive_battle': '🛡️',
-            'tactical_stalemate': '⚔️', 
-            'offensive_showdown': '🔥',
-            'home_dominance': '🏠',
-            'away_counter': '✈️',
-            'unpredictable': '❓'
-        }.get(match_context, '❓')
-        st.metric("Match Context", f"{context_emoji} {match_context.replace('_', ' ').title()}")
-    with col4:
-        st.metric("Confidence Score", f"{confidence_score}%")
-    
-    # System validation
-    system_validation = safe_get(predictions, 'system_validation') or {}
-    alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    
-    if alignment_status == 'PERFECT':
-        st.markdown('<div class="alignment-perfect">✅ <strong>PERFECT ENGINE ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions</div>', unsafe_allow_html=True)
-    elif alignment_status == 'PARTIAL':
-        st.markdown('<div class="alignment-warning">⚠️ <strong>PARTIAL ALIGNMENT:</strong> Some inconsistencies detected</div>', unsafe_allow_html=True)
-    elif alignment_status == 'CONTRADICTORY':
-        st.markdown('<div class="alignment-danger">❌ <strong>CONTRADICTORY ALIGNMENT:</strong> Engines disagree - system error</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="success-banner">✅ <strong>SYSTEM VALIDATION PASSED:</strong> Realistic probabilities generated</div>', unsafe_allow_html=True)
-    
-    # Match Outcomes
-    st.markdown('<div class="section-title">📈 Match Outcome Probabilities</div>', unsafe_allow_html=True)
-    
-    outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {'home_win': 0, 'draw': 0, 'away_win': 0}
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        display_probability_bar("Home Win", outcomes.get('home_win', 0), "#4CAF50")
-    with col2:
-        display_probability_bar("Draw", outcomes.get('draw', 0), "#FF9800")
-    with col3:
-        display_probability_bar("Away Win", outcomes.get('away_win', 0), "#2196F3")
-    
-    # Goals Analysis
-    display_goals_analysis(predictions)
-    
-    # Exact Scores
-    st.markdown('<div class="section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
-    
-    exact_scores = safe_get(predictions, 'probabilities', 'exact_scores') or {}
-    top_scores = dict(list(exact_scores.items())[:6])
-    
-    if top_scores:
-        score_cols = st.columns(6)
-        for idx, (score, prob) in enumerate(top_scores.items()):
-            with score_cols[idx]:
-                st.metric(f"{score}", f"{prob}%")
-    else:
-        st.info("No exact score data available")
-    
-    # Risk Assessment
-    risk = safe_get(predictions, 'risk_assessment') or {'risk_level': 'UNKNOWN', 'explanation': 'No data'}
-    risk_class = f"risk-{risk.get('risk_level', 'unknown').lower()}"
-    
-    st.markdown(f'''
-    <div class="prediction-card {risk_class}">
-        <h3>📊 Risk Assessment</h3>
-        <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
-        <strong>Explanation:</strong> {risk.get("explanation", "No data available")}<br>
-        <strong>Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
-        <strong>Certainty:</strong> {risk.get("certainty", "N/A")}<br>
-        <strong>Home Advantage:</strong> {risk.get('home_advantage', 'N/A')}
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    # Professional Summary
-    st.markdown('<div class="section-title">📝 Football Summary</div>', unsafe_allow_html=True)
-    summary = safe_get(predictions, 'summary') or "No summary available."
-    st.info(summary)
-
-def display_value_detection(predictions):
-    """Display value detection results"""
-    
-    st.markdown('<p class="main-header">💰 Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Perfectly aligned with Tier-Calibrated Signal Engine</div>', unsafe_allow_html=True)
-    
-    betting_signals = safe_get(predictions, 'betting_signals') or []
-    
-    # Get primary predictions for context
-    outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {}
-    btts = safe_get(predictions, 'probabilities', 'both_teams_score') or {}
-    over_under = safe_get(predictions, 'probabilities', 'over_under') or {}
-    team_tiers = safe_get(predictions, 'team_tiers') or {}
-    league = safe_get(predictions, 'league', 'premier_league')
-    
-    primary_outcome = max(outcomes, key=outcomes.get) if outcomes else 'unknown'
-    primary_btts = 'yes' if btts.get('yes', 0) > btts.get('no', 0) else 'no'
-    primary_over_under = 'over_25' if over_under.get('over_25', 0) > over_under.get('under_25', 0) else 'under_25'
-    
-    # Display primary predictions context
-    st.markdown('<div class="section-title">🎯 Signal Engine Primary Predictions</div>', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        outcome_map = {'home_win': 'Home Win', 'draw': 'Draw', 'away_win': 'Away Win'}
-        st.metric("Primary Outcome", outcome_map.get(primary_outcome, 'Unknown'))
-    with col2:
-        st.metric("Primary BTTS", "YES" if primary_btts == 'yes' else "NO")
-    with col3:
-        st.metric("Primary Over/Under", "OVER 2.5" if primary_over_under == 'over_25' else "UNDER 2.5")
-    
-    if not betting_signals:
-        st.markdown('<div class="alignment-perfect">', unsafe_allow_html=True)
-        st.info("""
-        ## ✅ NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
-        
-        **This means:**
-        - Pure probabilities align with market expectations  
-        - No significant edges above realistic thresholds
-        - Market is efficient for this match
-        - **PERFECT ENGINE ALIGNMENT ACHIEVED**
-        
-        **Value Engine is properly confirming Signal Engine predictions without contradictions!**
-        """)
-        st.markdown('</div>', unsafe_allow_html=True)
-        return
-    
-    # Check alignment status
-    system_validation = safe_get(predictions, 'system_validation') or {}
-    alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    
-    if alignment_status == 'PERFECT':
-        st.markdown('<div class="alignment-perfect">✅ <strong>PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions</div>', unsafe_allow_html=True)
-    elif alignment_status == 'PARTIAL':
-        st.markdown('<div class="alignment-warning">⚠️ <strong>PARTIAL ALIGNMENT:</strong> Some inconsistencies detected</div>', unsafe_allow_html=True)
-    elif alignment_status == 'CONTRADICTORY':
-        st.markdown('<div class="alignment-danger">❌ <strong>CONTRADICTORY ALIGNMENT:</strong> Value bets contradict Signal Engine</div>', unsafe_allow_html=True)
-    
-    # Value Bet Summary
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        total_signals = len(betting_signals)
-        st.metric("Value Bets", total_signals)
-    
-    with col2:
-        high_value = len([s for s in betting_signals if s.get('value_rating') in ['EXCEPTIONAL', 'HIGH']])
-        st.metric("High Value Signals", high_value)
-    
-    with col3:
-        avg_edge = np.mean([s.get('edge', 0) for s in betting_signals])
-        st.metric("Average Edge", f"{avg_edge:.1f}%")
-    
-    with col4:
-        total_stake = np.sum([s.get('recommended_stake', 0) for s in betting_signals])
-        st.metric("Total Stake", f"{total_stake * 100:.1f}%")
-    
-    # Display value bets by rating
-    st.markdown('<div class="section-title">🎯 Value Bet Recommendations</div>', unsafe_allow_html=True)
-    
-    # Group by value rating
-    exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
-    high_bets = [s for s in betting_signals if s.get('value_rating') == 'HIGH']
-    good_bets = [s for s in betting_signals if s.get('value_rating') == 'GOOD']
-    moderate_bets = [s for s in betting_signals if s.get('value_rating') == 'MODERATE']
-    
-    def display_bet_group(bets, title, emoji):
-        if bets:
-            st.subheader(f"{emoji} {title} Value Bets")
-            for bet in bets:
-                value_class = f"value-{bet.get('value_rating', '').lower()}"
-                confidence_emoji = {
-                    'HIGH': '🟢',
-                    'MEDIUM-HIGH': '🟡',
-                    'MEDIUM': '🟡', 
-                    'LOW': '🔴',
-                    'SPECULATIVE': '⚪'
-                }.get(bet.get('confidence', 'SPECULATIVE'), '⚪')
-                
-                # Check if bet aligns with primary prediction
-                aligns_with_primary = True
-                alignment_emoji = "✅"
-                
-                if (bet.get('market') == 'BTTS Yes' and primary_btts == 'no') or \
-                   (bet.get('market') == 'BTTS No' and primary_btts == 'yes'):
-                    aligns_with_primary = False
-                    alignment_emoji = "⚠️"
-                
-                # Tier-aware contradiction checks
-                home_tier = team_tiers.get('home', 'MEDIUM')
-                away_tier = team_tiers.get('away', 'MEDIUM')
-                
-                if (bet.get('market') in ['1x2 Draw', '1x2 Away'] and primary_outcome == 'home_win' and 
-                    home_tier == 'ELITE' and away_tier == 'WEAK' and outcomes.get('home_win', 0) > 65):
-                    aligns_with_primary = False
-                    alignment_emoji = "❌"
-                
-                alignment_text = "ALIGNS" if aligns_with_primary else "CONTRADICTS"
-                
-                st.markdown(f'''
-                <div class="bet-card {value_class}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 2;">
-                            <strong>{bet.get('market', 'Unknown')}</strong><br>
-                            <small>Model: {bet.get('model_prob', 0)}% | Market: {bet.get('book_prob', 0)}%</small>
-                            <div style="margin-top: 0.3rem;">
-                                <small>{alignment_emoji} <strong>{alignment_text}</strong> with Signal Engine</small>
-                            </div>
-                        </div>
-                        <div style="flex: 1; text-align: right;">
-                            <strong style="color: #4CAF50; font-size: 1.1rem;">+{bet.get('edge', 0)}% Edge</strong><br>
-                            <small>Stake: {bet.get('recommended_stake', 0)*100:.1f}% | {confidence_emoji} {bet.get('confidence', 'Unknown')}</small>
-                        </div>
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
-    
-    display_bet_group(exceptional_bets, "Exceptional", "🔥")
-    display_bet_group(high_bets, "High", "⭐")
-    display_bet_group(good_bets, "Good", "✅")
-    display_bet_group(moderate_bets, "Moderate", "📊")
-
-def display_analytics(predictions):
-    """Display advanced analytics"""
-    
-    st.markdown('<p class="main-header">📈 Advanced Analytics</p>', unsafe_allow_html=True)
-    
-    # Data Quality and Intelligence Metrics
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown('<div class="section-title">📊 Model Performance</div>', unsafe_allow_html=True)
-        
-        data_quality = safe_get(predictions, 'data_quality_score') or 0
-        confidence = safe_get(predictions, 'confidence_score') or 0
-        football_iq = safe_get(predictions, 'apex_intelligence', 'football_iq_score') or 0
-        coherence = safe_get(predictions, 'apex_intelligence', 'narrative_coherence') or 0
-        
-        st.metric("Data Quality Score", f"{data_quality:.1f}%")
-        st.metric("Overall Confidence", f"{confidence}%")
-        st.metric("Football IQ Score", f"{football_iq:.1f}/100")
-        st.metric("Narrative Coherence", f"{coherence}%")
+        home_motivation = st.selectbox("Home Team Motivation", ["Low", "Normal", "High", "Very High"], index=2)
+        home_injuries = st.slider("Home Key Injuries", 0, 5, 1)
+        match_importance = st.slider("Match Importance", 0.0, 1.0, 0.8, 0.1)
     
     with col2:
-        st.markdown('<div class="section-title">🎲 Additional Predictions</div>', unsafe_allow_html=True)
-        
-        corners = safe_get(predictions, 'corner_predictions') or {}
-        timing = safe_get(predictions, 'probabilities', 'goal_timing') or {}
-        
-        st.write(f"**Total Corners:** {corners.get('total', 'N/A')}")
-        st.write(f"**First Half Goal:** {timing.get('first_half', 'N/A')}%")
-        st.write(f"**Second Half Goal:** {timing.get('second_half', 'N/A')}%")
-        
-        # Narrative insights
-        narrative = safe_get(predictions, 'match_narrative') or {}
-        st.write(f"**Match Rhythm:** {narrative.get('expected_tempo', 'N/A').title()}")
-        st.write(f"**Defensive Stability:** {narrative.get('defensive_stability', 'N/A').title()}")
+        away_motivation = st.selectbox("Away Team Motivation", ["Low", "Normal", "High", "Very High"], index=2)
+        away_injuries = st.slider("Away Key Injuries", 0, 5, 2)
+        days_since_last = st.slider("Days Since Last Game", 2, 14, 7)
+    
+    is_derby = st.checkbox("Is Derby Match")
+    
+    return MatchContext(
+        home_motivation=home_motivation,
+        away_motivation=away_motivation,
+        home_injuries=home_injuries,
+        away_injuries=away_injuries,
+        match_importance=match_importance,
+        is_derby=is_derby,
+        days_since_last=days_since_last
+    )
 
-def display_analysis(predictions):
-    """Display analysis"""
+def create_odds_inputs():
+    """Create market odds input form"""
+    st.subheader("💰 Market Odds")
     
-    tab1, tab2, tab3 = st.tabs(["🎯 Predictions", "💰 Value Detection", "📈 Analytics"])
+    col1, col2 = st.columns(2)
     
-    with tab1:
-        display_predictions(predictions)
+    with col1:
+        st.write("**1X2 Markets**")
+        home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.10, step=0.01)
+        draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.50, step=0.01)
+        away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.80, step=0.01)
     
-    with tab2:
-        display_value_detection(predictions)
+    with col2:
+        st.write("**Goal Markets**")
+        btts_yes = st.number_input("BTTS Yes Odds", min_value=1.01, value=1.80, step=0.01)
+        btts_no = st.number_input("BTTS No Odds", min_value=1.01, value=2.10, step=0.01)
+        over_25 = st.number_input("Over 2.5 Goals Odds", min_value=1.01, value=1.65, step=0.01)
+        under_25 = st.number_input("Under 2.5 Goals Odds", min_value=1.01, value=2.20, step=0.01)
     
-    with tab3:
-        display_analytics(predictions)
-
-def store_prediction_in_session(prediction):
-    """Store prediction in session state for history tracking"""
-    if 'prediction_history' not in st.session_state:
-        st.session_state.prediction_history = []
-    
-    prediction_record = {
-        'timestamp': datetime.now().isoformat(),
-        'match': prediction['match'],
-        'league': prediction.get('league', 'premier_league'),
-        'expected_goals': prediction['expected_goals'],
-        'team_tiers': prediction.get('team_tiers', {}),
-        'probabilities': prediction['probabilities']['match_outcomes'],
-        'match_context': prediction['match_context'],
-        'confidence_score': prediction['confidence_score'],
-        'data_quality': prediction['data_quality_score']
+    return {
+        '1x2 Home': home_odds,
+        '1x2 Draw': draw_odds,
+        '1x2 Away': away_odds,
+        'BTTS Yes': btts_yes,
+        'BTTS No': btts_no,
+        'Over 2.5 Goals': over_25,
+        'Under 2.5 Goals': under_25
     }
+
+def display_predictions(predictions):
+    """Display prediction results"""
+    st.markdown('<div class="section-title">🎯 Football Predictions</div>', unsafe_allow_html=True)
     
-    st.session_state.prediction_history.append(prediction_record)
+    # Match header
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col1:
+        st.markdown(f"### 🏠 {predictions['match'].split(' vs ')[0]}")
+    with col2:
+        st.markdown("### vs")
+    with col3:
+        st.markdown(f"### ✈️ {predictions['match'].split(' vs ')[1]}")
     
-    if len(st.session_state.prediction_history) > 20:
-        st.session_state.prediction_history = st.session_state.prediction_history[-20:]
+    # Key metrics
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Expected Goals Home", f"{predictions['expected_goals']['home']:.2f}")
+    with col2:
+        st.metric("Expected Goals Away", f"{predictions['expected_goals']['away']:.2f}")
+    with col3:
+        st.metric("Total Expected Goals", f"{predictions['expected_goals']['total']:.2f}")
+    with col4:
+        confidence_color = {
+            'HIGH': 'confidence-high',
+            'MEDIUM': 'confidence-medium', 
+            'LOW': 'confidence-low'
+        }.get(predictions['confidence'], 'confidence-medium')
+        st.markdown(f'<div class="value-badge {confidence_color}">Confidence: {predictions["confidence"]}</div>', unsafe_allow_html=True)
+    
+    # Match outcomes
+    st.subheader("📈 Match Outcome Probabilities")
+    outcomes = predictions['probabilities']['match_outcomes']
+    
+    fig_outcomes = go.Figure(data=[
+        go.Bar(name='Probability', x=list(outcomes.keys()), y=list(outcomes.values()),
+               text=[f"{v}%" for v in outcomes.values()], textposition='auto')
+    ])
+    fig_outcomes.update_layout(
+        title="Match Outcome Probabilities",
+        yaxis_title="Probability (%)",
+        showlegend=False
+    )
+    st.plotly_chart(fig_outcomes, use_container_width=True)
+    
+    # Goal markets
+    st.subheader("⚽ Goal Market Probabilities")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # BTTS probabilities
+        btts_probs = predictions['probabilities']['both_teams_score']
+        fig_btts = go.Figure(data=[
+            go.Pie(labels=list(btts_probs.keys()), values=list(btts_probs.values()),
+                   textinfo='label+percent', hole=0.4)
+        ])
+        fig_btts.update_layout(title="Both Teams to Score")
+        st.plotly_chart(fig_btts, use_container_width=True)
+    
+    with col2:
+        # Over/Under probabilities
+        ou_probs = predictions['probabilities']['over_under']
+        fig_ou = go.Figure(data=[
+            go.Bar(x=list(ou_probs.keys()), y=list(ou_probs.values()),
+                   text=[f"{v}%" for v in ou_probs.values()], textposition='auto')
+        ])
+        fig_ou.update_layout(title="Over/Under Probabilities", yaxis_title="Probability (%)")
+        st.plotly_chart(fig_ou, use_container_width=True)
+    
+    # Exact scores
+    st.subheader("🎯 Most Likely Scores")
+    exact_scores = predictions['probabilities']['exact_scores']
+    
+    if exact_scores:
+        score_cols = st.columns(6)
+        for idx, (score, prob) in enumerate(exact_scores.items()):
+            with score_cols[idx]:
+                st.metric(f"{score}", f"{prob}%")
+    
+    # Explanation
+    st.subheader("📝 Analysis Explanation")
+    explanation = predictions.get('explanation', {})
+    
+    if 'summary' in explanation:
+        for point in explanation['summary']:
+            st.info(point)
+    
+    if 'key_factors' in explanation and explanation['key_factors']:
+        st.write("**Key Factors:**")
+        for factor in explanation['key_factors']:
+            st.write(f"• {factor}")
+
+def display_betting_recommendations(recommendations):
+    """Display betting recommendations"""
+    st.markdown('<div class="section-title">💰 Betting Recommendations</div>', unsafe_allow_html=True)
+    
+    # Summary
+    summary = recommendations['summary']
+    risk_assessment = recommendations['risk_assessment']
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Recommendations", recommendations['recommendation_count'])
+    with col2:
+        st.metric("Total Stake", f"${summary['total_stake']:.2f}")
+    with col3:
+        st.metric("Total Expected Value", f"${summary['total_ev']:.2f}")
+    with col4:
+        risk_color = {
+            'LOW': 'risk-low',
+            'MEDIUM': 'risk-medium',
+            'HIGH': 'risk-high'
+        }.get(risk_assessment['risk_level'], 'risk-medium')
+        st.markdown(f'<div class="value-badge {risk_color}">Risk: {risk_assessment["risk_level"]}</div>', unsafe_allow_html=True)
+    
+    # Betting signals
+    signals = recommendations['signals']
+    
+    if not signals:
+        st.info("No value bets identified for this match.")
+        return
+    
+    st.subheader("🎯 Recommended Bets")
+    
+    for signal in signals:
+        confidence_color = {
+            'HIGH': 'value-exceptional',
+            'MEDIUM': 'value-high',
+            'LOW': 'value-good',
+            'SPECULATIVE': 'value-moderate'
+        }.get(signal['confidence'], 'value-moderate')
+        
+        with st.container():
+            col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
+            
+            with col1:
+                st.write(f"**{signal['market']}**")
+                st.write(f"Model Probability: {signal['model_probability']:.1%}")
+                st.write(f"Market Odds: {signal['market_odds']}")
+            
+            with col2:
+                st.write(f"**Edge:** +{signal['edge_percentage']:.1f}%")
+                st.write(f"**EV:** {signal['expected_value']:.3f}")
+                st.markdown(f'<div class="value-badge {confidence_color}">{signal["confidence"]}</div>', unsafe_allow_html=True)
+            
+            with col3:
+                st.write(f"**Stake:** ${signal['recommended_stake']:.2f}")
+                st.write(f"**Kelly:** {signal['kelly_fraction']:.1%}")
+            
+            with col4:
+                if signal['explanation']:
+                    with st.expander("Explanation"):
+                        for exp in signal['explanation']:
+                            st.write(f"• {exp}")
+    
+    # Risk assessment details
+    st.subheader("📊 Risk Assessment")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Portfolio Metrics:**")
+        st.write(f"• Total Exposure: ${risk_assessment['total_exposure']:.2f}")
+        st.write(f"• Exposure Percentage: {risk_assessment['exposure_percentage']:.1%}")
+        st.write(f"• Number of Bets: {risk_assessment['number_of_bets']}")
+        st.write(f"• Average Confidence: {risk_assessment['average_confidence']:.2f}")
+    
+    with col2:
+        st.write("**Recommendations:**")
+        if risk_assessment['recommendations']:
+            for rec in risk_assessment['recommendations']:
+                st.warning(rec)
+        else:
+            st.success("Portfolio risk within acceptable limits")
+
+def create_probability_gauge(probability, title, color):
+    """Create a probability gauge chart"""
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number+delta",
+        value = probability,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': title},
+        delta = {'reference': 50},
+        gauge = {
+            'axis': {'range': [None, 100]},
+            'bar': {'color': color},
+            'steps': [
+                {'range': [0, 33], 'color': "lightgray"},
+                {'range': [33, 66], 'color': "gray"},
+                {'range': [66, 100], 'color': "darkgray"}
+            ],
+            'threshold': {
+                'line': {'color': "red", 'width': 4},
+                'thickness': 0.75,
+                'value': 90
+            }
+        }
+    ))
+    fig.update_layout(height=250)
+    return fig
 
 def main():
     """Main application function"""
     
-    if 'predictions' not in st.session_state:
-        st.session_state.predictions = None
+    st.markdown('<p class="main-header">⚽ Advanced Football Predictor Pro</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Multi-League Analysis & Betting Intelligence</p>', unsafe_allow_html=True)
     
-    if 'prediction_history' not in st.session_state:
-        st.session_state.prediction_history = []
+    initialize_session_state()
     
+    # Sidebar for navigation
+    st.sidebar.title("Navigation")
+    app_mode = st.sidebar.selectbox("Choose Mode", 
+                                   ["🏠 Home", "🎯 Predictions", "💰 Betting", "📊 Analytics"])
+    
+    if app_mode == "🏠 Home":
+        display_home()
+    elif app_mode == "🎯 Predictions":
+        display_predictions_tab()
+    elif app_mode == "💰 Betting":
+        display_betting_tab()
+    elif app_mode == "📊 Analytics":
+        display_analytics_tab()
+
+def display_home():
+    """Display home page"""
+    
+    st.markdown("""
+    ## 🎯 Welcome to Advanced Football Predictor Pro
+    
+    This professional tool combines advanced statistical modeling with intelligent betting analysis 
+    to provide comprehensive football match predictions and value betting opportunities.
+    
+    ### 🚀 Key Features:
+    
+    **🎯 Prediction Engine**
+    - Advanced expected goals (xG) modeling
+    - Monte Carlo simulations with Dixon-Coles correlation
+    - Team strength analysis with Bayesian shrinkage
+    - Context-aware probability adjustments
+    
+    **💰 Betting Intelligence**
+    - Expected Value (EV) calculation
+    - Kelly Criterion stake management
+    - Portfolio risk assessment
+    - Market edge detection
+    
+    **📊 Professional Analytics**
+    - Interactive visualizations
+    - Real-time probability gauges
+    - Risk management tools
+    - Performance tracking
+    
+    ### 🎮 How to Use:
+    
+    1. **Navigate to Predictions** - Input team data and match context
+    2. **Generate Predictions** - Get detailed probability analysis
+    3. **Check Betting Tab** - Find value betting opportunities
+    4. **Review Analytics** - Monitor performance and risk
+    
+    ### 🏗️ Technical Architecture:
+    
+    - **Machine Learning**: Gradient Boosting + Calibrated Classifiers
+    - **Statistical Modeling**: Poisson & Negative Binomial Distributions
+    - **Simulation**: Monte Carlo with Dixon-Coles Correlation
+    - **Risk Management**: Fractional Kelly + Portfolio Optimization
+    """)
+    
+    # Quick start example
+    st.markdown("---")
+    st.subheader("🚀 Quick Start Example")
+    
+    if st.button("Run Demo Analysis", type="primary"):
+        with st.spinner("Running demo analysis..."):
+            # Generate sample predictions
+            predictions = test_prediction_engine()
+            betting_recs = test_betting_engine()
+            
+            st.session_state.predictions = predictions
+            st.session_state.betting_recommendations = betting_recs
+            
+            st.success("Demo analysis completed! Navigate to Predictions and Betting tabs to see results.")
+            st.rerun()
+
+def display_predictions_tab():
+    """Display predictions tab"""
+    
+    st.header("🎯 Match Predictions")
+    
+    # Input form
+    with st.form("prediction_form"):
+        st.subheader("📋 Match Input Data")
+        
+        # League selection
+        league = st.selectbox("League", 
+                            ["premier_league", "la_liga", "serie_a", 
+                             "bundesliga", "ligue_1", "eredivisie"])
+        
+        # Team inputs
+        home_team = create_team_inputs("Home")
+        away_team = create_team_inputs("Away")
+        
+        # Context inputs
+        context = create_context_inputs()
+        
+        # Submit button
+        submitted = st.form_submit_button("🎯 Generate Predictions", type="primary")
+    
+    # Generate predictions
+    if submitted:
+        with st.spinner("Running advanced prediction analysis..."):
+            try:
+                engine = PredictionEngine()
+                predictions = engine.predict_match(home_team, away_team, context, league)
+                st.session_state.predictions = predictions
+                st.success("Predictions generated successfully!")
+            except Exception as e:
+                st.error(f"Prediction error: {str(e)}")
+    
+    # Display results
     if st.session_state.predictions:
-        display_analysis(st.session_state.predictions)
-        
-        st.markdown("---")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("🔄 Analyze New Match", use_container_width=True):
-                st.session_state.predictions = None
-                st.rerun()
-        
-        with col2:
-            if st.button("📊 View History", use_container_width=True):
-                if st.session_state.prediction_history:
-                    st.write("**Recent Predictions:**")
-                    for i, pred in enumerate(st.session_state.prediction_history[-5:]):
-                        with st.expander(f"Prediction {i+1}: {pred['match']}"):
-                            st.write(f"Date: {pred.get('timestamp', 'N/A')}")
-                            st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
-                            st.write(f"Expected Goals: Home {pred['expected_goals']['home']:.2f} - Away {pred['expected_goals']['away']:.2f}")
-                            st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
-                            st.write(f"Probabilities: {pred['probabilities']}")
-                            st.write(f"Match Context: {pred['match_context']}")
-                            st.write(f"Confidence: {pred['confidence_score']}%")
-                else:
-                    st.info("No prediction history yet.")
-        
+        display_predictions(st.session_state.predictions)
+
+def display_betting_tab():
+    """Display betting tab"""
+    
+    st.header("💰 Betting Intelligence")
+    
+    if not st.session_state.predictions:
+        st.warning("Please generate predictions first in the Predictions tab.")
         return
     
-    match_data, mc_iterations = create_input_form()
+    # Bankroll management
+    st.subheader("🏦 Bankroll Management")
+    col1, col2 = st.columns(2)
     
-    if match_data:
-        with st.spinner("🔍 Running multi-league calibrated analysis..."):
+    with col1:
+        bankroll = st.number_input("Bankroll Amount ($)", min_value=100.0, max_value=10000.0, 
+                                 value=st.session_state.bankroll, step=100.0)
+        st.session_state.bankroll = bankroll
+    
+    with col2:
+        st.metric("Available Bankroll", f"${bankroll:,.2f}")
+    
+    # Odds inputs
+    st.subheader("📊 Market Odds")
+    market_odds = create_odds_inputs()
+    
+    # Generate betting recommendations
+    if st.button("💰 Generate Betting Recommendations", type="primary"):
+        with st.spinner("Analyzing betting markets..."):
             try:
-                predictor = AdvancedFootballPredictor(match_data)
-                predictions = predictor.generate_comprehensive_analysis(mc_iterations)
-                
-                # Add league information to predictions for display
-                predictions['league'] = match_data['league']
-                
-                st.session_state.predictions = predictions
-                store_prediction_in_session(predictions)
-                
-                # Check alignment status
-                system_validation = safe_get(predictions, 'system_validation') or {}
-                alignment_status = system_validation.get('alignment', 'UNKNOWN')
-                
-                if alignment_status == 'PERFECT':
-                    st.success("✅ PERFECT ALIGNMENT ACHIEVED! Value Engine confirms Signal Engine predictions!")
-                elif alignment_status == 'PARTIAL':
-                    st.warning("⚠️ PARTIAL ALIGNMENT: Some inconsistencies detected")
-                elif alignment_status == 'CONTRADICTORY':
-                    st.error("❌ CONTRADICTORY ALIGNMENT: Engines disagree - system error")
-                else:
-                    st.success("✅ Analysis completed with realistic probabilities!")
-                
-                st.rerun()
-                
+                betting_engine = BettingDecisionEngine(bankroll_amount=bankroll)
+                recommendations = betting_engine.generate_recommendations(
+                    st.session_state.predictions, market_odds
+                )
+                st.session_state.betting_recommendations = recommendations
+                st.success("Betting analysis completed!")
             except Exception as e:
-                st.error(f"❌ Analysis error: {str(e)}")
-                st.info("💡 Check input parameters and try again")
+                st.error(f"Betting analysis error: {str(e)}")
+    
+    # Display recommendations
+    if st.session_state.betting_recommendations:
+        display_betting_recommendations(st.session_state.betting_recommendations)
+
+def display_analytics_tab():
+    """Display analytics tab"""
+    
+    st.header("📊 Advanced Analytics")
+    
+    if not st.session_state.predictions:
+        st.warning("Please generate predictions first to view analytics.")
+        return
+    
+    predictions = st.session_state.predictions
+    
+    # Probability gauges
+    st.subheader("🎯 Probability Gauges")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        btts_yes_prob = predictions['probabilities']['both_teams_score']['yes']
+        fig_btts = create_probability_gauge(btts_yes_prob, "BTTS Yes", "blue")
+        st.plotly_chart(fig_btts, use_container_width=True)
+    
+    with col2:
+        over_25_prob = predictions['probabilities']['over_under']['over_25']
+        fig_over = create_probability_gauge(over_25_prob, "Over 2.5 Goals", "green")
+        st.plotly_chart(fig_over, use_container_width=True)
+    
+    with col3:
+        home_win_prob = predictions['probabilities']['match_outcomes']['home_win']
+        fig_home = create_probability_gauge(home_win_prob, "Home Win", "orange")
+        st.plotly_chart(fig_home, use_container_width=True)
+    
+    # Expected goals breakdown
+    st.subheader("⚽ Expected Goals Analysis")
+    
+    xg_data = predictions['expected_goals']
+    fig_xg = go.Figure(data=[
+        go.Bar(name='Expected Goals', x=['Home', 'Away', 'Total'], 
+               y=[xg_data['home'], xg_data['away'], xg_data['total']])
+    ])
+    fig_xg.update_layout(title="Expected Goals Breakdown", yaxis_title="Expected Goals")
+    st.plotly_chart(fig_xg, use_container_width=True)
+    
+    # Simulation statistics
+    if 'simulation_stats' in predictions:
+        st.subheader("🎲 Simulation Statistics")
+        
+        sim_stats = predictions['simulation_stats']
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Avg Home Goals", f"{sim_stats['avg_home_goals']:.2f}")
+        with col2:
+            st.metric("Avg Away Goals", f"{sim_stats['avg_away_goals']:.2f}")
+        with col3:
+            st.metric("Most Common Score", sim_stats['most_common_score'])
+        with col4:
+            st.metric("Home Clean Sheet", f"{sim_stats['clean_sheet_prob']['home']}%")
+    
+    # Betting performance (if available)
+    if st.session_state.betting_recommendations:
+        st.subheader("💰 Betting Performance")
+        
+        betting_data = st.session_state.betting_recommendations
+        signals = betting_data['signals']
+        
+        if signals:
+            # Create performance summary
+            edges = [s['edge_percentage'] for s in signals]
+            stakes = [s['recommended_stake'] for s in signals]
+            evs = [s['expected_value'] for s in signals]
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Average Edge", f"{np.mean(edges):.1f}%")
+            with col2:
+                st.metric("Total Stake", f"${sum(stakes):.2f}")
+            with col3:
+                st.metric("Total EV", f"${sum(evs):.2f}")
+            with col4:
+                st.metric("Avg Confidence", betting_data['risk_assessment']['average_confidence'])
 
 if __name__ == "__main__":
     main()

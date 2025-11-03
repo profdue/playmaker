@@ -144,7 +144,7 @@ class TeamTierCalibrator:
                 'Sporting CP': 'ELITE', 'Porto': 'ELITE', 'Benfica': 'ELITE',
                 'Braga': 'STRONG', 
                 'Vitoria Guimaraes': 'MEDIUM', 'Boavista': 'MEDIUM', 'Famalicao': 'MEDIUM',
-                'Casa Pia': 'WEAK', 'Rio Ave': 'WEAK', 'Estoril': 'WEAK', 
+                'Casa Pia': 'WEAK', 'Rio Ave': 'WEAK', 'Estoril': 'WEAK', 'Tondela': 'WEAK',
                 'Gil Vicente': 'WEAK', 'FC Alverca': 'WEAK', 'AVS': 'WEAK', 'Leiria': 'WEAK',
             },
             'brasileirao': {

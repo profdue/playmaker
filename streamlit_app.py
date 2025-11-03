@@ -1,5 +1,6 @@
 # streamlit_app.py - PRODUCTION GRADE WITH ALL ENHANCEMENTS (FIXED)
 import streamlit as st
+st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go

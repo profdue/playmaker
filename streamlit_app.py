@@ -1,6 +1,5 @@
-# streamlit_app.py - ELITE REFINED VERSION
+# streamlit_app.py - COMPLETE WORKING VERSION
 import streamlit as st
-st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -10,9 +9,9 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the REFINED PREDICTION ENGINE
+# Import the PREDICTION ENGINE
 try:
-    from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator, EliteStakeCalculator
+    from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator
 except ImportError as e:
     st.error(f"❌ Could not import prediction_engine: {str(e)}")
     st.info("💡 Make sure prediction_engine.py is in the same directory")
@@ -20,13 +19,13 @@ except ImportError as e:
 
 # Page configuration
 st.set_page_config(
-    page_title="🌍 Elite Football Predictor",
+    page_title="🌍 Advanced Football Predictor",
     page_icon="⚽", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS styling with elite features
+# Enhanced CSS styling with league badges
 st.markdown("""
 <style>
     .main-header { 
@@ -63,25 +62,13 @@ st.markdown("""
     .liga-mx { background: #006847; }
     .eredivisie { background: #FF6B00; }
     
-    .elite-feature {
+    .betting-activity-rank {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 1rem;
         border-radius: 10px;
         margin: 1rem 0;
-        text-align: center;
     }
-    
-    .kelly-stake {
-        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-        color: white;
-        padding: 0.8rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        text-align: center;
-        font-weight: bold;
-    }
-    
     .prediction-card { 
         background: white;
         padding: 1.5rem;
@@ -248,15 +235,6 @@ st.markdown("""
     .tier-strong { background: #e67e22; }
     .tier-medium { background: #f1c40f; color: black; }
     .tier-weak { background: #95a5a6; }
-    
-    .stake-kelly {
-        background: #e8f5e8;
-        border-left: 4px solid #4CAF50;
-        padding: 0.8rem;
-        border-radius: 6px;
-        margin: 0.3rem 0;
-        font-size: 0.9rem;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -306,49 +284,47 @@ def get_league_badge(league_id: str) -> str:
     }
     return league_classes.get(league_id, 'premier-league')
 
-def display_elite_features():
-    """Display elite features overview"""
-    st.markdown('<div class="elite-feature">', unsafe_allow_html=True)
-    st.markdown("### 🚀 ELITE FEATURES ACTIVATED")
+def display_betting_activity_ranking():
+    """Display betting activity ranking by league"""
+    st.markdown('<div class="betting-activity-rank">', unsafe_allow_html=True)
+    st.markdown("### 📊 Betting Activity Ranking")
     
-    elite_features = {
-        "Feature": ["Kelly Criterion Stake Sizing", "Enhanced Dixon-Coles Model", "Dynamic Form Decay", 
-                   "Market Efficiency Adjustment", "Advanced Injury Impact", "Tier-Aware Calibration"],
-        "Status": ["✅ ACTIVE", "✅ ACTIVE", "✅ ACTIVE", "✅ ACTIVE", "✅ ACTIVE", "✅ ACTIVE"],
-        "Impact": ["Professional Bankroll Management", "Accurate Score Dependency", "Contextual Form Weighting",
-                  "Realistic Edge Estimation", "Nuanced Absence Impact", "League-Specific Intelligence"]
+    # Professional betting activity ranking (based on liquidity, market depth, etc.)
+    ranking_data = {
+        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Liga MX', 'Eredivisie'],
+        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium', 'Medium'],
+        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good', 'Good'],
+        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
     }
     
-    df = pd.DataFrame(elite_features)
+    df = pd.DataFrame(ranking_data)
     st.dataframe(df, use_container_width=True, hide_index=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 def create_input_form():
-    """Create input form with elite features"""
+    """Create input form with multi-league support"""
     
-    st.markdown('<p class="main-header">🌍 Elite Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Multi-League Analysis with Elite Calibration</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">🌍 Advanced Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Multi-League Analysis with Tier-Based Calibration</p>', unsafe_allow_html=True)
     
-    # Display elite features
-    display_elite_features()
+    # Display betting activity ranking
+    display_betting_activity_ranking()
     
-    # Elite System Architecture
-    with st.expander("🏗️ Elite System Architecture", expanded=True):
+    # System Architecture Overview
+    with st.expander("🏗️ System Architecture", expanded=True):
         st.markdown("""
-        ### 🎯 ELITE MULTI-LEAGUE PREDICTOR
-        
-        **Enhanced Features** 🚀
-        - **Kelly Criterion Stake Sizing** - Professional bankroll management
-        - **Enhanced Dixon-Coles Model** - Accurate score dependency modeling  
-        - **Dynamic Form Decay** - Contextual recency weighting
-        - **Market Efficiency Adjustment** - Realistic edge estimation
-        - **Advanced Injury Impact** - Tier-aware absence calibration
-        - **Tier-Based Intelligence** - Elite vs Weak team dynamics
+        ### 🎯 PROFESSIONAL MULTI-LEAGUE PREDICTOR
         
         **Supported Leagues** 🌍
         - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿, **La Liga** 🇪🇸, **Serie A** 🇮🇹
         - **Bundesliga** 🇩🇪, **Ligue 1** 🇫🇷, **Liga Portugal** 🇵🇹  
         - **Brasileirão** 🇧🇷, **Liga MX** 🇲🇽, **Eredivisie** 🇳🇱
+        
+        **League-Specific Calibration** ⚡
+        - Different scoring profiles per league
+        - League-specific home advantage
+        - Tier-based team strength systems
+        - Contextual probability adjustments
         """)
     
     # League Selection
@@ -377,7 +353,7 @@ def create_input_form():
     league_display_name = get_league_display_name(selected_league)
     st.markdown(f'<span class="league-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
     
-    tab1, tab2, tab3 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Elite Settings"])
+    tab1, tab2, tab3 = st.tabs(["🏠 Football Data", "💰 Market Data", "⚙️ Settings"])
 
     with tab1:
         st.markdown("### 🎯 Football Data Input")
@@ -397,7 +373,7 @@ def create_input_form():
             home_team = st.selectbox(
                 "Team Name", 
                 options=league_teams,
-                index=min(5, len(league_teams) - 1),
+                index=min(5, len(league_teams) - 1),  # Default to a mid-table team
                 key="home_team"
             )
             
@@ -410,7 +386,7 @@ def create_input_form():
             away_team = st.selectbox(
                 "Team Name",
                 options=league_teams,
-                index=0,
+                index=0,  # Default to top team
                 key="away_team"
             )
             
@@ -484,7 +460,7 @@ def create_input_form():
             btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01, key="btts_no_odds")
 
     with tab3:
-        st.markdown("### ⚙️ Elite Model Configuration")
+        st.markdown("### ⚙️ Model Configuration")
         
         model_col1, model_col2 = st.columns(2)
         
@@ -521,11 +497,6 @@ def create_input_form():
                 key="away_motivation"
             )
             
-            # Kelly Criterion Settings
-            st.write("**💰 Bankroll Management**")
-            max_stake = st.slider("Maximum Stake (%)", 1, 10, 3, key="max_stake")
-            bankroll_fraction = st.slider("Bankroll Fraction (%)", 1, 5, 2, key="bankroll_fraction")
-            
             mc_iterations = st.select_slider(
                 "Monte Carlo Iterations",
                 options=[1000, 5000, 10000, 25000],
@@ -534,7 +505,7 @@ def create_input_form():
             )
 
     # Submit button
-    submitted = st.button("🚀 GENERATE ELITE ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE MULTI-LEAGUE ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -737,9 +708,9 @@ def display_probability_bar(label: str, probability: float, color: str):
     ''', unsafe_allow_html=True)
 
 def display_predictions(predictions):
-    """Display football predictions with elite features"""
+    """Display football predictions with league context"""
     
-    st.markdown('<p class="main-header">🎯 Elite Football Predictions</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">🎯 Football Predictions</p>', unsafe_allow_html=True)
     st.markdown('<div class="pure-engine-card"><h3>🟢 Signal Engine Output</h3>Professional Multi-League Tier-Calibrated Analysis</div>', unsafe_allow_html=True)
     
     # League and team tiers display
@@ -852,10 +823,10 @@ def display_predictions(predictions):
     st.info(summary)
 
 def display_value_detection(predictions):
-    """Display value detection results with Kelly sizing"""
+    """Display value detection results"""
     
-    st.markdown('<p class="main-header">💰 Elite Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Perfectly aligned with Kelly Criterion Stake Sizing</div>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">💰 Value Betting Detection</p>', unsafe_allow_html=True)
+    st.markdown('<div class="value-engine-card"><h3>🟠 Value Engine Output</h3>Perfectly aligned with Tier-Calibrated Signal Engine</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals') or []
     
@@ -881,18 +852,6 @@ def display_value_detection(predictions):
         st.metric("Primary BTTS", "YES" if primary_btts == 'yes' else "NO")
     with col3:
         st.metric("Primary Over/Under", "OVER 2.5" if primary_over_under == 'over_25' else "UNDER 2.5")
-    
-    # Kelly Criterion Explanation
-    st.markdown('<div class="kelly-stake">', unsafe_allow_html=True)
-    st.markdown("""
-    ### 💰 Kelly Criterion Stake Sizing Active
-    **Professional bankroll management using fractional Kelly strategy:**
-    - **HIGH Confidence**: 1/4 Kelly (25% of optimal)
-    - **MEDIUM Confidence**: 1/6 Kelly (16.7% of optimal)  
-    - **LOW Confidence**: 1/12 Kelly (8.3% of optimal)
-    - **SPECULATIVE**: 1/25 Kelly (4% of optimal)
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
     
     if not betting_signals:
         st.markdown('<div class="alignment-perfect">', unsafe_allow_html=True)
@@ -938,7 +897,7 @@ def display_value_detection(predictions):
     
     with col4:
         total_stake = np.sum([s.get('recommended_stake', 0) for s in betting_signals])
-        st.metric("Total Portfolio", f"{total_stake * 100:.1f}%")
+        st.metric("Total Stake", f"{total_stake * 100:.1f}%")
     
     # Display value bets by rating
     st.markdown('<div class="section-title">🎯 Value Bet Recommendations</div>', unsafe_allow_html=True)
@@ -956,6 +915,7 @@ def display_value_detection(predictions):
                 value_class = f"value-{bet.get('value_rating', '').lower()}"
                 confidence_emoji = {
                     'HIGH': '🟢',
+                    'MEDIUM-HIGH': '🟡',
                     'MEDIUM': '🟡', 
                     'LOW': '🔴',
                     'SPECULATIVE': '⚪'
@@ -981,14 +941,6 @@ def display_value_detection(predictions):
                 
                 alignment_text = "ALIGNS" if aligns_with_primary else "CONTRADICTS"
                 
-                # Kelly stake explanation
-                stake_explanation = {
-                    'HIGH': "1/4 Kelly (Professional)",
-                    'MEDIUM': "1/6 Kelly (Conservative)", 
-                    'LOW': "1/12 Kelly (Very Conservative)",
-                    'SPECULATIVE': "1/25 Kelly (Minimal)"
-                }.get(bet.get('confidence', 'SPECULATIVE'), 'Custom Sizing')
-                
                 st.markdown(f'''
                 <div class="bet-card {value_class}">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1002,9 +954,6 @@ def display_value_detection(predictions):
                         <div style="flex: 1; text-align: right;">
                             <strong style="color: #4CAF50; font-size: 1.1rem;">+{bet.get('edge', 0)}% Edge</strong><br>
                             <small>Stake: {bet.get('recommended_stake', 0)*100:.1f}% | {confidence_emoji} {bet.get('confidence', 'Unknown')}</small>
-                            <div class="stake-kelly">
-                                <small>{stake_explanation}</small>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1016,15 +965,15 @@ def display_value_detection(predictions):
     display_bet_group(moderate_bets, "Moderate", "📊")
 
 def display_analytics(predictions):
-    """Display advanced analytics with elite features"""
+    """Display advanced analytics"""
     
-    st.markdown('<p class="main-header">📈 Elite Advanced Analytics</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">📈 Advanced Analytics</p>', unsafe_allow_html=True)
     
     # Data Quality and Intelligence Metrics
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown('<div class="section-title">📊 Elite Model Performance</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📊 Model Performance</div>', unsafe_allow_html=True)
         
         data_quality = safe_get(predictions, 'data_quality_score') or 0
         confidence = safe_get(predictions, 'confidence_score') or 0
@@ -1037,7 +986,7 @@ def display_analytics(predictions):
         st.metric("Narrative Coherence", f"{coherence}%")
     
     with col2:
-        st.markdown('<div class="section-title">🎲 Enhanced Predictions</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🎲 Additional Predictions</div>', unsafe_allow_html=True)
         
         corners = safe_get(predictions, 'corner_predictions') or {}
         timing = safe_get(predictions, 'probabilities', 'goal_timing') or {}
@@ -1050,17 +999,11 @@ def display_analytics(predictions):
         narrative = safe_get(predictions, 'match_narrative') or {}
         st.write(f"**Match Rhythm:** {narrative.get('expected_tempo', 'N/A').title()}")
         st.write(f"**Defensive Stability:** {narrative.get('defensive_stability', 'N/A').title()}")
-        
-        # Monte Carlo results
-        mc_results = safe_get(predictions, 'monte_carlo_results') or {}
-        if mc_results:
-            st.write(f"**MC Iterations:** 10,000")
-            st.write(f"**Confidence Intervals:** Active")
 
 def display_analysis(predictions):
-    """Display analysis with elite features"""
+    """Display analysis"""
     
-    tab1, tab2, tab3 = st.tabs(["🎯 Elite Predictions", "💰 Kelly Value Detection", "📈 Elite Analytics"])
+    tab1, tab2, tab3 = st.tabs(["🎯 Predictions", "💰 Value Detection", "📈 Analytics"])
     
     with tab1:
         display_predictions(predictions)
@@ -1116,7 +1059,7 @@ def main():
         with col2:
             if st.button("📊 View History", use_container_width=True):
                 if st.session_state.prediction_history:
-                    st.write("**Recent Elite Predictions:**")
+                    st.write("**Recent Predictions:**")
                     for i, pred in enumerate(st.session_state.prediction_history[-5:]):
                         with st.expander(f"Prediction {i+1}: {pred['match']}"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
@@ -1134,7 +1077,7 @@ def main():
     match_data, mc_iterations = create_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running elite multi-league calibrated analysis..."):
+        with st.spinner("🔍 Running multi-league calibrated analysis..."):
             try:
                 predictor = AdvancedFootballPredictor(match_data)
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
@@ -1150,18 +1093,18 @@ def main():
                 alignment_status = system_validation.get('alignment', 'UNKNOWN')
                 
                 if alignment_status == 'PERFECT':
-                    st.success("✅ PERFECT ELITE ALIGNMENT ACHIEVED! Kelly Criterion active with perfect engine synchronization!")
+                    st.success("✅ PERFECT ALIGNMENT ACHIEVED! Value Engine confirms Signal Engine predictions!")
                 elif alignment_status == 'PARTIAL':
                     st.warning("⚠️ PARTIAL ALIGNMENT: Some inconsistencies detected")
                 elif alignment_status == 'CONTRADICTORY':
                     st.error("❌ CONTRADICTORY ALIGNMENT: Engines disagree - system error")
                 else:
-                    st.success("✅ Elite analysis completed with professional stake sizing!")
+                    st.success("✅ Analysis completed with realistic probabilities!")
                 
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ Elite analysis error: {str(e)}")
+                st.error(f"❌ Analysis error: {str(e)}")
                 st.info("💡 Check input parameters and try again")
 
 if __name__ == "__main__":

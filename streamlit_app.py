@@ -264,6 +264,7 @@ def get_league_display_name(league_id: str) -> str:
         'ligue_1': 'Ligue 1 🇫🇷',
         'liga_portugal': 'Liga Portugal 🇵🇹',
         'brasileirao': 'Brasileirão 🇧🇷',
+        'liga_mx': 'Liga MX 🇲🇽',
         'eredivisie': 'Eredivisie 🇳🇱'
     }
     return league_names.get(league_id, league_id)
@@ -278,6 +279,7 @@ def get_league_badge(league_id: str) -> str:
         'ligue_1': 'ligue-1',
         'liga_portugal': 'liga-portugal',
         'brasileirao': 'brasileirao',
+        'liga_mx': 'liga-mx',
         'eredivisie': 'eredivisie'
     }
     return league_classes.get(league_id, 'premier-league')
@@ -289,10 +291,10 @@ def display_betting_activity_ranking():
     
     # Professional betting activity ranking (based on liquidity, market depth, etc.)
     ranking_data = {
-        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Eredivisie'],
-        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium'],
-        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good'],
-        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
+        'League': ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Brasileirão', 'Liga MX', 'Eredivisie'],
+        'Betting Activity': ['Very High', 'High', 'High', 'High', 'Medium', 'Medium', 'Medium', 'Medium'],
+        'Market Depth': ['Excellent', 'Excellent', 'Very Good', 'Very Good', 'Good', 'Good', 'Good', 'Good'],
+        'Liquidity': ['★★★★★', '★★★★★', '★★★★☆', '★★★★☆', '★★★☆☆', '★★★☆☆', '★★★☆☆', '★★★☆☆']
     }
     
     df = pd.DataFrame(ranking_data)
@@ -303,7 +305,7 @@ def create_input_form():
     """Create input form with multi-league support"""
     
     st.markdown('<p class="main-header">🌍 Advanced Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Professional Multi-League Analysis with 2025/2026 Team Data</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Professional Multi-League Analysis with Tier-Based Calibration</p>', unsafe_allow_html=True)
     
     # Display betting activity ranking
     display_betting_activity_ranking()
@@ -316,12 +318,13 @@ def create_input_form():
         **Supported Leagues** 🌍
         - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿, **La Liga** 🇪🇸, **Serie A** 🇮🇹
         - **Bundesliga** 🇩🇪, **Ligue 1** 🇫🇷, **Liga Portugal** 🇵🇹  
-        - **Brasileirão** 🇧🇷, **Eredivisie** 🇳🇱
+        - **Brasileirão** 🇧🇷, **Liga MX** 🇲🇽, **Eredivisie** 🇳🇱
         
-        **2025/2026 Season Data** 📊
-        - Updated team standings and tiers
-        - Restored accurate BTTS/Over-Under logic
-        - League-specific performance baselines
+        **League-Specific Calibration** ⚡
+        - Different scoring profiles per league
+        - League-specific home advantage
+        - Tier-based team strength systems
+        - Contextual probability adjustments
         """)
     
     # League Selection
@@ -334,6 +337,7 @@ def create_input_form():
         'ligue_1': 'Ligue 1 🇫🇷',
         'liga_portugal': 'Liga Portugal 🇵🇹',
         'brasileirao': 'Brasileirão 🇧🇷',
+        'liga_mx': 'Liga MX 🇲🇽',
         'eredivisie': 'Eredivisie 🇳🇱'
     }
     
@@ -578,7 +582,7 @@ def create_input_form():
     return None, None
 
 def display_goals_analysis(predictions):
-    """Display RESTORED ACCURATE goals analysis"""
+    """Display goals analysis"""
     st.markdown('<div class="section-title">⚽ Goals Analysis</div>', unsafe_allow_html=True)
     
     # Get probabilities with safe defaults
@@ -594,28 +598,21 @@ def display_goals_analysis(predictions):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # BTTS - STRONGER RECOMMENDATION LOGIC (like before)
-        if btts_yes >= 55:
-            recommendation = "YES"
-            primary_prob = btts_yes
-            secondary_prob = btts_no
-            card_class = "recommendation-yes"
-            emoji = "✅"
-        elif btts_no >= 55:
+        # BTTS - Show the HIGHER probability as primary
+        if btts_no > btts_yes:
             recommendation = "NO"
             primary_prob = btts_no
             secondary_prob = btts_yes
             card_class = "recommendation-no"
             emoji = "❌"
         else:
-            recommendation = "UNCLEAR"
-            primary_prob = max(btts_yes, btts_no)
-            secondary_prob = min(btts_yes, btts_no)
-            card_class = ""
-            emoji = "⚪"
+            recommendation = "YES"
+            primary_prob = btts_yes
+            secondary_prob = btts_no
+            card_class = "recommendation-yes"
+            emoji = "✅"
         
-        # HIGHER CONFIDENCE THRESHOLDS (like the golden version)
-        confidence = "HIGH" if abs(primary_prob - 50) > 15 else "MEDIUM" if abs(primary_prob - 50) > 8 else "LOW"
+        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
         
         st.markdown(f'''
         <div class="goals-card {card_class}">
@@ -633,27 +630,21 @@ def display_goals_analysis(predictions):
         ''', unsafe_allow_html=True)
     
     with col2:
-        # Over/Under 2.5 - STRONGER RECOMMENDATION LOGIC
-        if over_25 >= 60:
-            recommendation = "OVER"
-            primary_prob = over_25
-            secondary_prob = under_25
-            card_class = "recommendation-yes"
-            emoji = "✅"
-        elif under_25 >= 60:
+        # Over/Under 2.5 - Show the HIGHER probability as primary
+        if under_25 > over_25:
             recommendation = "UNDER"
             primary_prob = under_25
             secondary_prob = over_25
             card_class = "recommendation-no"
             emoji = "❌"
         else:
-            recommendation = "UNCLEAR"
-            primary_prob = max(over_25, under_25)
-            secondary_prob = min(over_25, under_25)
-            card_class = ""
-            emoji = "⚪"
+            recommendation = "OVER"
+            primary_prob = over_25
+            secondary_prob = under_25
+            card_class = "recommendation-yes"
+            emoji = "✅"
         
-        confidence = "HIGH" if abs(primary_prob - 50) > 15 else "MEDIUM" if abs(primary_prob - 50) > 8 else "LOW"
+        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
         
         st.markdown(f'''
         <div class="goals-card {card_class}">

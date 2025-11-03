@@ -1,4 +1,4 @@
-# prediction_engine.py - IMPROVED VERSION
+# prediction_engine.py - COMPLETE IMPROVED VERSION
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -107,8 +107,30 @@ class DynamicTierCalibrator:
                 'Lecce': 'MEDIUM', 'Sassuolo': 'MEDIUM', 'Frosinone': 'WEAK',
                 'Udinese': 'WEAK', 'Verona': 'WEAK', 'Empoli': 'WEAK',
                 'Cagliari': 'WEAK', 'Salernitana': 'WEAK'
+            },
+            'bundesliga': {
+                'Bayern Munich': 'ELITE', 'Bayer Leverkusen': 'ELITE', 'Borussia Dortmund': 'ELITE',
+                'RB Leipzig': 'STRONG', 'Eintracht Frankfurt': 'STRONG', 'Wolfsburg': 'STRONG',
+                'Freiburg': 'STRONG', 'Hoffenheim': 'STRONG', 'Augsburg': 'MEDIUM',
+                'Stuttgart': 'STRONG', 'Borussia Mönchengladbach': 'MEDIUM', 'Werder Bremen': 'MEDIUM',
+                'Heidenheim': 'MEDIUM', 'Union Berlin': 'MEDIUM', 'Bochum': 'WEAK',
+                'Mainz': 'WEAK', 'Köln': 'WEAK', 'Darmstadt': 'WEAK'
+            },
+            'ligue_1': {
+                'PSG': 'ELITE', 'Monaco': 'STRONG', 'Marseille': 'STRONG',
+                'Lille': 'STRONG', 'Lyon': 'STRONG', 'Rennes': 'STRONG',
+                'Nice': 'STRONG', 'Lens': 'STRONG', 'Reims': 'MEDIUM',
+                'Montpellier': 'MEDIUM', 'Toulouse': 'MEDIUM', 'Strasbourg': 'MEDIUM',
+                'Nantes': 'MEDIUM', 'Le Havre': 'MEDIUM', 'Brest': 'MEDIUM',
+                'Metz': 'WEAK', 'Lorient': 'WEAK', 'Clermont': 'WEAK'
             }
         }
+    
+    def get_league_teams(self, league: str) -> List[str]:
+        return list(self.base_tiers.get(league, {}).keys())
+    
+    def get_team_tier(self, team: str, league: str) -> str:
+        return self.base_tiers.get(league, {}).get(team, 'MEDIUM')
     
     def calculate_dynamic_tier(self, team: str, league: str, form_data: List[float], 
                              recent_goals: float, recent_conceded: float) -> str:

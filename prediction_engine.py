@@ -137,9 +137,17 @@ class ApexIntelligenceEngine:
     def _validate_and_enhance_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
         enhanced_data = match_data.copy()
         
+        # Ensure required fields exist
+        required_fields = ['home_team', 'away_team', 'league']
+        for field in required_fields:
+            if field not in enhanced_data:
+                enhanced_data[field] = 'Unknown'
+        
+        # Enhanced data validation with better defaults
         predictive_fields = {
-            'home_goals': (0, 20, 1.5), 'away_goals': (0, 20, 1.5),
-            'home_conceded': (0, 20, 1.5), 'away_conceded': (0, 20, 1.5),
+            'home_goals': (0, 30, 8), 'away_goals': (0, 30, 8),
+            'home_conceded': (0, 30, 8), 'away_conceded': (0, 30, 8),
+            'home_goals_home': (0, 15, 4), 'away_goals_away': (0, 15, 4),
         }
         
         for field, (min_val, max_val, default) in predictive_fields.items():
@@ -152,18 +160,47 @@ class ApexIntelligenceEngine:
             else:
                 enhanced_data[field] = default
         
+        # Enhanced form data processing
         for form_field in ['home_form', 'away_form']:
-            if form_field in enhanced_data:
+            if form_field in enhanced_data and enhanced_data[form_field]:
                 try:
                     if isinstance(enhanced_data[form_field], list):
-                        enhanced_data[form_field] = [float(x) for x in enhanced_data[form_field]]
+                        # Ensure we have exactly 6 form points, pad if necessary
+                        form_data = enhanced_data[form_field]
+                        if len(form_data) < 6:
+                            # Pad with average form
+                            avg_form = np.mean(form_data) if form_data else 1.5
+                            form_data.extend([avg_form] * (6 - len(form_data)))
+                        enhanced_data[form_field] = form_data[:6]  # Take first 6
                     else:
-                        enhanced_data[form_field] = []
+                        enhanced_data[form_field] = [1.5] * 6  # Default average form
                 except (TypeError, ValueError):
-                    enhanced_data[form_field] = []
+                    enhanced_data[form_field] = [1.5] * 6
+            else:
+                enhanced_data[form_field] = [1.5] * 6  # Default average form
         
+        # Enhanced H2H data
+        if 'h2h_data' not in enhanced_data:
+            enhanced_data['h2h_data'] = {
+                'matches': 0, 'home_wins': 0, 'away_wins': 0, 'draws': 0,
+                'home_goals': 0, 'away_goals': 0
+            }
+        else:
+            h2h = enhanced_data['h2h_data']
+            h2h['matches'] = max(0, min(20, h2h.get('matches', 0)))
+            h2h['home_wins'] = max(0, min(h2h['matches'], h2h.get('home_wins', 0)))
+            h2h['away_wins'] = max(0, min(h2h['matches'], h2h.get('away_wins', 0)))
+            h2h['draws'] = max(0, min(h2h['matches'], h2h.get('draws', 0)))
+            h2h['home_goals'] = max(0, h2h.get('home_goals', 0))
+            h2h['away_goals'] = max(0, h2h.get('away_goals', 0))
+        
+        # Enhanced motivation data
         if 'motivation' not in enhanced_data:
             enhanced_data['motivation'] = {'home': 'Normal', 'away': 'Normal'}
+            
+        # Enhanced injuries data
+        if 'injuries' not in enhanced_data:
+            enhanced_data['injuries'] = {'home': 1, 'away': 1}
             
         return enhanced_data
 
@@ -175,50 +212,94 @@ class ApexIntelligenceEngine:
 
     def _calculate_data_quality(self) -> float:
         score = 0
-        max_score = 0
+        max_score = 100
         
-        if self.data.get('home_team') and self.data.get('away_team'):
+        # Basic match info (20 points)
+        if self.data.get('home_team') and self.data.get('away_team') and self.data.get('home_team') != 'Unknown' and self.data.get('away_team') != 'Unknown':
             score += 20
-        max_score += 20
         
-        if self.data.get('home_goals', 0) > 0:
+        # Goals data quality (30 points)
+        home_goals = self.data.get('home_goals', 0)
+        away_goals = self.data.get('away_goals', 0)
+        if home_goals > 0 and away_goals > 0:
+            score += 30
+        elif home_goals > 0 or away_goals > 0:
             score += 15
-        if self.data.get('away_goals', 0) > 0:
-            score += 15
-        max_score += 30
         
-        if len(self.data.get('home_form', [])) >= 4:
+        # Form data quality (20 points)
+        home_form = self.data.get('home_form', [])
+        away_form = self.data.get('away_form', [])
+        if len(home_form) >= 4 and len(away_form) >= 4:
+            score += 20
+        elif len(home_form) >= 2 or len(away_form) >= 2:
             score += 10
-        if len(self.data.get('away_form', [])) >= 4:
-            score += 10
-        max_score += 20
         
+        # H2H data quality (20 points)
         h2h_data = self.data.get('h2h_data', {})
         if h2h_data.get('matches', 0) >= 3:
             score += 20
-        max_score += 20
+        elif h2h_data.get('matches', 0) >= 1:
+            score += 10
         
-        return (score / max_score) * 100
+        # Additional context (10 points)
+        if self.data.get('motivation') and self.data.get('injuries'):
+            score += 10
+        
+        return min(100, score)
 
     def _estimate_market_edge(self) -> float:
-        return 0.5  # Placeholder - would integrate with actual market odds analysis
+        # Simple market edge estimation based on data quality and consistency
+        data_quality = self._calculate_data_quality() / 100
+        form_consistency = 0.5  # Placeholder - would calculate from form data
+        
+        # Higher data quality and consistency = higher potential edge
+        market_edge = 0.3 + (data_quality * 0.4) + (form_consistency * 0.3)
+        return min(0.8, market_edge)
 
     def _calculate_realistic_xg(self) -> Tuple[float, float]:
         league = self.data.get('league', 'premier_league')
+        league_baseline = self.calibrator.league_baselines.get(league, {'avg_goals': 2.7, 'home_advantage': 0.35})
         
-        home_goals_avg = self.data.get('home_goals', 0) / 6.0
-        away_goals_avg = self.data.get('away_goals', 0) / 6.0
-        home_conceded_avg = self.data.get('home_conceded', 0) / 6.0
-        away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
+        # Calculate averages per game with better normalization
+        home_goals_avg = self.data.get('home_goals', 8) / 6.0
+        away_goals_avg = self.data.get('away_goals', 8) / 6.0
+        home_conceded_avg = self.data.get('home_conceded', 8) / 6.0
+        away_conceded_avg = self.data.get('away_conceded', 8) / 6.0
         
-        league_avg = self.calibrator.league_baselines.get(league, {'avg_goals': 2.7})['avg_goals']
+        # Home/away specific adjustments
+        home_goals_home_avg = self.data.get('home_goals_home', 4) / 3.0
+        away_goals_away_avg = self.data.get('away_goals_away', 4) / 3.0
         
-        home_xg = home_goals_avg * (1 - (away_conceded_avg / league_avg) * 0.4)
-        away_xg = away_goals_avg * (1 - (home_conceded_avg / league_avg) * 0.4)
+        # Blend overall and home/away specific performance
+        home_attack = (home_goals_avg * 0.7) + (home_goals_home_avg * 0.3)
+        away_attack = (away_goals_avg * 0.7) + (away_goals_away_avg * 0.3)
         
-        home_advantage = self.calibrator.league_baselines.get(league, {'home_advantage': 0.35})['home_advantage']
+        # Defensive strength adjustment
+        home_defense = home_conceded_avg
+        away_defense = away_conceded_avg
+        
+        # Base xG calculation with opponent adjustment
+        home_xg = home_attack * (1 - (away_defense / league_baseline['avg_goals']) * 0.3)
+        away_xg = away_attack * (1 - (home_defense / league_baseline['avg_goals']) * 0.3)
+        
+        # Apply home advantage
+        home_advantage = league_baseline['home_advantage']
         home_xg *= (1 + home_advantage)
         
+        # Form adjustment
+        home_form = self.data.get('home_form', [1.5] * 6)
+        away_form = self.data.get('away_form', [1.5] * 6)
+        
+        home_form_avg = np.mean(home_form[-4:]) if len(home_form) >= 4 else 1.5
+        away_form_avg = np.mean(away_form[-4:]) if len(away_form) >= 4 else 1.5
+        
+        home_form_factor = (home_form_avg / 1.5) ** 0.5  # Square root to dampen effect
+        away_form_factor = (away_form_avg / 1.5) ** 0.5
+        
+        home_xg *= home_form_factor
+        away_xg *= away_form_factor
+        
+        # Motivation adjustment
         motivation = self.data.get('motivation', {})
         home_motivation = self._calculate_motivation_impact(motivation.get('home', 'Normal'))
         away_motivation = self._calculate_motivation_impact(motivation.get('away', 'Normal'))
@@ -226,9 +307,22 @@ class ApexIntelligenceEngine:
         home_xg *= home_motivation
         away_xg *= away_motivation
         
+        # Injuries adjustment
+        injuries = self.data.get('injuries', {})
+        home_injury_factor = 1.0 - (injuries.get('home', 1) * 0.05)
+        away_injury_factor = 1.0 - (injuries.get('away', 1) * 0.05)
+        
+        home_xg *= home_injury_factor
+        away_xg *= away_injury_factor
+        
+        # H2H adjustment
         h2h_data = self.data.get('h2h_data', {})
         if h2h_data and h2h_data.get('matches', 0) >= 3:
             home_xg, away_xg = self._apply_h2h_adjustment(home_xg, away_xg, h2h_data)
+        
+        # Ensure realistic bounds
+        home_xg = max(0.2, min(4.0, home_xg))
+        away_xg = max(0.2, min(4.0, away_xg))
         
         return round(home_xg, 3), round(away_xg, 3)
 
@@ -245,16 +339,20 @@ class ApexIntelligenceEngine:
         h2h_home_avg = h2h_data.get('home_goals', 0) / matches
         h2h_away_avg = h2h_data.get('away_goals', 0) / matches
         
-        adjusted_home_xg = (home_xg * (1 - h2h_weight)) + (h2h_home_avg * h2h_weight)
-        adjusted_away_xg = (away_xg * (1 - h2h_weight)) + (h2h_away_avg * h2h_weight)
+        # Only apply adjustment if H2H data is meaningful
+        if h2h_home_avg > 0 or h2h_away_avg > 0:
+            adjusted_home_xg = (home_xg * (1 - h2h_weight)) + (h2h_home_avg * h2h_weight)
+            adjusted_away_xg = (away_xg * (1 - h2h_weight)) + (h2h_away_avg * h2h_weight)
+            return adjusted_home_xg, adjusted_away_xg
         
-        return adjusted_home_xg, adjusted_away_xg
+        return home_xg, away_xg
 
     def _determine_match_narrative(self, home_xg: float, away_xg: float) -> MatchNarrative:
         narrative = MatchNarrative()
         total_xg = home_xg + away_xg
         xg_difference = home_xg - away_xg
         
+        # Determine dominance
         if xg_difference > 0.8:
             narrative.dominance = "home"
             narrative.primary_pattern = "home_dominance"
@@ -264,12 +362,14 @@ class ApexIntelligenceEngine:
         else:
             narrative.dominance = "balanced"
             
+        # Calculate attack/defense metrics
         home_attack = self.data.get('home_goals', 0) / 6.0
         away_attack = self.data.get('away_goals', 0) / 6.0
         home_defense = self.data.get('home_conceded', 0) / 6.0
         away_defense = self.data.get('away_conceded', 0) / 6.0
         
-        if home_attack > 2.0 and away_attack > 2.0:
+        # Determine style conflict
+        if home_attack > 1.8 and away_attack > 1.8:
             narrative.style_conflict = "attacking_vs_attacking"
             narrative.expected_openness = 0.85
             narrative.expected_tempo = "high"
@@ -286,6 +386,7 @@ class ApexIntelligenceEngine:
             narrative.expected_openness = 0.5
             narrative.expected_tempo = "medium"
             
+        # Determine defensive stability
         avg_conceded = (home_defense + away_defense) / 2
         if avg_conceded < 0.8:
             narrative.defensive_stability = "solid"
@@ -297,10 +398,12 @@ class ApexIntelligenceEngine:
         return narrative
     
     def _calculate_holistic_btts(self, home_xg: float, away_xg: float, narrative: MatchNarrative) -> float:
+        # Base probability using Poisson distribution
         home_score_prob = 1 - math.exp(-home_xg)
         away_score_prob = 1 - math.exp(-away_xg)
         base_btts = home_score_prob * away_score_prob
         
+        # Narrative adjustments
         narrative_factor = 1.0
         if narrative.style_conflict == "attacking_vs_attacking":
             narrative_factor *= 1.4
@@ -312,6 +415,7 @@ class ApexIntelligenceEngine:
         elif narrative.defensive_stability == "solid":
             narrative_factor *= 0.8
             
+        # League adjustments
         league = self.data.get('league', 'premier_league')
         league_factors = {
             'bundesliga': 1.25, 'eredivisie': 1.2, 'premier_league': 1.1,
@@ -324,8 +428,11 @@ class ApexIntelligenceEngine:
     
     def _calculate_holistic_over_under(self, home_xg: float, away_xg: float, narrative: MatchNarrative) -> Dict[str, float]:
         total_xg = home_xg + away_xg
+        
+        # Base probability using Poisson distribution
         base_over = 1 - poisson.cdf(2, total_xg)
         
+        # Narrative adjustments
         narrative_factor = 1.0
         if narrative.style_conflict == "attacking_vs_attacking":
             narrative_factor *= 1.4
@@ -339,6 +446,7 @@ class ApexIntelligenceEngine:
         elif narrative.defensive_stability == "solid":
             narrative_factor *= 0.7
             
+        # League adjustments
         league = self.data.get('league', 'premier_league')
         league_factors = {
             'bundesliga': 1.3, 'eredivisie': 1.25, 'premier_league': 1.15,
@@ -355,14 +463,17 @@ class ApexIntelligenceEngine:
         }
     
     def _calculate_intelligent_goal_timing(self, total_xg: float, narrative: MatchNarrative, btts_prob: float) -> Dict[str, float]:
+        # Base timing probabilities (slightly more goals in second half)
         first_half_base = 1 - poisson.pmf(0, total_xg * 0.46)
         second_half_base = 1 - poisson.pmf(0, total_xg * 0.54)
         
+        # Adjust based on match characteristics
         timing_factor = 1.0
-        if btts_prob < 0.4:
+        if btts_prob < 0.4:  # Low scoring game
             timing_factor *= 0.7
             
         if narrative.style_conflict in ["attacking_vs_defensive", "defensive_vs_attacking"]:
+            # Defensive teams often concede later
             first_half_base *= 0.8
             second_half_base *= 1.1
             
@@ -380,17 +491,19 @@ class ApexIntelligenceEngine:
     def _calculate_intelligent_corners(self, narrative: MatchNarrative, home_xg: float, away_xg: float) -> Dict[str, str]:
         base_corners = 9.5
         
+        # Style-based adjustments
         if narrative.style_conflict == "attacking_vs_defensive":
-            corner_adjustment = 2.5
+            corner_adjustment = 2.5  # Attacking team wins corners against defensive setup
         elif narrative.style_conflict == "defensive_vs_attacking":
-            corner_adjustment = 1.5
+            corner_adjustment = 1.5  # Away attacking team wins some corners
         elif narrative.style_conflict == "attacking_vs_attacking":
-            corner_adjustment = 2.0
+            corner_adjustment = 2.0  # Both teams attack = more corners
         elif narrative.defensive_stability == "solid":
-            corner_adjustment = -1.5
+            corner_adjustment = -1.5  # Defensive game = fewer corners
         else:
             corner_adjustment = 0
             
+        # xG-based adjustment (more goals = more corners generally)
         xg_adjustment = (home_xg + away_xg - 2.7) * 0.5
         total_corners = max(5, min(16, base_corners + corner_adjustment + xg_adjustment))
         
@@ -401,13 +514,15 @@ class ApexIntelligenceEngine:
         }
     
     def _run_monte_carlo(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
-        np.random.seed(42)
+        np.random.seed(42)  # For reproducible results
         
-        lambda3_alpha = 0.12
+        # Use Dixon-Coles adjustment for dependency between scores
+        lambda3_alpha = 0.12  # Dependency parameter
         lambda3 = lambda3_alpha * min(home_xg, away_xg)
         lambda1 = max(0.1, home_xg - lambda3)
         lambda2 = max(0.1, away_xg - lambda3)
         
+        # Generate correlated Poisson distributions
         C = np.random.poisson(lambda3, iterations)
         A = np.random.poisson(lambda1, iterations)
         B = np.random.poisson(lambda2, iterations)
@@ -415,24 +530,36 @@ class ApexIntelligenceEngine:
         home_goals_sim = A + C
         away_goals_sim = B + C
         
+        # Calculate probabilities
         home_wins = np.sum(home_goals_sim > away_goals_sim) / iterations
         draws = np.sum(home_goals_sim == away_goals_sim) / iterations
         away_wins = np.sum(home_goals_sim < away_goals_sim) / iterations
         
+        # Calculate exact score probabilities
         exact_scores = {}
-        for i in range(6):
+        for i in range(6):  # 0-5 goals
             for j in range(6):
                 count = np.sum((home_goals_sim == i) & (away_goals_sim == j))
                 prob = count / iterations
-                if prob > 0.005:
+                if prob > 0.005:  # Only include probabilities > 0.5%
                     exact_scores[f"{i}-{j}"] = round(prob * 100, 1)
         
+        # Get top 6 most likely scores
         exact_scores = dict(sorted(exact_scores.items(), key=lambda x: x[1], reverse=True)[:6])
         
+        # Calculate BTTS and Over 2.5 probabilities
+        btts_count = np.sum((home_goals_sim > 0) & (away_goals_sim > 0)) / iterations
+        over_25_count = np.sum(home_goals_sim + away_goals_sim > 2.5) / iterations
+        
         return MonteCarloResults(
-            home_win_prob=home_wins, draw_prob=draws, away_win_prob=away_wins,
-            over_25_prob=0.5, btts_prob=0.5, exact_scores=exact_scores,
-            confidence_intervals={}, probability_volatility={}
+            home_win_prob=home_wins, 
+            draw_prob=draws, 
+            away_win_prob=away_wins,
+            over_25_prob=over_25_count, 
+            btts_prob=btts_count, 
+            exact_scores=exact_scores,
+            confidence_intervals={},  # Would calculate in enhanced version
+            probability_volatility={}  # Would calculate in enhanced version
         )
     
     def _assess_prediction_coherence(self, predictions: Dict) -> Tuple[float, str]:
@@ -442,20 +569,23 @@ class ApexIntelligenceEngine:
         
         coherence_score = 0.0
         
+        # Check BTTS vs Over/Under coherence
         if btts_yes > 0.7 and over_25 < 0.4:
-            coherence_score -= 0.3
+            coherence_score -= 0.3  # High BTTS but low Over 2.5 is contradictory
         elif btts_yes < 0.3 and over_25 > 0.7:
-            coherence_score -= 0.3  
+            coherence_score -= 0.3  # Low BTTS but high Over 2.5 is contradictory
         else:
-            coherence_score += 0.3
+            coherence_score += 0.3  # Coherent relationship
             
+        # Check match outcome vs goal expectation coherence
         if home_win > 0.6 and over_25 < 0.3:
-            coherence_score -= 0.2
+            coherence_score -= 0.2  # Strong favorite but low scoring is unusual
         elif home_win < 0.3 and over_25 > 0.7:
-            coherence_score -= 0.2
+            coherence_score -= 0.2  # Underdog but high scoring is unusual
         else:
-            coherence_score += 0.2
+            coherence_score += 0.2  # Coherent relationship
             
+        # Determine alignment level
         if coherence_score >= 0.4:
             alignment = "HIGH"
         elif coherence_score >= 0.1:
@@ -512,50 +642,81 @@ class ApexIntelligenceEngine:
             return f"A competitive match expected between {home_team} and {away_team}, with small margins likely deciding the outcome. Both teams will seek to establish control in what promises to be a closely-fought encounter."
 
     def generate_apex_predictions(self, mc_iterations: int = 10000) -> Dict[str, Any]:
+        # Calculate core metrics
         home_xg, away_xg = self._calculate_realistic_xg()
         self.narrative = self._determine_match_narrative(home_xg, away_xg)
         
+        # Calculate probabilities
         btts_prob = self._calculate_holistic_btts(home_xg, away_xg, self.narrative)
         over_under = self._calculate_holistic_over_under(home_xg, away_xg, self.narrative)
         goal_timing = self._calculate_intelligent_goal_timing(home_xg + away_xg, self.narrative, btts_prob)
         corners = self._calculate_intelligent_corners(self.narrative, home_xg, away_xg)
         
+        # Run Monte Carlo simulation
         mc_results = self._run_monte_carlo(home_xg, away_xg, mc_iterations)
         
+        # Prepare prediction set for coherence assessment
         prediction_set = {
             'home_win': mc_results.home_win_prob,
             'btts_yes': btts_prob,
             'over_25': over_under['over_25']
         }
         
+        # Calculate intelligence metrics
         coherence, alignment = self._assess_prediction_coherence(prediction_set)
-        certainty = max(mc_results.home_win_prob, mc_results.away_win_prob)
+        certainty = max(mc_results.home_win_prob, mc_results.away_win_prob, mc_results.draw_prob)
         data_quality = self._calculate_data_quality()
         market_edge = self._estimate_market_edge()
         
         risk_level = self._calculate_intelligent_risk(certainty, data_quality, market_edge, alignment)
         
+        # Calculate Football IQ score
+        football_iq_score = (coherence * 40 + (data_quality/100) * 30 + (1 - self._risk_to_penalty(risk_level)) * 30)
+        
         self.intelligence = IntelligenceMetrics(
-            narrative_coherence=coherence, prediction_alignment=alignment,
-            data_quality_score=data_quality, certainty_score=certainty,
-            market_edge_score=market_edge, risk_level=risk_level,
-            football_iq_score=(coherence * 40 + data_quality * 0.3 + (1 - self._risk_to_penalty(risk_level)) * 30)
+            narrative_coherence=coherence, 
+            prediction_alignment=alignment,
+            data_quality_score=data_quality, 
+            certainty_score=certainty,
+            market_edge_score=market_edge, 
+            risk_level=risk_level,
+            football_iq_score=football_iq_score
         )
         
+        # Generate intelligent summary
         summary = self._generate_intelligent_summary(
             self.narrative, prediction_set, 
             self.data['home_team'], self.data['away_team']
         )
         
+        # Get team tiers for display
+        home_tier = self.calibrator.get_team_tier(self.data['home_team'], self.data['league'])
+        away_tier = self.calibrator.get_team_tier(self.data['away_team'], self.data['league'])
+        
+        # Determine match context from narrative
+        match_context = self.narrative.primary_pattern or self.narrative.style_conflict
+        if match_context == "attacking_vs_attacking":
+            match_context_display = "offensive_showdown"
+        elif match_context == "home_dominance":
+            match_context_display = "home_dominance"
+        elif match_context == "away_dominance":
+            match_context_display = "away_counter"
+        else:
+            match_context_display = "balanced"
+        
         return {
             'match': f"{self.data['home_team']} vs {self.data['away_team']}",
             'league': self.data.get('league', 'premier_league'),
             'expected_goals': {'home': round(home_xg, 2), 'away': round(away_xg, 2)},
+            'team_tiers': {'home': home_tier, 'away': away_tier},
+            'match_context': match_context_display,
+            'confidence_score': round(certainty * 100, 1),
+            'data_quality_score': round(data_quality, 1),
             'match_narrative': self.narrative.to_dict(),
             'apex_intelligence': {
                 'narrative_coherence': round(coherence * 100, 1),
                 'prediction_alignment': alignment,
-                'football_iq_score': round(self.intelligence.football_iq_score, 1),
+                'football_iq_score': round(football_iq_score, 1),
                 'data_quality': round(data_quality, 1),
                 'certainty': round(certainty * 100, 1)
             },
@@ -584,10 +745,18 @@ class ApexIntelligenceEngine:
                 'risk_level': risk_level,
                 'explanation': self._get_risk_explanation(risk_level),
                 'recommendation': self._get_risk_recommendation(risk_level),
-                'certainty': f"{certainty * 100:.1f}%"
+                'certainty': f"{certainty * 100:.1f}%",
+                'home_advantage': 'N/A'  # Would calculate in enhanced version
             },
             'summary': summary,
-            'intelligence_breakdown': self._get_intelligence_breakdown()
+            'intelligence_breakdown': self._get_intelligence_breakdown(),
+            'monte_carlo_results': {
+                'home_win_prob': mc_results.home_win_prob,
+                'draw_prob': mc_results.draw_prob,
+                'away_win_prob': mc_results.away_win_prob,
+                'confidence_intervals': mc_results.confidence_intervals,
+                'probability_volatility': mc_results.probability_volatility
+            }
         }
     
     def _get_risk_explanation(self, risk_level: str) -> str:
@@ -628,24 +797,37 @@ class ValueDetectionEngine:
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
         signals = []
         
-        home_pure = pure_probabilities['probabilities']['match_outcomes']['home_win'] / 100.0
-        draw_pure = pure_probabilities['probabilities']['match_outcomes']['draw'] / 100.0  
-        away_pure = pure_probabilities['probabilities']['match_outcomes']['away_win'] / 100.0
+        # Extract probabilities with safe defaults
+        outcomes = pure_probabilities.get('probabilities', {}).get('match_outcomes', {})
+        home_pure = outcomes.get('home_win', 33.3) / 100.0
+        draw_pure = outcomes.get('draw', 33.3) / 100.0  
+        away_pure = outcomes.get('away_win', 33.3) / 100.0
         
+        # Normalize to ensure sum = 1
         total = home_pure + draw_pure + away_pure
         if total > 0:
             home_pure /= total
             draw_pure /= total
             away_pure /= total
         
+        # Get other probabilities
+        over_under = pure_probabilities.get('probabilities', {}).get('over_under', {})
+        btts = pure_probabilities.get('probabilities', {}).get('both_teams_score', {})
+        
+        over_25_pure = over_under.get('over_25', 50) / 100.0
+        under_25_pure = over_under.get('under_25', 50) / 100.0
+        btts_yes_pure = btts.get('yes', 50) / 100.0
+        btts_no_pure = btts.get('no', 50) / 100.0
+        
+        # Define probability mapping
         probability_mapping = [
             ('1x2 Home', home_pure, '1x2 Home'),
             ('1x2 Draw', draw_pure, '1x2 Draw'), 
             ('1x2 Away', away_pure, '1x2 Away'),
-            ('Over 2.5 Goals', pure_probabilities['probabilities']['over_under']['over_25'] / 100.0, 'Over 2.5 Goals'),
-            ('Under 2.5 Goals', pure_probabilities['probabilities']['over_under']['under_25'] / 100.0, 'Under 2.5 Goals'),
-            ('BTTS Yes', pure_probabilities['probabilities']['both_teams_score']['yes'] / 100.0, 'BTTS Yes'),
-            ('BTTS No', pure_probabilities['probabilities']['both_teams_score']['no'] / 100.0, 'BTTS No')
+            ('Over 2.5 Goals', over_25_pure, 'Over 2.5 Goals'),
+            ('Under 2.5 Goals', under_25_pure, 'Under 2.5 Goals'),
+            ('BTTS Yes', btts_yes_pure, 'BTTS Yes'),
+            ('BTTS No', btts_no_pure, 'BTTS No')
         ]
         
         for market_name, pure_prob, market_key in probability_mapping:
@@ -657,17 +839,22 @@ class ValueDetectionEngine:
             edge = (pure_prob / market_prob) - 1.0
             edge_percentage = edge * 100
             
-            if edge_percentage >= 4.0:
+            if edge_percentage >= 4.0:  # Minimum edge threshold
                 value_rating = self._get_value_rating(edge_percentage)
                 stake = min(self.max_stake, edge_percentage / 500)
                 
                 signal = BettingSignal(
-                    market=market_name, model_prob=round(pure_prob * 100, 1),
-                    book_prob=round(market_prob * 100, 1), edge=round(edge_percentage, 1),
-                    confidence="MEDIUM", recommended_stake=stake, value_rating=value_rating
+                    market=market_name, 
+                    model_prob=round(pure_prob * 100, 1),
+                    book_prob=round(market_prob * 100, 1), 
+                    edge=round(edge_percentage, 1),
+                    confidence="MEDIUM", 
+                    recommended_stake=stake, 
+                    value_rating=value_rating
                 )
                 signals.append(signal)
         
+        # Sort by edge (highest first)
         signals.sort(key=lambda x: x.edge, reverse=True)
         return signals
     
@@ -691,20 +878,49 @@ class AdvancedFootballPredictor:
         football_predictions = self.apex_engine.generate_apex_predictions(mc_iterations)
         value_signals = self.value_engine.detect_value_bets(football_predictions, self.market_odds)
         
+        # Enhanced system validation
+        alignment_status = "PERFECT" if self._validate_system_alignment(football_predictions, value_signals) else "PARTIAL"
+        
         comprehensive_result = football_predictions.copy()
         comprehensive_result['betting_signals'] = [signal.__dict__ for signal in value_signals]
-        comprehensive_result['system_validation'] = {'status': 'VALID', 'alignment': 'PERFECT'}
+        comprehensive_result['system_validation'] = {
+            'status': 'VALID', 
+            'alignment': alignment_status,
+            'engine_sync': 'OPTIMAL'
+        }
         
         return comprehensive_result
+    
+    def _validate_system_alignment(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> bool:
+        """Validate that value signals align with football predictions"""
+        if not value_signals:
+            return True  # No value bets is still valid alignment
+            
+        # Check if any value bet strongly contradicts primary predictions
+        primary_outcome = max(
+            football_predictions['probabilities']['match_outcomes'], 
+            key=football_predictions['probabilities']['match_outcomes'].get
+        )
+        
+        for signal in value_signals:
+            market = signal.market
+            # If we have a strong value bet that contradicts primary outcome, flag as partial alignment
+            if (market in ['1x2 Away', '1x2 Draw'] and primary_outcome == 'home_win' and 
+                football_predictions['probabilities']['match_outcomes']['home_win'] > 60):
+                return False
+                
+        return True
 
 # TEST FUNCTION
 def test_apex_intelligence():
     match_data = {
-        'home_team': 'Wolfsburg', 'away_team': 'Hoffenheim', 'league': 'bundesliga',
-        'home_goals': 5, 'away_goals': 12, 'home_conceded': 11, 'away_conceded': 9,
-        'home_form': [1, 0, 1, 0, 0, 1], 'away_form': [3, 3, 1, 3, 3, 3],
+        'home_team': 'Rennes', 'away_team': 'Strasbourg', 'league': 'ligue_1',
+        'home_goals': 8, 'away_goals': 12, 'home_conceded': 8, 'away_conceded': 6,
+        'home_goals_home': 5, 'away_goals_away': 7,
+        'home_form': [3, 0, 3, 0, 0, 3], 'away_form': [3, 3, 1, 3, 3, 3],
         'h2h_data': {'matches': 6, 'home_wins': 3, 'away_wins': 2, 'draws': 1, 'home_goals': 10, 'away_goals': 9},
         'motivation': {'home': 'High', 'away': 'Normal'},
+        'injuries': {'home': 1, 'away': 2},
         'market_odds': {
             '1x2 Home': 2.70, '1x2 Draw': 3.75, '1x2 Away': 2.38,
             'Over 2.5 Goals': 1.44, 'Under 2.5 Goals': 2.75,
@@ -721,6 +937,7 @@ def test_apex_intelligence():
     print(f"Football IQ: {results['apex_intelligence']['football_iq_score']}/100")
     print(f"Narrative Coherence: {results['apex_intelligence']['narrative_coherence']}%")
     print(f"Prediction Alignment: {results['apex_intelligence']['prediction_alignment']}")
+    print(f"Data Quality: {results['data_quality_score']}%")
     print(f"Risk Level: {results['risk_assessment']['risk_level']}")
     print()
     

@@ -354,11 +354,11 @@ class TeamTierCalibrator:
         
         # Adjust home advantage based on tier matchup
         if home_tier == 'WEAK' and away_tier == 'ELITE':
-            return base_advantage * 0.6  # Reduced advantage for weak teams vs elite
+            return base_advantage * 0.5  # Reduced advantage for weak teams vs elite
         elif home_tier == 'ELITE' and away_tier == 'WEAK':
-            return base_advantage * 1.2  # Increased advantage for elite vs weak
+            return base_advantage * 1.3  # Increased advantage for elite vs weak
         elif home_tier == 'WEAK' and away_tier == 'STRONG':
-            return base_advantage * 0.8  # Slightly reduced
+            return base_advantage * 0.7  # Slightly reduced
         
         return base_advantage
     
@@ -379,10 +379,10 @@ class TeamTierCalibrator:
         home_xg = max(home_xg_min, min(home_xg_max, home_xg))
         away_xg = max(away_xg_min, min(away_xg_max, away_xg))
         
-        # Apply tier matchup logic
-        if home_tier == 'ELITE' and away_tier == 'WEAK':
+        # Apply tier matchup logic - CRITICAL FIX
+        if home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK']:
             home_xg = max(home_xg, away_xg + 0.8)  # Elite should have significant advantage
-        elif home_tier == 'WEAK' and away_tier == 'ELITE':
+        elif away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK']:
             away_xg = max(away_xg, home_xg + 0.8)  # Elite should have significant advantage
         
         return round(home_xg, 3), round(away_xg, 3)
@@ -406,13 +406,13 @@ class TeamTierCalibrator:
         return True
 
 class SignalEngine:
-    """RESTORED ACCURATE PREDICTIVE ENGINE - With Golden BTTS/Over-Under Logic"""
+    """FIXED PREDICTIVE ENGINE - With Proper Tier Calibration"""
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.data = self._validate_and_enhance_data(match_data)
         self.calibration_data = calibration_data or {}
         self.calibrator = TeamTierCalibrator()
-        self.logger = PredictionLogger(use_database=True)  # Enhanced logging
+        self.logger = PredictionLogger(use_database=True)
         self._setup_realistic_parameters()
         self.match_context = MatchContext.UNPREDICTABLE
         
@@ -540,7 +540,7 @@ class SignalEngine:
             'injury_impact': 0.08,
             'motivation_impact': 0.10,
             'bivariate_correlation': 0.12,
-            'defensive_impact_multiplier': 0.4,
+            'defensive_impact_multiplier': 0.6,  # Increased defensive impact
         }
         
         if self.calibration_data:
@@ -589,10 +589,10 @@ class SignalEngine:
             
             # Tier-based form impact - weaker teams get more form volatility
             form_weight = {
-                'ELITE': 0.3,    # 30% form, 70% baseline quality
-                'STRONG': 0.4,   # 40% form, 60% baseline quality  
+                'ELITE': 0.2,    # 20% form, 80% baseline quality (ELITE less affected by form)
+                'STRONG': 0.3,   # 30% form, 70% baseline quality  
                 'MEDIUM': 0.5,   # 50% form, 50% baseline quality
-                'WEAK': 0.6      # 60% form, 40% baseline quality
+                'WEAK': 0.7      # 70% form, 30% baseline quality (WEAK more affected by form)
             }.get(team_tier, 0.5)
             
             form_ratio = avg_form / 3.0
@@ -607,9 +607,9 @@ class SignalEngine:
             return 1.0
 
     def _calculate_enhanced_btts_probability(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> float:
-        """RESTORED GOLDEN BTTS LOGIC - Simple & Accurate"""
+        """FIXED BTTS LOGIC - Proper tier calibration"""
         
-        # Base BTTS from independent probabilities (THE GOLDEN FORMULA)
+        # Base BTTS from independent probabilities
         home_score_prob = 1 - math.exp(-home_xg)
         away_score_prob = 1 - math.exp(-away_xg)
         base_btts = home_score_prob * away_score_prob
@@ -619,27 +619,29 @@ class SignalEngine:
         away_btts_rate = self.data.get('away_btts_rate', 0.5)
         historical_factor = (home_btts_rate + away_btts_rate) / 2
         
-        # CRITICAL FIX: Blend base probability with historical data
-        # 70% weight to mathematical probability, 30% to historical trend
+        # FIXED: Blend base probability with historical data
         adjusted_btts = (base_btts * 0.7) + (historical_factor * 0.3)
         
-        # Minimal tier-based adjustment (max ±10%)
+        # STRONGER tier-based adjustment
         home_tier = self.calibrator.get_team_tier(home_team, league)
         away_tier = self.calibrator.get_team_tier(away_team, league)
         
+        # Elite defenses significantly reduce BTTS probability
         if home_tier == 'ELITE' and away_tier == 'ELITE':
-            adjusted_btts *= 0.9   # Slight reduction for top defenses
+            adjusted_btts *= 0.7   # Strong reduction for top defenses
+        elif home_tier == 'ELITE' or away_tier == 'ELITE':
+            adjusted_btts *= 0.85  # Moderate reduction when one team is elite
         elif home_tier == 'WEAK' and away_tier == 'WEAK':
-            adjusted_btts *= 1.1   # Slight increase for weak defenses
+            adjusted_btts *= 1.2   # Increase for weak defenses
         
-        return max(0.20, min(0.80, adjusted_btts))
+        return max(0.15, min(0.85, adjusted_btts))
 
     def _calculate_enhanced_over_under(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> Dict[str, float]:
-        """RESTORED ACCURATE OVER/UNDER LOGIC - Monte Carlo Based"""
+        """FIXED OVER/UNDER LOGIC"""
         
         total_xg = home_xg + away_xg
         
-        # USE POISSON DIRECTLY (proven accurate)
+        # USE POISSON DIRECTLY
         over_25 = 1 - poisson.cdf(2, total_xg)
         under_25 = poisson.cdf(2, total_xg)
         
@@ -648,7 +650,7 @@ class SignalEngine:
         away_over_rate = self.data.get('away_over_25_rate', 0.5)
         historical_factor = (home_over_rate + away_over_rate) / 2
         
-        # FIX: Blend mathematical probability with historical data
+        # FIXED: Blend mathematical probability with historical data
         over_25 = (over_25 * 0.7) + (historical_factor * 0.3)
         under_25 = (under_25 * 0.7) + ((1 - historical_factor) * 0.3)
         
@@ -664,44 +666,56 @@ class SignalEngine:
         }
 
     def _calculate_realistic_xg(self) -> Tuple[float, float]:
-        """Calculate REALISTIC predictive xG with multi-league tier calibration"""
+        """FIXED: Realistic xG with PROPER tier calibration"""
         league = self.data.get('league', 'premier_league')
         
-        # Get tier-based baselines with league context
-        home_baseline, home_def_baseline = self.calibrator.get_tier_baselines(self.data['home_team'], league)
-        away_baseline, away_def_baseline = self.calibrator.get_tier_baselines(self.data['away_team'], league)
-        
-        # Start from tier baselines instead of raw data
-        home_goals_avg = self.data.get('home_goals', 0) / 6.0
-        away_goals_avg = self.data.get('away_goals', 0) / 6.0
-        
-        # Blend recent performance with tier baseline
-        home_attack = (home_goals_avg * 0.4) + (home_baseline * 0.6)
-        away_attack = (away_goals_avg * 0.4) + (away_baseline * 0.6)
-        
-        home_conceded_avg = self.data.get('home_conceded', 0) / 6.0
-        away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
-        
-        # Blend defensive performance with tier baseline
-        home_defense = (home_conceded_avg * 0.4) + (home_def_baseline * 0.6)
-        away_defense = (away_conceded_avg * 0.4) + (away_def_baseline * 0.6)
-        
-        # Calculate xG using blended values
-        league_avg = self.calibrator.league_baselines.get(league, self.calibrator.league_baselines['default'])['avg_goals']
-        
-        home_xg = home_attack * (1 - (away_defense / league_avg) * self.calibration_params['defensive_impact_multiplier'])
-        away_xg = away_attack * (1 - (home_defense / league_avg) * self.calibration_params['defensive_impact_multiplier'])
-        
-        # Apply contextual home advantage with league context
-        home_advantage = self.calibrator.get_contextual_home_advantage(
-            self.data['home_team'], self.data['away_team'], league
-        )
-        home_xg *= (1 + home_advantage)
-        
-        # Apply weighted form impact
+        # Get team tiers
         home_tier = self.calibrator.get_team_tier(self.data['home_team'], league)
         away_tier = self.calibrator.get_team_tier(self.data['away_team'], league)
         
+        # Get tier baselines
+        home_baseline, home_def_baseline = self.calibrator.get_tier_baselines(self.data['home_team'], league)
+        away_baseline, away_def_baseline = self.calibrator.get_tier_baselines(self.data['away_team'], league)
+        
+        # FIXED: TIER-AWARE WEIGHTING
+        # Elite teams: 90% baseline quality, 10% recent form
+        # Weak teams: 30% baseline quality, 70% recent form
+        if home_tier == 'ELITE':
+            home_attack = (self.data.get('home_goals', 0)/6.0 * 0.1) + (home_baseline * 0.9)
+        elif home_tier == 'WEAK':
+            home_attack = (self.data.get('home_goals', 0)/6.0 * 0.7) + (home_baseline * 0.3)
+        else:
+            home_attack = (self.data.get('home_goals', 0)/6.0 * 0.4) + (home_baseline * 0.6)
+        
+        if away_tier == 'ELITE':
+            away_attack = (self.data.get('away_goals', 0)/6.0 * 0.1) + (away_baseline * 0.9)
+        elif away_tier == 'WEAK':
+            away_attack = (self.data.get('away_goals', 0)/6.0 * 0.7) + (away_baseline * 0.3)
+        else:
+            away_attack = (self.data.get('away_goals', 0)/6.0 * 0.4) + (away_baseline * 0.6)
+        
+        # FIXED: DEFENSIVE ADJUSTMENTS
+        # Use ACTUAL conceded data more heavily for defense
+        home_conceded_avg = self.data.get('home_conceded', 0) / 6.0
+        away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
+        
+        home_defense = (home_conceded_avg * 0.7) + (home_def_baseline * 0.3)
+        away_defense = (away_conceded_avg * 0.7) + (away_def_baseline * 0.3)
+        
+        league_avg = self.calibrator.league_baselines.get(league, self.calibrator.league_baselines['default'])['avg_goals']
+        
+        # FIXED: STRONGER DEFENSIVE IMPACT
+        home_xg = home_attack * (1 - (away_defense / league_avg) * 0.8)
+        away_xg = away_attack * (1 - (home_defense / league_avg) * 0.8)
+        
+        # FIXED: REALISTIC HOME ADVANTAGE
+        home_advantage = self.calibrator.get_contextual_home_advantage(
+            self.data['home_team'], self.data['away_team'], league
+        )
+        
+        home_xg *= (1 + home_advantage)
+        
+        # Apply weighted form impact
         home_form = self._calculate_weighted_form_impact('home', home_tier, league)
         away_form = self._calculate_weighted_form_impact('away', away_tier, league)
         
@@ -730,9 +744,7 @@ class SignalEngine:
             home_xg, away_xg, self.data['home_team'], self.data['away_team'], league
         )
         
-        logger.info(f"Calibrated xG - Home: {home_xg:.3f}, Away: {away_xg:.3f}")
-        logger.info(f"Team Tiers - Home: {home_tier}, Away: {away_tier}")
-        logger.info(f"League: {league}")
+        logger.info(f"🚀 FIXED xG - {self.data['home_team']}({home_tier}): {home_xg:.3f} vs {self.data['away_team']}({away_tier}): {away_xg:.3f}")
         
         return home_xg, away_xg
     
@@ -791,7 +803,7 @@ class SignalEngine:
         return debug_data
 
     def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
-        """Run Enhanced Monte Carlo simulation with RESTORED BTTS and Over/Under"""
+        """Run Enhanced Monte Carlo simulation with FIXED BTTS and Over/Under"""
         np.random.seed(42)
         
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
@@ -812,7 +824,7 @@ class SignalEngine:
         home_goals_sim = A + C
         away_goals_sim = B + C
         
-        # Use RESTORED calculations for BTTS and Over/Under
+        # Use FIXED calculations for BTTS and Over/Under
         home_team = self.data['home_team']
         away_team = self.data['away_team']
         league = self.data.get('league', 'premier_league')
@@ -948,7 +960,7 @@ class SignalEngine:
         }
 
     def generate_predictions(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate ACCURATE football predictions with restored BTTS/Over-Under logic"""
+        """Generate REALISTIC football predictions with FIXED tier calibration"""
         
         home_team = self.data['home_team']
         away_team = self.data['away_team']
@@ -971,12 +983,12 @@ class SignalEngine:
             away_tier = self.calibrator.get_team_tier(away_team, league)
             
             # Apply tier-based probability corrections
-            if home_tier == 'ELITE' and away_tier == 'WEAK':
+            if home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK']:
                 mc_results.home_win_prob = max(mc_results.home_win_prob, 0.65)
-                mc_results.away_win_prob = min(mc_results.away_win_prob, 0.15)
-            elif away_tier == 'ELITE' and home_tier == 'WEAK':
+                mc_results.away_win_prob = min(mc_results.away_win_prob, 0.20)
+            elif away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK']:
                 mc_results.away_win_prob = max(mc_results.away_win_prob, 0.65)
-                mc_results.home_win_prob = min(mc_results.home_win_prob, 0.15)
+                mc_results.home_win_prob = min(mc_results.home_win_prob, 0.20)
             
             # Normalize probabilities
             total = mc_results.home_win_prob + mc_results.draw_prob + mc_results.away_win_prob
@@ -1090,10 +1102,10 @@ class SignalEngine:
         home_tier = self.calibrator.get_team_tier(home_team, league)
         away_tier = self.calibrator.get_team_tier(away_team, league)
         
-        if home_tier == 'ELITE' and away_tier == 'WEAK' and home_win_prob > 0.70:
+        if home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and home_win_prob > 0.70:
             return f"{home_team} are overwhelming favorites with {home_xg:.1f} expected goals. Their superior quality and home advantage should see them comfortably overcome {away_team}."
         
-        elif away_tier == 'ELITE' and home_tier == 'WEAK' and home_win_prob < 0.25:
+        elif away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK'] and home_win_prob < 0.25:
             return f"{away_team} demonstrate clear superiority with {away_xg:.1f} expected goals. Their quality should overcome {home_team}'s home advantage."
         
         elif self.match_context == MatchContext.HOME_DOMINANCE and home_win_prob > 0.60:
@@ -1113,7 +1125,7 @@ class SignalEngine:
 
 
 class ValueDetectionEngine:
-    """PERFECTLY ALIGNED VALUE DETECTION ENGINE - MULTI-LEAGUE SUPPORT"""
+    """FIXED VALUE DETECTION ENGINE - Proper tier alignment"""
     
     def __init__(self):
         # Realistic thresholds
@@ -1200,13 +1212,13 @@ class ValueDetectionEngine:
         league = primary_prediction.get('league', 'premier_league')
         
         # NEVER allow contradictory outcomes in tier mismatches
-        if (home_tier == 'ELITE' and away_tier == 'WEAK' and 
+        if (home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and 
             primary_prediction['outcome'] == 'HOME'):
             
             if signal.market in ['1x2 Draw', '1x2 Away']:
                 return True
         
-        if (away_tier == 'ELITE' and home_tier == 'WEAK' and 
+        if (away_tier == 'ELITE' and home_tier in ['MEDIUM', 'WEAK'] and 
             primary_prediction['outcome'] == 'AWAY'):
             
             if signal.market in ['1x2 Draw', '1x2 Home']:
@@ -1229,7 +1241,7 @@ class ValueDetectionEngine:
         return False
 
     def detect_value_bets(self, pure_probabilities: Dict, market_odds: Dict) -> List[BettingSignal]:
-        """PERFECTLY ALIGNED value bet detection - NO CONTRADICTIONS"""
+        """FIXED value bet detection - NO CONTRADICTIONS"""
         
         signals = []
         
@@ -1371,7 +1383,7 @@ class ValueDetectionEngine:
 
 
 class AdvancedFootballPredictor:
-    """PERFECTLY ALIGNED ORCHESTRATOR: Multi-League Support"""
+    """FIXED ORCHESTRATOR: Proper Tier Calibration"""
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.market_odds = match_data.get('market_odds', {})
@@ -1385,7 +1397,7 @@ class AdvancedFootballPredictor:
         self.prediction_history = []
     
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate comprehensive analysis with PERFECT alignment"""
+        """Generate comprehensive analysis with FIXED alignment"""
         
         football_predictions = self.signal_engine.generate_predictions(mc_iterations)
         
@@ -1401,7 +1413,7 @@ class AdvancedFootballPredictor:
         return comprehensive_result
     
     def _validate_system_output(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> Dict[str, str]:
-        """Validate system output for perfect alignment"""
+        """Validate system output for proper alignment"""
         
         issues = []
         
@@ -1425,11 +1437,11 @@ class AdvancedFootballPredictor:
             away_tier = team_tiers.get('away', 'MEDIUM')
             
             if (signal_dict['market'] == '1x2 Draw' and primary_outcome == 'home_win' and 
-                home_tier == 'ELITE' and away_tier == 'WEAK' and outcomes['home_win'] > 65):
+                home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and outcomes['home_win'] > 65):
                 issues.append("Draw value bet contradicts strong home win prediction for elite vs weak")
             
             if (signal_dict['market'] == '1x2 Away' and primary_outcome == 'home_win' and 
-                home_tier == 'ELITE' and away_tier == 'WEAK' and outcomes['home_win'] > 65):
+                home_tier == 'ELITE' and away_tier in ['MEDIUM', 'WEAK'] and outcomes['home_win'] > 65):
                 issues.append("Away win value bet contradicts strong home win prediction for elite vs weak")
             
             # Check BTTS contradictions
@@ -1470,76 +1482,74 @@ class AdvancedFootballPredictor:
 
 
 # =============================================================================
-# TEST THE RESTORED CALIBRATION
+# TEST THE FIXED CALIBRATION
 # =============================================================================
 
-def test_restored_calibration():
-    """Test the restored calibration system with updated teams"""
+def test_fixed_calibration():
+    """Test the fixed calibration system"""
     
     match_data = {
-        'home_team': 'West Ham',  # Weak team for 2025/2026
-        'away_team': 'Arsenal',   # Elite team
+        'home_team': 'Burnley',  # MEDIUM tier
+        'away_team': 'Arsenal',   # ELITE tier
         'league': 'premier_league',
         'home_goals': 8,    # Last 6 games
-        'away_goals': 12,   # Last 6 games
-        'home_conceded': 14,
-        'away_conceded': 6,
-        'home_clean_sheets': 1,    # Enhanced BTTS data
-        'away_clean_sheets': 3,    # Enhanced BTTS data
-        'home_btts_rate': 0.67,    # BTTS in last 6 games
-        'away_btts_rate': 0.50,    # BTTS in last 6 games
-        'home_over_25_rate': 0.83, # Over 2.5 in last 6 games
-        'away_over_25_rate': 0.67, # Over 2.5 in last 6 games
-        'home_form': [1, 0, 1, 0, 0, 1],  # Recent form points
-        'away_form': [3, 3, 1, 3, 3, 3],  # Recent form points
+        'away_goals': 10,   # Last 6 games
+        'home_conceded': 13,
+        'away_conceded': 2,
+        'home_clean_sheets': 1,
+        'away_clean_sheets': 4,
+        'home_btts_rate': 0.67,
+        'away_btts_rate': 0.33,
+        'home_over_25_rate': 0.50,
+        'away_over_25_rate': 0.67,
+        'home_form': [1, 0, 1, 0, 0, 1],
+        'away_form': [3, 3, 1, 3, 3, 3],
         'h2h_data': {
-            'matches': 5,
+            'matches': 6,
             'home_wins': 1,
             'away_wins': 3, 
-            'draws': 1,
-            'home_goals': 4,
-            'away_goals': 9
+            'draws': 2,
+            'home_goals': 3,
+            'away_goals': 10
         },
         'injuries': {
-            'home': 1,  # Minor absences
-            'away': 2   # Regular starters out
+            'home': 1,
+            'away': 0
         },
         'motivation': {
-            'home': 'High',    # Fighting relegation
-            'away': 'Normal'   # Title challenge
+            'home': 'High',
+            'away': 'Normal'
         },
         'market_odds': {
-            '1x2 Home': 6.50,   # ~15.4% implied
-            '1x2 Draw': 4.50,   # ~22.2% implied  
-            '1x2 Away': 1.50,   # ~66.7% implied
-            'Over 2.5 Goals': 1.80,
-            'Under 2.5 Goals': 2.00,
-            'BTTS Yes': 1.90,
-            'BTTS No': 1.90
+            '1x2 Home': 13.00,
+            '1x2 Draw': 6.25,
+            '1x2 Away': 1.22,
+            'Over 2.5 Goals': 1.91,
+            'Under 2.5 Goals': 1.90,
+            'BTTS Yes': 2.63,
+            'BTTS No': 1.44
         }
     }
     
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("🎯 RESTORED CALIBRATED PREDICTION RESULTS")
+    print("🎯 FIXED CALIBRATION PREDICTION RESULTS")
     print("=" * 50)
     print(f"Match: {results['match']}")
-    print(f"League: {results.get('league', 'premier_league')}")
     print(f"Team Tiers: {results['team_tiers']['home']} vs {results['team_tiers']['away']}")
     print(f"Expected Goals: {results['expected_goals']['home']} - {results['expected_goals']['away']}")
     print(f"Match Context: {results['match_context']}")
-    print(f"Confidence: {results['confidence_score']}%")
     print()
     
-    print("📊 RESTORED PROBABILITIES:")
+    print("📊 FIXED PROBABILITIES:")
     outcomes = results['probabilities']['match_outcomes']
     print(f"Home Win: {outcomes['home_win']}%")
     print(f"Draw: {outcomes['draw']}%") 
     print(f"Away Win: {outcomes['away_win']}%")
     print()
     
-    print("⚽ RESTORED GOALS ANALYSIS:")
+    print("⚽ FIXED GOALS ANALYSIS:")
     print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']}%")
     print(f"Over 2.5: {results['probabilities']['over_under']['over_25']}%")
     print()
@@ -1554,4 +1564,4 @@ def test_restored_calibration():
     print(f"Alignment: {results['system_validation']['alignment']}")
 
 if __name__ == "__main__":
-    test_restored_calibration()
+    test_fixed_calibration()

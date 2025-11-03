@@ -278,9 +278,27 @@ def safe_get(dictionary, *keys, default=None):
                 current = current[key]
             else:
                 return default
-        except (TypeError, KeyError):
+        except (TypeError, KeyError, AttributeError):
             return default
     return current
+
+def safe_replace(text, old, new, default=""):
+    """Safely replace text with fallback"""
+    if text is None:
+        return default
+    try:
+        return text.replace(old, new)
+    except (AttributeError, TypeError):
+        return default
+
+def safe_title(text, default=""):
+    """Safely convert text to title case"""
+    if text is None:
+        return default
+    try:
+        return text.title()
+    except (AttributeError, TypeError):
+        return default
 
 def get_league_display_name(league_id: str) -> str:
     """Get display name for league"""
@@ -439,8 +457,8 @@ def create_input_form():
         
         st.markdown(f"""
         **Team Tiers:** 
-        <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
-        <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
+        <span class="tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
+        <span class="tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
         
         # Enhanced Head-to-head section
@@ -677,7 +695,8 @@ def display_goals_analysis(predictions):
         # Show explanations
         explanations = safe_get(predictions, 'explanations', 'btts') or []
         for explanation in explanations[:2]:  # Show top 2 explanations
-            st.markdown(f'<div class="explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
+            if explanation:  # Only show non-empty explanations
+                st.markdown(f'<div class="explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col2:
         # Over/Under with explanations
@@ -714,7 +733,8 @@ def display_goals_analysis(predictions):
         # Show explanations
         explanations = safe_get(predictions, 'explanations', 'over_under') or []
         for explanation in explanations[:2]:
-            st.markdown(f'<div class="explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
+            if explanation:  # Only show non-empty explanations
+                st.markdown(f'<div class="explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col3:
         # Expected Goals display
@@ -738,7 +758,7 @@ def display_goals_analysis(predictions):
     
     with col4:
         # Match Context
-        context = safe_get(predictions, 'match_context', 'balanced')
+        context = safe_get(predictions, 'match_context') or 'balanced'
         context_emoji = {
             'defensive_battle': '🛡️',
             'offensive_showdown': '🔥',
@@ -753,27 +773,28 @@ def display_goals_analysis(predictions):
         <div class="goals-card">
             <h4>{context_emoji} Match Context</h4>
             <div style="font-size: 1.1rem; font-weight: bold; color: #333; margin: 0.5rem 0;">
-                {context.replace('_', ' ').title()}
+                {safe_replace(context, '_', ' ', 'Balanced').title()}
             </div>
             <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
-                Tempo: {narrative.get('expected_tempo', 'medium').title()}
+                Tempo: {safe_title(narrative.get('expected_tempo', 'medium'), 'Medium')}
             </div>
             <div style="font-size: 0.9rem; color: #666; margin: 0.3rem 0;">
-                Defense: {narrative.get('defensive_stability', 'mixed').title()}
+                Defense: {safe_title(narrative.get('defensive_stability', 'mixed'), 'Mixed')}
             </div>
         </div>
         ''', unsafe_allow_html=True)
 
 def display_probability_bar(label: str, probability: float, color: str):
     """Display a probability with a visual bar"""
+    safe_prob = probability or 0
     st.markdown(f'''
     <div style="margin-bottom: 1rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
             <span><strong>{label}</strong></span>
-            <span><strong>{probability:.1f}%</strong></span>
+            <span><strong>{safe_prob:.1f}%</strong></span>
         </div>
         <div class="probability-bar">
-            <div class="probability-fill" style="width: {probability}%; background: {color};"></div>
+            <div class="probability-fill" style="width: {safe_prob}%; background: {color};"></div>
         </div>
     </div>
     ''', unsafe_allow_html=True)
@@ -781,6 +802,10 @@ def display_probability_bar(label: str, probability: float, color: str):
 def display_predictions(predictions):
     """Enhanced predictions display with new features"""
     
+    if not predictions:
+        st.error("❌ No predictions available")
+        return
+        
     st.markdown('<p class="main-header">🎯 Enhanced Football Predictions</p>', unsafe_allow_html=True)
     st.markdown('<div class="pure-engine-card"><h3>🟢 Enhanced Signal Engine Output</h3>Production-Grade Multi-League Analysis</div>', unsafe_allow_html=True)
     
@@ -796,9 +821,9 @@ def display_predictions(predictions):
     
     st.markdown(f'''
     <p style="text-align: center; font-size: 1.4rem; font-weight: 600;">
-        {predictions["match"]} 
-        <span class="tier-badge tier-{home_tier.lower()}">{home_tier}</span> vs 
-        <span class="tier-badge tier-{away_tier.lower()}">{away_tier}</span>
+        {predictions.get("match", "Unknown Match")} 
+        <span class="tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
+        <span class="tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
     </p>
     <p style="text-align: center; margin-top: 0.5rem;">
         <span class="league-badge {league_badge_class}">{league_display_name}</span>
@@ -827,7 +852,7 @@ def display_predictions(predictions):
             'away_counter': '✈️',
             'unpredictable': '❓'
         }.get(match_context, '❓')
-        st.metric("Match Context", f"{context_emoji} {match_context.replace('_', ' ').title()}")
+        st.metric("Match Context", f"{context_emoji} {safe_replace(match_context, '_', ' ', 'Unknown').title()}")
     with col4:
         st.metric("Football IQ", f"{football_iq:.1f}/100")
     
@@ -914,6 +939,10 @@ def display_predictions(predictions):
 def display_value_detection(predictions):
     """Enhanced value detection with explanations"""
     
+    if not predictions:
+        st.error("❌ No predictions available for value detection")
+        return
+        
     st.markdown('<p class="main-header">💰 Enhanced Value Betting Detection</p>', unsafe_allow_html=True)
     st.markdown('<div class="value-engine-card"><h3>🟠 Enhanced Value Engine Output</h3>Perfectly aligned with Production-Grade Signal Engine</div>', unsafe_allow_html=True)
     
@@ -981,11 +1010,11 @@ def display_value_detection(predictions):
         st.metric("High Value Signals", high_value)
     
     with col3:
-        avg_edge = np.mean([s.get('edge', 0) for s in betting_signals])
+        avg_edge = np.mean([s.get('edge', 0) for s in betting_signals]) if betting_signals else 0
         st.metric("Average Edge", f"{avg_edge:.1f}%")
     
     with col4:
-        total_stake = np.sum([s.get('recommended_stake', 0) for s in betting_signals])
+        total_stake = np.sum([s.get('recommended_stake', 0) for s in betting_signals]) if betting_signals else 0
         st.metric("Total Stake", f"${total_stake:.2f}")
     
     # Display enhanced value bets with explanations
@@ -1020,6 +1049,10 @@ def display_value_detection(predictions):
                 
                 alignment_text = "ALIGNS" if aligns_with_primary else "CONTRADICTS"
                 
+                # Safely get explanations
+                explanations = bet.get('explanation', [])
+                safe_explanations = [exp for exp in explanations if exp]  # Filter out empty explanations
+                
                 st.markdown(f'''
                 <div class="bet-card {value_class}">
                     <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -1030,7 +1063,7 @@ def display_value_detection(predictions):
                                 <small>{alignment_emoji} <strong>{alignment_text}</strong> with Signal Engine</small>
                             </div>
                             <div style="margin-top: 0.5rem;">
-                                {''.join([f'<span class="feature-badge">💡 {exp}</span>' for exp in bet.get('explanation', [])[:1]])}
+                                {''.join([f'<span class="feature-badge">💡 {exp}</span>' for exp in safe_explanations[:1]])}
                             </div>
                         </div>
                         <div style="flex: 1; text-align: right;">
@@ -1049,6 +1082,10 @@ def display_value_detection(predictions):
 def display_analytics(predictions):
     """Enhanced analytics display"""
     
+    if not predictions:
+        st.error("❌ No predictions available for analytics")
+        return
+        
     st.markdown('<p class="main-header">📈 Enhanced Analytics Dashboard</p>', unsafe_allow_html=True)
     
     # Enhanced Data Quality and Intelligence Metrics
@@ -1097,6 +1134,10 @@ def display_analytics(predictions):
 def display_analysis(predictions):
     """Enhanced analysis display with tabs"""
     
+    if not predictions:
+        st.error("❌ No analysis data available")
+        return
+        
     tab1, tab2, tab3 = st.tabs(["🎯 Enhanced Predictions", "💰 Enhanced Value Detection", "📈 Enhanced Analytics"])
     
     with tab1:
@@ -1113,17 +1154,20 @@ def store_prediction_in_session(prediction):
     if 'prediction_history' not in st.session_state:
         st.session_state.prediction_history = []
     
+    if not prediction:
+        return
+        
     prediction_record = {
         'timestamp': datetime.now().isoformat(),
-        'match': prediction['match'],
+        'match': prediction.get('match', 'Unknown Match'),
         'league': prediction.get('league', 'premier_league'),
-        'expected_goals': prediction['expected_goals'],
+        'expected_goals': prediction.get('expected_goals', {'home': 0, 'away': 0}),
         'team_tiers': prediction.get('team_tiers', {}),
-        'probabilities': prediction['probabilities']['match_outcomes'],
-        'match_context': prediction['match_context'],
-        'confidence_score': prediction['confidence_score'],
-        'data_quality': prediction['data_quality_score'],
-        'football_iq': prediction.get('apex_intelligence', {}).get('football_iq_score', 0),
+        'probabilities': safe_get(prediction, 'probabilities', 'match_outcomes') or {},
+        'match_context': prediction.get('match_context', 'unknown'),
+        'confidence_score': prediction.get('confidence_score', 0),
+        'data_quality': prediction.get('data_quality_score', 0),
+        'football_iq': safe_get(prediction, 'apex_intelligence', 'football_iq_score') or 0,
         'value_bets': len(prediction.get('betting_signals', []))
     }
     
@@ -1135,6 +1179,7 @@ def store_prediction_in_session(prediction):
 def main():
     """Enhanced main application function"""
     
+    # Initialize session state
     if 'predictions' not in st.session_state:
         st.session_state.predictions = None
     
@@ -1157,14 +1202,14 @@ def main():
                 if st.session_state.prediction_history:
                     st.write("**Enhanced Prediction History:**")
                     for i, pred in enumerate(st.session_state.prediction_history[-5:]):
-                        with st.expander(f"Prediction {i+1}: {pred['match']} (IQ: {pred.get('football_iq', 0):.1f})"):
+                        with st.expander(f"Prediction {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
-                            st.write(f"Expected Goals: Home {pred['expected_goals']['home']:.2f} - Away {pred['expected_goals']['away']:.2f}")
+                            st.write(f"Expected Goals: Home {pred['expected_goals'].get('home', 0):.2f} - Away {pred['expected_goals'].get('away', 0):.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
                             st.write(f"Football IQ: {pred.get('football_iq', 0):.1f}/100")
                             st.write(f"Value Bets Found: {pred.get('value_bets', 0)}")
-                            st.write(f"Confidence: {pred['confidence_score']}%")
+                            st.write(f"Confidence: {pred.get('confidence_score', 0)}%")
                 else:
                     st.info("No prediction history yet.")
         
@@ -1197,36 +1242,41 @@ def main():
                 # Generate comprehensive analysis
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
                 
-                # Add enhanced information
-                predictions['league'] = match_data['league']
-                predictions['bankroll'] = match_data.get('bankroll', 1000)
-                predictions['kelly_fraction'] = match_data.get('kelly_fraction', 0.25)
-                
-                st.session_state.predictions = predictions
-                store_prediction_in_session(predictions)
-                
-                # Enhanced alignment status check
-                system_validation = safe_get(predictions, 'system_validation') or {}
-                alignment_status = system_validation.get('alignment', 'UNKNOWN')
-                
-                if alignment_status == 'PERFECT':
-                    st.success("""
-                    ✅ **PERFECT ALIGNMENT ACHIEVED!** 
+                if predictions:
+                    # Add enhanced information
+                    predictions['league'] = match_data['league']
+                    predictions['bankroll'] = match_data.get('bankroll', 1000)
+                    predictions['kelly_fraction'] = match_data.get('kelly_fraction', 0.25)
                     
-                    Enhanced Value Engine confirms Signal Engine predictions with:
-                    - League-specific calibration ✅
-                    - Realistic probability modeling ✅  
-                    - Professional bankroll management ✅
-                    """)
-                elif alignment_status == 'PARTIAL':
-                    st.warning("⚠️ PARTIAL ALIGNMENT: Some inconsistencies detected - review carefully")
+                    st.session_state.predictions = predictions
+                    store_prediction_in_session(predictions)
+                    
+                    # Enhanced alignment status check
+                    system_validation = safe_get(predictions, 'system_validation') or {}
+                    alignment_status = system_validation.get('alignment', 'UNKNOWN')
+                    
+                    if alignment_status == 'PERFECT':
+                        st.success("""
+                        ✅ **PERFECT ALIGNMENT ACHIEVED!** 
+                        
+                        Enhanced Value Engine confirms Signal Engine predictions with:
+                        - League-specific calibration ✅
+                        - Realistic probability modeling ✅  
+                        - Professional bankroll management ✅
+                        """)
+                    elif alignment_status == 'PARTIAL':
+                        st.warning("⚠️ PARTIAL ALIGNMENT: Some inconsistencies detected - review carefully")
+                    else:
+                        st.success("✅ Enhanced analysis completed with production-grade probabilities!")
+                    
+                    st.rerun()
                 else:
-                    st.success("✅ Enhanced analysis completed with production-grade probabilities!")
-                
-                st.rerun()
+                    st.error("❌ Failed to generate predictions")
                 
             except Exception as e:
                 st.error(f"❌ Enhanced analysis error: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
                 st.info("💡 Check input parameters and try again")
 
 if __name__ == "__main__":

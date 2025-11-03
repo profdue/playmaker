@@ -13,7 +13,7 @@ from datetime import datetime
 try:
     from prediction_engine import AdvancedFootballPredictor, TeamTierCalibrator
 except ImportError as e:
-    st.error(f"❌ Could not import prediction_engine: {e}")
+    st.error(f"❌ Could not import prediction_engine: {str(e)}")
     st.info("💡 Make sure prediction_engine.py is in the same directory")
     st.stop()
 
@@ -969,49 +969,7 @@ def display_analytics(predictions):
     
     st.markdown('<p class="main-header">📈 Advanced Analytics</p>', unsafe_allow_html=True)
     
-    # Monte Carlo Results
-    mc_results = safe_get(predictions, 'monte_carlo_results') or {}
-    
-    if mc_results:
-        st.markdown('<div class="section-title">⚡ Monte Carlo Simulation</div>', unsafe_allow_html=True)
-        
-        # Confidence Intervals
-        confidence_intervals = safe_get(mc_results, 'confidence_intervals') or {}
-        
-        if confidence_intervals:
-            markets = ['Home Win', 'Draw', 'Away Win', 'Over 2.5']
-            lower_bounds = [ci[0] * 100 for ci in confidence_intervals.values()]
-            upper_bounds = [ci[1] * 100 for ci in confidence_intervals.values()]
-            means = [(lower + upper) / 2 for lower, upper in zip(lower_bounds, upper_bounds)]
-            
-            fig = go.Figure()
-            
-            fig.add_trace(go.Scatter(
-                x=markets,
-                y=means,
-                mode='markers',
-                name='Mean Probability',
-                marker=dict(size=10, color='#667eea')
-            ))
-            
-            for i, market in enumerate(markets):
-                fig.add_trace(go.Scatter(
-                    x=[market, market],
-                    y=[lower_bounds[i], upper_bounds[i]],
-                    mode='lines',
-                    line=dict(color='#667eea', width=2),
-                    showlegend=False
-                ))
-            
-            fig.update_layout(
-                title="95% Confidence Intervals for Probabilities",
-                yaxis_title="Probability (%)",
-                xaxis_tickangle=-45
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-    
-    # Additional Metrics
+    # Data Quality and Intelligence Metrics
     col1, col2 = st.columns(2)
     
     with col1:
@@ -1019,26 +977,28 @@ def display_analytics(predictions):
         
         data_quality = safe_get(predictions, 'data_quality_score') or 0
         confidence = safe_get(predictions, 'confidence_score') or 0
+        football_iq = safe_get(predictions, 'apex_intelligence', 'football_iq_score') or 0
+        coherence = safe_get(predictions, 'apex_intelligence', 'narrative_coherence') or 0
         
         st.metric("Data Quality Score", f"{data_quality:.1f}%")
         st.metric("Overall Confidence", f"{confidence}%")
-        
-        # Volatility metrics
-        probability_volatility = safe_get(mc_results, 'probability_volatility') or {}
-        if probability_volatility:
-            avg_volatility = np.mean(list(probability_volatility.values())) * 100
-            st.metric("Probability Volatility", f"{avg_volatility:.2f}%")
+        st.metric("Football IQ Score", f"{football_iq:.1f}/100")
+        st.metric("Narrative Coherence", f"{coherence}%")
     
     with col2:
         st.markdown('<div class="section-title">🎲 Additional Predictions</div>', unsafe_allow_html=True)
         
         corners = safe_get(predictions, 'corner_predictions') or {}
-        timing = safe_get(predictions, 'timing_predictions') or {}
+        timing = safe_get(predictions, 'probabilities', 'goal_timing') or {}
         
         st.write(f"**Total Corners:** {corners.get('total', 'N/A')}")
-        st.write(f"**First Goal:** {timing.get('first_goal', 'N/A')}")
-        st.write(f"**Late Goals:** {timing.get('late_goals', 'N/A')}")
-        st.write(f"**Match Rhythm:** {timing.get('most_action', 'N/A')}")
+        st.write(f"**First Half Goal:** {timing.get('first_half', 'N/A')}%")
+        st.write(f"**Second Half Goal:** {timing.get('second_half', 'N/A')}%")
+        
+        # Narrative insights
+        narrative = safe_get(predictions, 'match_narrative') or {}
+        st.write(f"**Match Rhythm:** {narrative.get('expected_tempo', 'N/A').title()}")
+        st.write(f"**Defensive Stability:** {narrative.get('defensive_stability', 'N/A').title()}")
 
 def display_analysis(predictions):
     """Display analysis"""

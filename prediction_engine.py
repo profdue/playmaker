@@ -1,4 +1,4 @@
-# prediction_engine.py - PRODUCTION GRADE WITH ALL ENHANCEMENTS
+# prediction_engine.py - PRODUCTION GRADE WITH ALL ENHANCEMENTS (FIXED)
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -9,10 +9,6 @@ import logging
 from datetime import datetime
 import json
 from enum import Enum
-import shap
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import RandomForestClassifier
-import joblib
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -246,7 +242,7 @@ class LeagueAwareCalibrator:
         return np.clip(base_calibrated, 0.02, 0.98)
 
 class PredictionExplainer:
-    """SHAP-based Explanation Engine"""
+    """Enhanced Explanation Engine (No SHAP Dependency)"""
     
     def __init__(self):
         self.feature_descriptions = {
@@ -258,36 +254,64 @@ class PredictionExplainer:
             'xg_difference': 'Difference in expected goals between teams'
         }
     
-    def generate_explanation(self, features: Dict, probabilities: Dict) -> Dict[str, List[str]]:
+    def generate_explanation(self, features: Dict, probabilities: Dict, narrative: Dict) -> Dict[str, List[str]]:
         """Generate human-readable explanations for predictions"""
         
         explanations = {}
+        
+        # Extract key metrics
+        home_attack = features.get('home_xg_for', 1.5)
+        away_attack = features.get('away_xg_for', 1.2)
+        home_defense = features.get('home_xg_against', 1.3)
+        away_defense = features.get('away_xg_against', 1.4)
+        total_xg = features.get('total_xg_expected', 2.7)
         
         # BTTS explanation
         btts_prob = probabilities.get('btts_yes', 0.5)
         if btts_prob > 0.6:
             explanations['btts'] = [
-                f"Both teams show strong attacking form ({features.get('home_form_attack', 1.5):.2f} vs {features.get('away_form_attack', 1.5):.2f} xG)",
-                f"Defensive vulnerabilities present (home xGA: {features.get('home_xg_against', 1.3):.2f}, away xGA: {features.get('away_xg_against', 1.4):.2f})"
+                f"Both teams show strong attacking form (Home: {home_attack:.1f}, Away: {away_attack:.1f} xG)",
+                f"Defensive vulnerabilities present (Home concedes: {home_defense:.1f}, Away concedes: {away_defense:.1f} xG)"
+            ]
+        elif btts_prob < 0.4:
+            explanations['btts'] = [
+                f"Defensive solidity from one or both teams",
+                f"Limited attacking threat reduces BTTS probability"
             ]
         else:
             explanations['btts'] = [
-                f"One or both teams show defensive solidity",
-                f"Attacking form may be insufficient for both teams to score"
+                f"Balanced attacking and defensive capabilities",
+                f"Moderate chance for both teams to score"
             ]
         
         # Over/Under explanation
         over_prob = probabilities.get('over_25', 0.5)
         if over_prob > 0.6:
             explanations['over_under'] = [
-                f"High expected goal volume (total xG: {features.get('total_xg_expected', 2.7):.2f})",
-                f"Attacking styles suggest open game"
+                f"High expected goal volume (Total xG: {total_xg:.2f})",
+                f"Attacking styles and defensive vulnerabilities suggest multiple goals"
+            ]
+        elif over_prob < 0.4:
+            explanations['over_under'] = [
+                f"Moderate expected goal volume (Total xG: {total_xg:.2f})",
+                f"Defensive organization likely to limit scoring opportunities"
             ]
         else:
             explanations['over_under'] = [
-                f"Moderate expected goal volume (total xG: {features.get('total_xg_expected', 2.7):.2f})",
-                f"Defensive organization may limit scoring"
+                f"Average expected goal volume (Total xG: {total_xg:.2f})",
+                f"Game could go either way in terms of total goals"
             ]
+            
+        # Add narrative-based explanations
+        style_conflict = narrative.get('style_conflict', 'balanced')
+        defensive_stability = narrative.get('defensive_stability', 'mixed')
+        
+        if style_conflict == "attacking_vs_attacking":
+            explanations['style'] = ["Open game expected with both teams prioritizing attack"]
+        elif style_conflict == "attacking_vs_defensive":
+            explanations['style'] = ["Tactical battle between attacking initiative and defensive organization"]
+        else:
+            explanations['style'] = ["Balanced tactical approach from both teams"]
             
         return explanations
 
@@ -441,7 +465,6 @@ class ApexIntelligenceEngine:
         self._setup_parameters()
         
     def _validate_and_enhance_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
-        # ... (keep existing validation logic from original)
         enhanced_data = match_data.copy()
         
         # Ensure required fields exist
@@ -643,12 +666,11 @@ class ApexIntelligenceEngine:
             over_25_prob=market_probs['over_25'], 
             btts_prob=market_probs['btts_yes'], 
             exact_scores=market_probs['exact_scores'],
-            confidence_intervals={},  # Would calculate in enhanced version
-            probability_volatility={}  # Would calculate in enhanced version
+            confidence_intervals={},
+            probability_volatility={}
         )
 
     def _calculate_data_quality(self) -> float:
-        # ... (keep existing data quality logic)
         score = 0
         max_score = 100
         
@@ -782,7 +804,7 @@ class ApexIntelligenceEngine:
         )
         
         probabilities = {'btts_yes': calibrated_btts, 'over_25': calibrated_over}
-        explanations = self.goal_model.explainer.generate_explanation(features, probabilities)
+        explanations = self.goal_model.explainer.generate_explanation(features, probabilities, self.narrative.to_dict())
         
         # Prepare prediction set for coherence assessment
         prediction_set = {

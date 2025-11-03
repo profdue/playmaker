@@ -264,14 +264,14 @@ class TeamTierCalibrator:
 
 class SignalEngine:
     """
-    REALISTIC PREDICTIVE ENGINE - With Enhanced BTTS and Over/Under Calibration
+    INTELLIGENT PREDICTIVE ENGINE - Data-Driven with Common Sense
     """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.data = self._validate_and_enhance_data(match_data)
         self.calibration_data = calibration_data or {}
         self.calibrator = TeamTierCalibrator()
-        self._setup_realistic_parameters()
+        self._setup_intelligent_parameters()
         self.match_context = MatchContext.UNPREDICTABLE
         
     def _validate_and_enhance_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -390,8 +390,8 @@ class SignalEngine:
         
         return (score / max_score) * 100
     
-    def _setup_realistic_parameters(self):
-        """REALISTIC calibration parameters"""
+    def _setup_intelligent_parameters(self):
+        """INTELLIGENT calibration parameters"""
         self.calibration_params = {
             'form_decay_rate': 0.85,
             'h2h_weight': 0.15,
@@ -413,25 +413,34 @@ class SignalEngine:
         return multipliers.get(motivation_level, 1.0)
 
     def _determine_match_context(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> MatchContext:
-        """Realistic context determination with tier awareness"""
-        home_tier = self.calibrator.get_team_tier(home_team, league)
-        away_tier = self.calibrator.get_team_tier(away_team, league)
-        
+        """Intelligent context determination"""
         total_xg = home_xg + away_xg
         xg_difference = home_xg - away_xg
         
-        # Tier-aware context determination
-        if home_tier == 'ELITE' and away_tier == 'WEAK' and xg_difference > 0.5:
-            return MatchContext.HOME_DOMINANCE
-        elif away_tier == 'ELITE' and home_tier == 'WEAK' and xg_difference < -0.5:
-            return MatchContext.AWAY_COUNTER
+        # LEAGUE-SPECIFIC CONTEXT
+        league_profile = self.calibrator.league_baselines.get(league, self.calibrator.league_baselines['default'])['scoring_profile']
         
-        if total_xg < 2.2:
+        # Adjust thresholds based on league scoring profile
+        if league_profile == 'very_high':  # Bundesliga, Eredivisie
+            defensive_threshold = 2.8
+            offensive_threshold = 3.6
+        elif league_profile == 'high':  # Premier League
+            defensive_threshold = 2.5
+            offensive_threshold = 3.3
+        else:  # Medium/Low scoring leagues
+            defensive_threshold = 2.2
+            offensive_threshold = 3.0
+        
+        if total_xg < defensive_threshold:
             return MatchContext.DEFENSIVE_BATTLE
-        elif total_xg > 3.2:
+        elif total_xg > offensive_threshold:
             return MatchContext.OFFENSIVE_SHOWDOWN
         elif abs(xg_difference) < 0.3:
             return MatchContext.TACTICAL_STALEMATE
+        elif xg_difference > 0.5:
+            return MatchContext.HOME_DOMINANCE
+        elif xg_difference < -0.5:
+            return MatchContext.AWAY_COUNTER
         
         return MatchContext.UNPREDICTABLE
 
@@ -465,129 +474,154 @@ class SignalEngine:
             return 1.0
 
     def _calculate_enhanced_btts_probability(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> float:
-        """Enhanced BTTS probability with team-tier awareness"""
+        """INTELLIGENT BTTS probability - Data-Driven Version"""
         
         # Base BTTS from independent probabilities
         home_score_prob = 1 - math.exp(-home_xg)
         away_score_prob = 1 - math.exp(-away_xg)
         base_btts = home_score_prob * away_score_prob
         
-        # Tier-based adjustments - FIXED: Less extreme defensive multipliers
-        home_tier = self.calibrator.get_team_tier(home_team, league)
-        away_tier = self.calibrator.get_team_tier(away_team, league)
-        
-        # Defensive quality adjustments - FIXED: More balanced multipliers
-        tier_defense_multiplier = {
-            'ELITE': 0.85,    # Reduced from 0.7
-            'STRONG': 0.92,   # Reduced from 0.85
-            'MEDIUM': 1.0, 
-            'WEAK': 1.08      # Reduced from 1.2
+        # LEAGUE-SPECIFIC ADJUSTMENTS - Data matters most
+        league_adjustments = {
+            'bundesliga': 1.25,    # HIGH scoring league
+            'eredivisie': 1.20,    # HIGH scoring league  
+            'premier_league': 1.10,
+            'liga_mx': 1.08,
+            'la_liga': 1.0,
+            'serie_a': 0.95,
+            'liga_portugal': 0.95,
+            'brasileirao': 0.92,
+            'ligue_1': 0.90,       # LOW scoring league
         }
         
-        defense_factor = (tier_defense_multiplier.get(home_tier, 1.0) + 
-                         tier_defense_multiplier.get(away_tier, 1.0)) / 2
+        league_factor = league_adjustments.get(league, 1.0)
         
-        # Match context adjustments
-        context_adjustment = {
-            MatchContext.OFFENSIVE_SHOWDOWN: 1.25,
-            MatchContext.DEFENSIVE_BATTLE: 0.75,  # Increased from 0.65
-            MatchContext.TACTICAL_STALEMATE: 0.95, # Increased from 0.9
-            MatchContext.HOME_DOMINANCE: 0.85,    # Increased from 0.8
-            MatchContext.AWAY_COUNTER: 0.85,      # Increased from 0.8
-            MatchContext.UNPREDICTABLE: 1.1
-        }.get(self.match_context, 1.0)
+        # RECENT FORM DOMINATES - not artificial tiers
+        home_goals_avg = self.data.get('home_goals', 0) / 6.0
+        away_goals_avg = self.data.get('away_goals', 0) / 6.0
+        home_conceded_avg = self.data.get('home_conceded', 0) / 6.0  
+        away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
         
-        # Recent form consideration (clean sheets data)
-        home_clean_sheets = self.data.get('home_clean_sheets', 1.0) / 6.0
-        away_clean_sheets = self.data.get('away_clean_sheets', 1.0) / 6.0
-        form_factor = 1.0 - ((home_clean_sheets + away_clean_sheets) * 0.2)  # Reduced from 0.3
+        # If both teams score and concede regularly → HIGH BTTS
+        attacking_form = (home_goals_avg + away_goals_avg) / 2.7
+        defensive_weakness = (home_conceded_avg + away_conceded_avg) / 2.7
         
-        # Historical BTTS rate
-        home_btts_rate = self.data.get('home_btts_rate', 0.5)
-        away_btts_rate = self.data.get('away_btts_rate', 0.5)
-        historical_factor = (home_btts_rate + away_btts_rate) / 2
+        # Intelligent form factor based on actual performance
+        if attacking_form > 1.2 and defensive_weakness > 1.2:
+            form_factor = 1.3  # Both teams scoring and conceding
+        elif attacking_form > 1.0 and defensive_weakness > 1.0:
+            form_factor = 1.15
+        elif attacking_form < 0.8 and defensive_weakness < 0.8:
+            form_factor = 0.7  # Both teams struggling to score/concede
+        else:
+            form_factor = 1.0
         
-        adjusted_btts = base_btts * defense_factor * context_adjustment * form_factor * historical_factor
+        # H2H goals matter - if history shows goals, trust it
+        h2h_data = self.data.get('h2h_data', {})
+        h2h_matches = h2h_data.get('matches', 0)
+        if h2h_matches >= 3:
+            h2h_goals_avg = (h2h_data.get('home_goals', 0) + h2h_data.get('away_goals', 0)) / h2h_matches
+            if h2h_goals_avg > 3.0:
+                h2h_factor = 1.25
+            elif h2h_goals_avg > 2.5:
+                h2h_factor = 1.15
+            elif h2h_goals_avg < 1.5:
+                h2h_factor = 0.8
+            else:
+                h2h_factor = 1.0
+        else:
+            h2h_factor = 1.0
         
-        return max(0.15, min(0.85, adjusted_btts))
+        # FINAL CALCULATION - Trust the evidence, not artificial adjustments
+        adjusted_btts = base_btts * league_factor * form_factor * h2h_factor
+        
+        return max(0.25, min(0.85, adjusted_btts))
 
     def _calculate_enhanced_over_under(self, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> Dict[str, float]:
-        """Enhanced Over/Under probabilities with tactical awareness"""
+        """INTELLIGENT Over/Under - Data-Driven Version"""
         
         total_xg = home_xg + away_xg
         
-        # Base probabilities from Poisson - FIXED: Trust the Poisson more
+        # Base probabilities from Poisson - THIS IS WHAT MATTERS
         over_25_base = 1 - poisson.cdf(2, total_xg)
-        under_25_base = poisson.cdf(2, total_xg)
         
-        # Tactical context adjustments - FIXED: Less extreme adjustments
-        home_tier = self.calibrator.get_team_tier(home_team, league)
-        away_tier = self.calibrator.get_team_tier(away_team, league)
-        
-        # High-scoring vs low-scoring team tendencies - FIXED: More balanced
-        tier_scoring_profile = {
-            'ELITE': 1.08,    # Reduced from 1.15
-            'STRONG': 1.03,   # Reduced from 1.05
-            'MEDIUM': 1.0, 
-            'WEAK': 0.95      # Increased from 0.9
+        # LEAGUE DOMINATES - Adjust based on actual league scoring
+        league_multipliers = {
+            'bundesliga': 1.30,    # Highest scoring
+            'eredivisie': 1.25,    # Very high scoring
+            'premier_league': 1.15,
+            'liga_mx': 1.10,
+            'la_liga': 1.0,
+            'serie_a': 0.95,
+            'liga_portugal': 0.95,
+            'brasileirao': 0.92,
+            'ligue_1': 0.85,       # Lowest scoring
         }
         
-        scoring_tendency = (tier_scoring_profile[home_tier] + tier_scoring_profile[away_tier]) / 2
+        league_factor = league_multipliers.get(league, 1.0)
         
-        # Match situation awareness - FIXED: Less extreme adjustments
-        if (home_tier == 'ELITE' and away_tier == 'WEAK') or (away_tier == 'ELITE' and home_tier == 'WEAK'):
-            # One-sided matches often have higher scoring
-            scoring_tendency *= 1.05  # Reduced from 1.1
-        
-        # Recent goal trends - FIXED: Less impact from recent form
+        # RECENT GOALS DOMINATE - Trust the actual data
         home_goals_avg = self.data.get('home_goals', 0) / 6.0
         away_goals_avg = self.data.get('away_goals', 0) / 6.0
-        recent_scoring = (home_goals_avg + away_goals_avg) / 2.7  # Normalize to league average
+        recent_goals_avg = (home_goals_avg + away_goals_avg)
         
-        momentum_factor = min(1.2, max(0.8, recent_scoring))  # Reduced range from 0.7-1.3
+        # Intelligent recent form adjustment
+        if recent_goals_avg > 3.0:
+            recent_factor = 1.25  # Very high recent scoring
+        elif recent_goals_avg > 2.5:
+            recent_factor = 1.15  # High recent scoring
+        elif recent_goals_avg < 1.5:
+            recent_factor = 0.8   # Low recent scoring
+        else:
+            recent_factor = 1.0
         
-        # Historical Over/Under rates
-        home_over_rate = self.data.get('home_over_25_rate', 0.5)
-        away_over_rate = self.data.get('away_over_25_rate', 0.5)
-        historical_factor = (home_over_rate + away_over_rate) / 2
+        # H2H goals matter - if history shows goals, trust it
+        h2h_data = self.data.get('h2h_data', {})
+        h2h_matches = h2h_data.get('matches', 0)
+        if h2h_matches >= 3:
+            h2h_goals_avg = (h2h_data.get('home_goals', 0) + h2h_data.get('away_goals', 0)) / h2h_matches
+            if h2h_goals_avg > 3.0:
+                h2h_factor = 1.2
+            elif h2h_goals_avg > 2.5:
+                h2h_factor = 1.1
+            elif h2h_goals_avg < 1.5:
+                h2h_factor = 0.85
+            else:
+                h2h_factor = 1.0
+        else:
+            h2h_factor = 1.0
         
-        # Apply adjustments - FIXED: Lighter adjustments overall
-        over_25_adj = over_25_base * scoring_tendency * momentum_factor * historical_factor
-        under_25_adj = under_25_base / (scoring_tendency * momentum_factor * historical_factor)
-        
-        # Normalize to ensure they sum to ~1.0
-        total = over_25_adj + under_25_adj
-        if total > 0:
-            over_25_adj /= total
-            under_25_adj /= total
+        # FINAL - Evidence-based prediction
+        over_25_final = over_25_base * league_factor * recent_factor * h2h_factor
+        under_25_final = 1 - over_25_final
         
         return {
-            'over_25': max(0.1, min(0.9, over_25_adj)),
-            'under_25': max(0.1, min(0.9, under_25_adj))
+            'over_25': max(0.2, min(0.8, over_25_final)),
+            'under_25': max(0.2, min(0.8, under_25_final))
         }
 
     def _calculate_realistic_xg(self) -> Tuple[float, float]:
-        """Calculate REALISTIC predictive xG with multi-league tier calibration"""
+        """Calculate REALISTIC predictive xG with intelligent calibration"""
         league = self.data.get('league', 'premier_league')
         
         # Get tier-based baselines with league context
         home_baseline, home_def_baseline = self.calibrator.get_tier_baselines(self.data['home_team'], league)
         away_baseline, away_def_baseline = self.calibrator.get_tier_baselines(self.data['away_team'], league)
         
-        # Start from tier baselines instead of raw data
+        # Start from tier baselines but let recent form dominate
         home_goals_avg = self.data.get('home_goals', 0) / 6.0
         away_goals_avg = self.data.get('away_goals', 0) / 6.0
         
-        # Blend recent performance with tier baseline
-        home_attack = (home_goals_avg * 0.4) + (home_baseline * 0.6)
-        away_attack = (away_goals_avg * 0.4) + (away_baseline * 0.6)
+        # Blend recent performance with tier baseline - FORM DOMINATES
+        home_attack = (home_goals_avg * 0.6) + (home_baseline * 0.4)  # 60% form, 40% baseline
+        away_attack = (away_goals_avg * 0.6) + (away_baseline * 0.4)  # 60% form, 40% baseline
         
         home_conceded_avg = self.data.get('home_conceded', 0) / 6.0
         away_conceded_avg = self.data.get('away_conceded', 0) / 6.0
         
         # Blend defensive performance with tier baseline
-        home_defense = (home_conceded_avg * 0.4) + (home_def_baseline * 0.6)
-        away_defense = (away_conceded_avg * 0.4) + (away_def_baseline * 0.6)
+        home_defense = (home_conceded_avg * 0.6) + (home_def_baseline * 0.4)
+        away_defense = (away_conceded_avg * 0.6) + (away_def_baseline * 0.4)
         
         # Calculate xG using blended values
         league_avg = self.calibrator.league_baselines.get(league, self.calibrator.league_baselines['default'])['avg_goals']
@@ -658,7 +692,7 @@ class SignalEngine:
         return adjusted_home_xg, adjusted_away_xg
 
     def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
-        """Run Enhanced Monte Carlo simulation with better BTTS and Over/Under"""
+        """Run Enhanced Monte Carlo simulation with intelligent BTTS and Over/Under"""
         np.random.seed(42)
         
         if self.match_context == MatchContext.DEFENSIVE_BATTLE:
@@ -679,15 +713,15 @@ class SignalEngine:
         home_goals_sim = A + C
         away_goals_sim = B + C
         
-        # Use ENHANCED calculations for BTTS and Over/Under
+        # Use INTELLIGENT calculations for BTTS and Over/Under
         home_team = self.data['home_team']
         away_team = self.data['away_team']
         league = self.data.get('league', 'premier_league')
         
-        # Enhanced BTTS probability
+        # Intelligent BTTS probability
         btts_prob = self._calculate_enhanced_btts_probability(home_xg, away_xg, home_team, away_team, league)
         
-        # Enhanced Over/Under probabilities
+        # Intelligent Over/Under probabilities
         over_under_probs = self._calculate_enhanced_over_under(home_xg, away_xg, home_team, away_team, league)
         
         # Keep existing match outcome logic (which is working well)
@@ -695,7 +729,7 @@ class SignalEngine:
         draws = np.sum(home_goals_sim == away_goals_sim) / iterations
         away_wins = np.sum(home_goals_sim < away_goals_sim) / iterations
         
-        # Use enhanced values instead of simulation for BTTS and Over/Under
+        # Use intelligent values instead of simulation for BTTS and Over/Under
         over_25 = over_under_probs['over_25']
         
         exact_scores = {}
@@ -780,12 +814,12 @@ class SignalEngine:
         return max(20, min(90, int(confidence)))
     
     def _assess_risk(self, mc_results: MonteCarloResults, confidence: int, home_xg: float, away_xg: float, home_team: str, away_team: str, league: str) -> Dict[str, str]:
-        """Realistic risk assessment with tier awareness"""
+        """Intelligent risk assessment"""
         home_win_prob = mc_results.home_win_prob
         home_tier = self.calibrator.get_team_tier(home_team, league)
         away_tier = self.calibrator.get_team_tier(away_team, league)
         
-        # Tier-aware risk assessment
+        # Intelligent risk assessment
         if (home_tier == 'ELITE' and away_tier == 'WEAK' and
             home_win_prob > 0.75 and confidence > 75 and
             self.data['data_quality_score'] > 75):
@@ -811,7 +845,7 @@ class SignalEngine:
         }
 
     def generate_predictions(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate REALISTIC football predictions with enhanced BTTS/Over-Under calibration"""
+        """Generate INTELLIGENT football predictions with data-driven calibration"""
         
         home_team = self.data['home_team']
         away_team = self.data['away_team']
@@ -943,7 +977,7 @@ class SignalEngine:
     
     def _generate_summary(self, home_team: str, away_team: str, home_xg: float, 
                         away_xg: float, mc_results: MonteCarloResults, league: str) -> str:
-        """Generate realistic football summary with tier awareness"""
+        """Generate intelligent football summary"""
         
         home_win_prob = mc_results.home_win_prob
         home_tier = self.calibrator.get_team_tier(home_team, league)
@@ -963,6 +997,9 @@ class SignalEngine:
         
         elif self.match_context == MatchContext.DEFENSIVE_BATTLE:
             return f"Defensive battle anticipated between {home_team} and {away_team}. Low expected goals ({home_xg:.1f} - {away_xg:.1f}) suggest a tight, cagey affair."
+        
+        elif self.match_context == MatchContext.OFFENSIVE_SHOWDOWN:
+            return f"Goals expected in this offensive showdown between {home_team} and {away_team}. High expected goals ({home_xg:.1f} - {away_xg:.1f}) point towards an entertaining match with multiple scoring opportunities."
         
         elif home_win_prob > 0.55 and home_xg > away_xg + 0.4:
             return f"{home_team} hold the advantage with better expected goal metrics. {away_team} will need a disciplined performance to get a result."
@@ -1239,7 +1276,7 @@ class ValueDetectionEngine:
 
 class AdvancedFootballPredictor:
     """
-    PERFECTLY ALIGNED ORCHESTRATOR: Multi-League Support
+    INTELLIGENT ORCHESTRATOR: Data-Driven Multi-League Support
     """
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
@@ -1254,7 +1291,7 @@ class AdvancedFootballPredictor:
         self.prediction_history = []
     
     def generate_comprehensive_analysis(self, mc_iterations: int = 10000) -> Dict[str, Any]:
-        """Generate comprehensive analysis with PERFECT alignment"""
+        """Generate comprehensive analysis with INTELLIGENT alignment"""
         
         football_predictions = self.signal_engine.generate_predictions(mc_iterations)
         
@@ -1270,7 +1307,7 @@ class AdvancedFootballPredictor:
         return comprehensive_result
     
     def _validate_system_output(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> Dict[str, str]:
-        """Validate system output for perfect alignment"""
+        """Validate system output for intelligent alignment"""
         
         issues = []
         
@@ -1336,91 +1373,3 @@ class AdvancedFootballPredictor:
     def get_prediction_history(self) -> List[Dict]:
         """Get prediction history for analysis"""
         return self.prediction_history
-
-
-# =============================================================================
-# TEST THE ENHANCED CALIBRATION
-# =============================================================================
-
-def test_enhanced_calibration():
-    """Test the enhanced calibration system with Burnley vs Arsenal"""
-    
-    match_data = {
-        'home_team': 'Burnley',
-        'away_team': 'Arsenal', 
-        'league': 'premier_league',
-        'home_goals': 8,    # Last 6 games
-        'away_goals': 12,   # Last 6 games
-        'home_conceded': 14,
-        'away_conceded': 6,
-        'home_clean_sheets': 1,    # Enhanced BTTS data
-        'away_clean_sheets': 3,    # Enhanced BTTS data
-        'home_btts_rate': 0.67,    # BTTS in last 6 games
-        'away_btts_rate': 0.50,    # BTTS in last 6 games
-        'home_over_25_rate': 0.83, # Over 2.5 in last 6 games
-        'away_over_25_rate': 0.67, # Over 2.5 in last 6 games
-        'home_form': [1, 0, 1, 0, 0, 1],  # Recent form points
-        'away_form': [3, 3, 1, 3, 3, 3],  # Recent form points
-        'h2h_data': {
-            'matches': 5,
-            'home_wins': 1,
-            'away_wins': 3, 
-            'draws': 1,
-            'home_goals': 4,
-            'away_goals': 9
-        },
-        'injuries': {
-            'home': 1,  # Minor absences
-            'away': 2   # Regular starters out
-        },
-        'motivation': {
-            'home': 'High',    # Fighting relegation
-            'away': 'Normal'   # Title challenge
-        },
-        'market_odds': {
-            '1x2 Home': 6.50,   # ~15.4% implied
-            '1x2 Draw': 4.50,   # ~22.2% implied  
-            '1x2 Away': 1.50,   # ~66.7% implied
-            'Over 2.5 Goals': 1.80,
-            'Under 2.5 Goals': 2.00,
-            'BTTS Yes': 1.90,
-            'BTTS No': 1.90
-        }
-    }
-    
-    predictor = AdvancedFootballPredictor(match_data)
-    results = predictor.generate_comprehensive_analysis()
-    
-    print("🎯 ENHANCED CALIBRATED PREDICTION RESULTS")
-    print("=" * 50)
-    print(f"Match: {results['match']}")
-    print(f"League: {results.get('league', 'premier_league')}")
-    print(f"Team Tiers: {results['team_tiers']['home']} vs {results['team_tiers']['away']}")
-    print(f"Expected Goals: {results['expected_goals']['home']} - {results['expected_goals']['away']}")
-    print(f"Match Context: {results['match_context']}")
-    print(f"Confidence: {results['confidence_score']}%")
-    print()
-    
-    print("📊 ENHANCED PROBABILITIES:")
-    outcomes = results['probabilities']['match_outcomes']
-    print(f"Home Win: {outcomes['home_win']}%")
-    print(f"Draw: {outcomes['draw']}%") 
-    print(f"Away Win: {outcomes['away_win']}%")
-    print()
-    
-    print("⚽ ENHANCED GOALS ANALYSIS:")
-    print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']}%")
-    print(f"Over 2.5: {results['probabilities']['over_under']['over_25']}%")
-    print()
-    
-    print("💰 VALUE SIGNALS:")
-    for signal in results['betting_signals']:
-        print(f"- {signal['market']}: +{signal['edge']}% edge (Stake: {signal['recommended_stake']*100:.1f}%)")
-    
-    print()
-    print("✅ SYSTEM VALIDATION:")
-    print(f"Status: {results['system_validation']['status']}")
-    print(f"Alignment: {results['system_validation']['alignment']}")
-
-if __name__ == "__main__":
-    test_enhanced_calibration()

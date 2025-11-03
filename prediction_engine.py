@@ -1,4 +1,4 @@
-# prediction_engine.py - COMPLETE APEX INTELLIGENCE VERSION
+# prediction_engine.py - COMPLETE WORKING VERSION
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -88,21 +88,42 @@ class TeamTierCalibrator:
             'eredivisie': {'avg_goals': 3.0, 'home_advantage': 0.30},
         }
         
+        # COMPLETE TEAM DATABASES FOR ALL LEAGUES
         self.team_databases = {
             'premier_league': {
                 'Arsenal': 'ELITE', 'Man City': 'ELITE', 'Liverpool': 'ELITE',
                 'Tottenham': 'STRONG', 'Aston Villa': 'STRONG', 'Newcastle': 'STRONG',
                 'West Ham': 'MEDIUM', 'Brighton': 'MEDIUM', 'Wolves': 'MEDIUM',
+                'Chelsea': 'STRONG', 'Man United': 'STRONG', 'Crystal Palace': 'MEDIUM',
+                'Fulham': 'MEDIUM', 'Bournemouth': 'MEDIUM', 'Brentford': 'MEDIUM',
+                'Everton': 'MEDIUM', 'Nottingham Forest': 'MEDIUM', 'Luton': 'WEAK',
+                'Burnley': 'WEAK', 'Sheffield United': 'WEAK'
             },
             'la_liga': {
                 'Real Madrid': 'ELITE', 'Barcelona': 'ELITE', 'Atletico Madrid': 'ELITE',
                 'Athletic Bilbao': 'STRONG', 'Real Sociedad': 'STRONG', 'Sevilla': 'STRONG',
                 'Real Betis': 'MEDIUM', 'Getafe': 'MEDIUM', 'Osasuna': 'MEDIUM',
+                'Valencia': 'MEDIUM', 'Villarreal': 'MEDIUM', 'Girona': 'STRONG',
+                'Las Palmas': 'MEDIUM', 'Rayo Vallecano': 'MEDIUM', 'Mallorca': 'MEDIUM',
+                'Alaves': 'WEAK', 'Celta Vigo': 'WEAK', 'Cadiz': 'WEAK',
+                'Granada': 'WEAK', 'Almeria': 'WEAK'
+            },
+            'serie_a': {
+                'Inter': 'ELITE', 'Juventus': 'ELITE', 'AC Milan': 'ELITE',
+                'Napoli': 'STRONG', 'Atalanta': 'STRONG', 'Roma': 'STRONG',
+                'Lazio': 'STRONG', 'Fiorentina': 'MEDIUM', 'Bologna': 'MEDIUM',
+                'Monza': 'MEDIUM', 'Torino': 'MEDIUM', 'Genoa': 'MEDIUM',
+                'Lecce': 'MEDIUM', 'Sassuolo': 'MEDIUM', 'Frosinone': 'WEAK',
+                'Udinese': 'WEAK', 'Verona': 'WEAK', 'Empoli': 'WEAK',
+                'Cagliari': 'WEAK', 'Salernitana': 'WEAK'
             },
             'bundesliga': {
                 'Bayern Munich': 'ELITE', 'Bayer Leverkusen': 'ELITE', 'Borussia Dortmund': 'ELITE',
                 'RB Leipzig': 'STRONG', 'Eintracht Frankfurt': 'STRONG', 'Wolfsburg': 'STRONG',
                 'Freiburg': 'STRONG', 'Hoffenheim': 'STRONG', 'Augsburg': 'MEDIUM',
+                'Stuttgart': 'STRONG', 'Borussia Mönchengladbach': 'MEDIUM', 'Werder Bremen': 'MEDIUM',
+                'Heidenheim': 'MEDIUM', 'Union Berlin': 'MEDIUM', 'Bochum': 'WEAK',
+                'Mainz': 'WEAK', 'Köln': 'WEAK', 'Darmstadt': 'WEAK'
             },
             'ligue_1': {
                 'PSG': 'ELITE', 'Monaco': 'STRONG', 'Marseille': 'STRONG',
@@ -110,6 +131,40 @@ class TeamTierCalibrator:
                 'Nice': 'STRONG', 'Lens': 'STRONG', 'Reims': 'MEDIUM',
                 'Montpellier': 'MEDIUM', 'Toulouse': 'MEDIUM', 'Strasbourg': 'MEDIUM',
                 'Nantes': 'MEDIUM', 'Le Havre': 'MEDIUM', 'Brest': 'MEDIUM',
+                'Metz': 'WEAK', 'Lorient': 'WEAK', 'Clermont': 'WEAK'
+            },
+            'liga_portugal': {
+                'Benfica': 'ELITE', 'Porto': 'ELITE', 'Sporting CP': 'ELITE',
+                'Braga': 'STRONG', 'Vitoria Guimaraes': 'STRONG', 'Famalicao': 'MEDIUM',
+                'Casa Pia': 'MEDIUM', 'Rio Ave': 'MEDIUM', 'Estoril': 'MEDIUM',
+                'Gil Vicente': 'MEDIUM', 'Arouca': 'MEDIUM', 'Chaves': 'MEDIUM',
+                'Portimonense': 'MEDIUM', 'Boavista': 'MEDIUM', 'Vizela': 'WEAK',
+                'Estrela Amadora': 'WEAK', 'Farense': 'WEAK'
+            },
+            'brasileirao': {
+                'Flamengo': 'ELITE', 'Palmeiras': 'ELITE', 'Sao Paulo': 'ELITE',
+                'Atletico Mineiro': 'STRONG', 'Gremio': 'STRONG', 'Fluminense': 'STRONG',
+                'Botafogo': 'STRONG', 'Corinthians': 'STRONG', 'Internacional': 'STRONG',
+                'Fortaleza': 'MEDIUM', 'Cruzeiro': 'MEDIUM', 'Bahia': 'MEDIUM',
+                'Vasco da Gama': 'MEDIUM', 'Bragantino': 'MEDIUM', 'Athletico Paranaense': 'MEDIUM',
+                'Santos': 'MEDIUM', 'Cuiaba': 'WEAK', 'Goias': 'WEAK',
+                'Coritiba': 'WEAK', 'America MG': 'WEAK'
+            },
+            'liga_mx': {
+                'America': 'ELITE', 'Monterrey': 'ELITE', 'Tigres': 'ELITE',
+                'Cruz Azul': 'STRONG', 'Guadalajara': 'STRONG', 'Pumas': 'STRONG',
+                'Toluca': 'STRONG', 'Santos Laguna': 'MEDIUM', 'Pachuca': 'MEDIUM',
+                'Leon': 'MEDIUM', 'Juarez': 'MEDIUM', 'Mazatlan': 'MEDIUM',
+                'Necaxa': 'MEDIUM', 'Queretaro': 'MEDIUM', 'Atlas': 'MEDIUM',
+                'Tijuana': 'WEAK', 'Puebla': 'WEAK', 'San Luis': 'WEAK'
+            },
+            'eredivisie': {
+                'Ajax': 'ELITE', 'PSV': 'ELITE', 'Feyenoord': 'ELITE',
+                'AZ Alkmaar': 'STRONG', 'Twente': 'STRONG', 'Sparta Rotterdam': 'MEDIUM',
+                'Heerenveen': 'MEDIUM', 'NEC Nijmegen': 'MEDIUM', 'Utrecht': 'MEDIUM',
+                'Go Ahead Eagles': 'MEDIUM', 'Fortuna Sittard': 'MEDIUM', 'Heracles': 'MEDIUM',
+                'Almere City': 'MEDIUM', 'Excelsior': 'WEAK', 'RKC Waalwijk': 'WEAK',
+                'Volendam': 'WEAK', 'Vitesse': 'WEAK'
             }
         }
     

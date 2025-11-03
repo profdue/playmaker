@@ -214,7 +214,7 @@ class LeagueAwareCalibrator:
             'premier_league': {'goal_intensity': 'high', 'defensive_variance': 'medium', 'calibration_factor': 1.0},
             'la_liga': {'goal_intensity': 'medium', 'defensive_variance': 'low', 'calibration_factor': 0.98},
             'serie_a': {'goal_intensity': 'medium', 'defensive_variance': 'low', 'calibration_factor': 0.96},
-            'bundesliga': {'goal_intensity': 'very_high', 'defensive_variance': 'high', 'calibration_factor': 1.05},
+            'bundesliga': {'goal_intensity': 'very_high', 'defensive_variance': 'high', 'calibration_factor': 1.08},
             'ligue_1': {'goal_intensity': 'low', 'defensive_variance': 'medium', 'calibration_factor': 0.95},
             'liga_portugal': {'goal_intensity': 'medium', 'defensive_variance': 'medium', 'calibration_factor': 0.97},
             'brasileirao': {'goal_intensity': 'high', 'defensive_variance': 'high', 'calibration_factor': 1.02},

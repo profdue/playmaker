@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 import json
 from enum import Enum
+import sqlite3
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -45,11 +46,134 @@ class MonteCarloResults:
     confidence_intervals: Dict[str, Tuple[float, float]]
     probability_volatility: Dict[str, float]
 
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder for datetime objects"""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+class PredictionLogger:
+    """Professional-grade prediction logger with database support"""
+    
+    def __init__(self, use_database: bool = False):
+        self.use_database = use_database
+        if use_database:
+            self._init_database()
+    
+    def _init_database(self):
+        """Initialize SQLite database for prediction logging"""
+        try:
+            conn = sqlite3.connect('predictions.db')
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS prediction_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    match_id TEXT NOT NULL,
+                    league TEXT NOT NULL,
+                    home_team TEXT NOT NULL,
+                    away_team TEXT NOT NULL,
+                    home_tier TEXT NOT NULL,
+                    away_tier TEXT NOT NULL,
+                    home_xg REAL NOT NULL,
+                    away_xg REAL NOT NULL,
+                    total_xg REAL NOT NULL,
+                    poisson_over25 REAL NOT NULL,
+                    historical_over25 REAL NOT NULL,
+                    final_over25 REAL NOT NULL,
+                    base_btts REAL NOT NULL,
+                    historical_btts REAL NOT NULL,
+                    final_btts_yes REAL NOT NULL,
+                    match_context TEXT NOT NULL,
+                    confidence_score INTEGER NOT NULL,
+                    data_quality REAL NOT NULL,
+                    actual_goals_home INTEGER,
+                    actual_goals_away INTEGER,
+                    actual_over25 INTEGER,
+                    actual_btts INTEGER,
+                    created_at TEXT NOT NULL
+                )
+            ''')
+            
+            conn.commit()
+            conn.close()
+            logger.info("✅ Prediction database initialized")
+        except Exception as e:
+            logger.warning(f"❌ Database initialization failed: {e}. Using JSONL only.")
+    
+    def log_prediction(self, debug_data: Dict, actual_result: Dict = None):
+        """Log prediction with optional actual results"""
+        
+        # Always log to JSONL for immediate analysis
+        self._log_to_jsonl(debug_data, actual_result)
+        
+        # Optionally log to database
+        if self.use_database:
+            self._log_to_database(debug_data, actual_result)
+    
+    def _log_to_jsonl(self, debug_data: Dict, actual_result: Dict = None):
+        """Log to JSONL file for immediate analysis"""
+        try:
+            log_entry = {
+                'debug_data': debug_data,
+                'actual_result': actual_result,
+                'log_timestamp': datetime.now().isoformat()
+            }
+            
+            with open('prediction_debug_log.jsonl', 'a') as f:
+                f.write(json.dumps(log_entry, cls=DateTimeEncoder) + '\n')
+        except Exception as e:
+            logger.error(f"Failed to write JSONL log: {e}")
+    
+    def _log_to_database(self, debug_data: Dict, actual_result: Dict = None):
+        """Log to SQLite database"""
+        try:
+            conn = sqlite3.connect('predictions.db')
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO prediction_logs (
+                    timestamp, match_id, league, home_team, away_team, home_tier, away_tier,
+                    home_xg, away_xg, total_xg, poisson_over25, historical_over25, final_over25,
+                    base_btts, historical_btts, final_btts_yes, match_context, confidence_score,
+                    data_quality, actual_goals_home, actual_goals_away, actual_over25, actual_btts, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                debug_data['timestamp'],
+                f"{debug_data['match'].replace(' ', '_')}",
+                debug_data['league'],
+                debug_data['match'].split(' vs ')[0],
+                debug_data['match'].split(' vs ')[1],
+                debug_data['team_tiers']['home'],
+                debug_data['team_tiers']['away'],
+                debug_data['expected_goals']['home'],
+                debug_data['expected_goals']['away'],
+                debug_data['expected_goals']['total'],
+                debug_data['poisson_probabilities']['over_25'],
+                debug_data['historical_factors']['over_25'],
+                debug_data['final_probabilities']['over_25'],
+                debug_data['poisson_probabilities']['btts_base'],
+                debug_data['historical_factors']['btts'],
+                debug_data['final_probabilities']['btts_yes'],
+                debug_data['match_context'],
+                debug_data['confidence_score'],
+                debug_data['data_quality'],
+                actual_result.get('home_goals') if actual_result else None,
+                actual_result.get('away_goals') if actual_result else None,
+                actual_result.get('over_25') if actual_result else None,
+                actual_result.get('btts') if actual_result else None,
+                datetime.now().isoformat()
+            ))
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"Failed to write to database: {e}")
+
 class TeamTierCalibrator:
-    """
-    PROFESSIONAL MULTI-LEAGUE TIER-BASED CALIBRATION SYSTEM
-    UPDATED WITH 2025/2026 SEASON STANDINGS
-    """
+    """PROFESSIONAL MULTI-LEAGUE TIER-BASED CALIBRATION SYSTEM"""
     
     def __init__(self):
         # Enhanced league-specific baselines with 2025/2026 data
@@ -282,14 +406,13 @@ class TeamTierCalibrator:
         return True
 
 class SignalEngine:
-    """
-    RESTORED ACCURATE PREDICTIVE ENGINE - With Golden BTTS/Over-Under Logic
-    """
+    """RESTORED ACCURATE PREDICTIVE ENGINE - With Golden BTTS/Over-Under Logic"""
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.data = self._validate_and_enhance_data(match_data)
         self.calibration_data = calibration_data or {}
         self.calibrator = TeamTierCalibrator()
+        self.logger = PredictionLogger(use_database=True)  # Enhanced logging
         self._setup_realistic_parameters()
         self.match_context = MatchContext.UNPREDICTABLE
         
@@ -526,7 +649,7 @@ class SignalEngine:
         historical_factor = (home_over_rate + away_over_rate) / 2
         
         # FIX: Blend mathematical probability with historical data
-        over_25 = (over_25 * 0.8) + (historical_factor * 0.2)
+        over_25 = (over_25 * 0.7) + (historical_factor * 0.3)
         under_25 = (under_25 * 0.7) + ((1 - historical_factor) * 0.3)
         
         # Normalize
@@ -630,6 +753,42 @@ class SignalEngine:
         adjusted_away_xg = (away_xg * (1 - h2h_weight)) + (h2h_away_avg * h2h_weight)
         
         return adjusted_home_xg, adjusted_away_xg
+
+    def _log_prediction_debug(self, home_xg: float, away_xg: float, home_team: str, away_team: str, 
+                            league: str, final_predictions: Dict) -> Dict:
+        """Enhanced debug logging for model analysis"""
+        
+        total_xg = home_xg + away_xg
+        poisson_over25 = 1 - poisson.cdf(2, total_xg)
+        
+        debug_data = {
+            'timestamp': datetime.now().isoformat(),
+            'match': f"{home_team} vs {away_team}",
+            'league': league,
+            'team_tiers': {
+                'home': self.calibrator.get_team_tier(home_team, league),
+                'away': self.calibrator.get_team_tier(away_team, league)
+            },
+            'expected_goals': {'home': home_xg, 'away': away_xg, 'total': total_xg},
+            'poisson_probabilities': {
+                'over_25': poisson_over25,
+                'btts_base': (1 - math.exp(-home_xg)) * (1 - math.exp(-away_xg))
+            },
+            'historical_factors': {
+                'over_25': (self.data.get('home_over_25_rate', 0.5) + self.data.get('away_over_25_rate', 0.5)) / 2,
+                'btts': (self.data.get('home_btts_rate', 0.5) + self.data.get('away_btts_rate', 0.5)) / 2
+            },
+            'final_probabilities': {
+                'over_25': final_predictions['probabilities']['over_under']['over_25'] / 100.0,
+                'btts_yes': final_predictions['probabilities']['both_teams_score']['yes'] / 100.0,
+                'home_win': final_predictions['probabilities']['match_outcomes']['home_win'] / 100.0
+            },
+            'match_context': final_predictions['match_context'],
+            'confidence_score': final_predictions['confidence_score'],
+            'data_quality_score': final_predictions['data_quality_score']
+        }
+        
+        return debug_data
 
     def run_monte_carlo_simulation(self, home_xg: float, away_xg: float, iterations: int = 10000) -> MonteCarloResults:
         """Run Enhanced Monte Carlo simulation with RESTORED BTTS and Over/Under"""
@@ -897,6 +1056,10 @@ class SignalEngine:
             }
         }
         
+        # Enhanced logging
+        debug_data = self._log_prediction_debug(home_xg, away_xg, home_team, away_team, league, predictions)
+        self.logger.log_prediction(debug_data)
+        
         return predictions
 
     def _generate_timing_predictions(self, home_xg: float, away_xg: float) -> Dict[str, str]:
@@ -950,9 +1113,7 @@ class SignalEngine:
 
 
 class ValueDetectionEngine:
-    """
-    PERFECTLY ALIGNED VALUE DETECTION ENGINE - MULTI-LEAGUE SUPPORT
-    """
+    """PERFECTLY ALIGNED VALUE DETECTION ENGINE - MULTI-LEAGUE SUPPORT"""
     
     def __init__(self):
         # Realistic thresholds
@@ -1210,9 +1371,7 @@ class ValueDetectionEngine:
 
 
 class AdvancedFootballPredictor:
-    """
-    PERFECTLY ALIGNED ORCHESTRATOR: Multi-League Support
-    """
+    """PERFECTLY ALIGNED ORCHESTRATOR: Multi-League Support"""
     
     def __init__(self, match_data: Dict[str, Any], calibration_data: Optional[Dict] = None):
         self.market_odds = match_data.get('market_odds', {})

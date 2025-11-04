@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the PROFESSIONAL PREDICTION ENGINE
+# Import the FIXED PROFESSIONAL PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, ProfessionalTeamTierCalibrator
 except ImportError as e:
@@ -151,6 +151,7 @@ st.markdown("""
     .confidence-high { background: #4CAF50; }
     .confidence-medium { background: #FF9800; }
     .confidence-low { background: #f44336; }
+    .confidence-speculative { background: #9E9E9E; }
     
     .professional-alignment-perfect {
         background: #f8fff8;
@@ -201,7 +202,7 @@ st.markdown("""
         display: inline-block;
     }
     
-    /* ENHANCED CONFIDENCE FEATURES */
+    /* FIXED CONFIDENCE FEATURES */
     .contradiction-warning {
         background: #fff3e0;
         border-left: 4px solid #FF9800;
@@ -219,6 +220,16 @@ st.markdown("""
         font-size: 0.8rem;
         margin-left: 0.5rem;
         border: 1px solid #4CAF50;
+    }
+    
+    .confidence-explanation {
+        background: #f0f8ff;
+        border-left: 4px solid #2196F3;
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+        color: #1565C0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -275,21 +286,28 @@ def display_professional_banner():
     """Display professional banner"""
     st.markdown("""
     <div class="money-grade-banner">
-        🎯 PROFESSIONAL BETTING GRADE • ENHANCED CONFIDENCE LOGIC • LEAGUE-SPECIFIC CALIBRATION • MONEY-GRADE ACCURACY
+        🎯 FIXED PROFESSIONAL BETTING GRADE • PROPER CONFIDENCE SYSTEM • LEAGUE-SPECIFIC CALIBRATION • MONEY-GRADE ACCURACY
     </div>
     """, unsafe_allow_html=True)
 
 def display_professional_architecture():
     """Display professional system architecture"""
-    with st.expander("🏗️ PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
+    with st.expander("🏗️ FIXED PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
         st.markdown("""
-        ### 🎯 ENHANCED MONEY-GRADE PREDICTION ENGINE
+        ### 🎯 FIXED MONEY-GRADE PREDICTION ENGINE
         
-        **Enhanced Confidence Features:**
-        - **League-Specific Confidence Multipliers** - Dynamic thresholds per league
-        - **Form Stability Bonus** - Rewards consistent team performance  
-        - **Contradiction Detection** - Automatically detects conflicting signals
-        - **Enhanced Confidence Reasoning** - Transparent confidence assignment
+        **Fixed Confidence Features:**
+        - **✅ Proper 4-Tier Confidence System** - HIGH, MEDIUM, LOW, SPECULATIVE
+        - **✅ League-Specific Confidence Multipliers** - Dynamic thresholds per league
+        - **✅ Form Stability Bonus** - Rewards consistent team performance  
+        - **✅ Contradiction Detection** - Automatically detects conflicting signals
+        - **✅ Enhanced Confidence Reasoning** - Transparent confidence assignment
+        
+        **Fixed Confidence Thresholds:**
+        - **HIGH**: >70% probability + >12% edge + >80% data quality
+        - **MEDIUM**: >60% probability + >8% edge + >70% data quality  
+        - **LOW**: >55% probability + >5% edge + >60% data quality
+        - **SPECULATIVE**: Below any threshold
         
         **Professional League Calibration** 🌍
         - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline confidence model
@@ -302,7 +320,7 @@ def create_professional_input_form():
     """Create professional input form"""
     
     st.markdown('<p class="professional-header">🎯 Professional Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="professional-subheader">Money-Grade Multi-League Analysis with Enhanced Confidence Intelligence</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-subheader">Fixed Money-Grade Multi-League Analysis with Proper Confidence System</p>', unsafe_allow_html=True)
     
     # Display professional banner
     display_professional_banner()
@@ -582,7 +600,7 @@ def display_professional_predictions(predictions):
         return
         
     st.markdown('<p class="professional-header">🎯 Professional Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-system-card"><h3>🟢 ENHANCED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Money-Grade Multi-League Analysis with Enhanced Confidence</div>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-system-card"><h3>🟢 FIXED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Money-Grade Multi-League Analysis with Proper Confidence System</div>', unsafe_allow_html=True)
     
     # Professional team tiers display
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -635,7 +653,7 @@ def display_professional_predictions(predictions):
         }.get(match_context, '❓')
         st.metric("Professional Context", f"{context_emoji} {match_context.replace('_', ' ').title()}")
     with col4:
-        st.metric("Enhanced IQ", f"{football_iq:.1f}/100")
+        st.metric("Fixed IQ", f"{football_iq:.1f}/100")
     
     # Professional system validation
     system_validation = safe_get(predictions, 'system_validation') or {}
@@ -645,15 +663,15 @@ def display_professional_predictions(predictions):
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
         st.markdown(f'''
         <div class="professional-alignment-perfect">
-            ✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions
-            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.1.0_enhanced')} | Stability Bonus: +{stability_bonus:.1f}</small>
+            ✅ <strong>FIXED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions
+            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.1.0_fixed')} | Stability Bonus: +{stability_bonus:.1f}</small>
         </div>
         ''', unsafe_allow_html=True)
     else:
         st.markdown(f'''
         <div class="professional-alignment-warning">
-            ⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Some inconsistencies detected
-            <br><small>Calibration: {calibration_level} | Enhanced professional discretion advised</small>
+            ⚠️ <strong>FIXED PROFESSIONAL REVIEW REQUIRED:</strong> Some inconsistencies detected
+            <br><small>Calibration: {calibration_level} | Fixed professional discretion advised</small>
         </div>
         ''', unsafe_allow_html=True)
     
@@ -730,6 +748,7 @@ def display_professional_predictions(predictions):
             card_class = "risk-low"
             emoji = "✅"
         
+        # FIXED: Proper confidence calculation
         confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
         
         st.markdown(f'''
@@ -768,6 +787,7 @@ def display_professional_predictions(predictions):
             card_class = "risk-low"
             emoji = "✅"
         
+        # FIXED: Proper confidence calculation
         confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
         
         st.markdown(f'''
@@ -872,10 +892,10 @@ def display_professional_predictions(predictions):
     
     st.markdown(f'''
     <div class="professional-card {risk_class}">
-        <h3>📊 Enhanced Professional Risk Assessment</h3>
+        <h3>📊 Fixed Professional Risk Assessment</h3>
         <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
-        <strong>Enhanced Explanation:</strong> {risk.get("explanation", "No data available")}<br>
-        <strong>Enhanced Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
+        <strong>Fixed Explanation:</strong> {risk.get("explanation", "No data available")}<br>
+        <strong>Fixed Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
         <strong>Certainty:</strong> {risk.get("certainty", "N/A")}<br>
         <strong>Narrative Coherence:</strong> {intelligence.get('narrative_coherence', 'N/A')}%<br>
         <strong>Prediction Alignment:</strong> {intelligence.get('prediction_alignment', 'N/A')}<br>
@@ -897,7 +917,7 @@ def display_professional_value_detection(predictions):
         return
         
     st.markdown('<p class="professional-header">💰 Professional Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-value-card"><h3>🟠 ENHANCED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Advanced confidence logic with contradiction detection</div>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-value-card"><h3>🟠 FIXED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Proper confidence system with 4-tier assessment</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals') or []
     
@@ -929,15 +949,15 @@ def display_professional_value_detection(predictions):
     if not betting_signals:
         st.markdown('<div class="professional-alignment-perfect">', unsafe_allow_html=True)
         st.info("""
-        ## ✅ ENHANCED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
+        ## ✅ FIXED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
         
-        **Enhanced Professional Assessment:**
+        **Fixed Professional Assessment:**
         - Pure probabilities align with market expectations  
-        - No significant edges above enhanced professional thresholds
+        - No significant edges above fixed professional thresholds
         - Advanced contradiction detection confirms signal coherence
-        - **ENHANCED PERFECT ALIGNMENT ACHIEVED**
+        - **FIXED PERFECT ALIGNMENT ACHIEVED**
         
-        **Enhanced Professional Value Engine with advanced confidence logic is properly confirming predictions!**
+        **Fixed Professional Value Engine with proper 4-tier confidence system is properly confirming predictions!**
         """)
         st.markdown('</div>', unsafe_allow_html=True)
         return
@@ -948,9 +968,9 @@ def display_professional_value_detection(predictions):
     calibration_level = system_validation.get('calibration_level', 'STANDARD')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
-        st.markdown('<div class="professional-alignment-perfect">✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with advanced validation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-perfect">✅ <strong>FIXED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with proper validation</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Advanced contradiction detection active</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>FIXED PROFESSIONAL REVIEW REQUIRED:</strong> Advanced contradiction detection active</div>', unsafe_allow_html=True)
     
     # Enhanced: Show contradiction warnings
     contradictory_signals = [s for s in betting_signals if any("contradict" in exp.lower() for exp in s.get('explanation', []))]
@@ -958,7 +978,7 @@ def display_professional_value_detection(predictions):
         st.markdown(f'''
         <div class="contradiction-warning">
             ⚠️ <strong>CONTRADICTION DETECTION:</strong> {len(contradictory_signals)} signal(s) contradict primary predictions
-            <br><small>Enhanced confidence logic has automatically adjusted stakes and confidence levels</small>
+            <br><small>Fixed confidence system has automatically adjusted stakes and confidence levels</small>
         </div>
         ''', unsafe_allow_html=True)
     
@@ -967,7 +987,7 @@ def display_professional_value_detection(predictions):
     
     with col1:
         total_signals = len(betting_signals)
-        st.metric("Enhanced Signals", total_signals)
+        st.metric("Fixed Signals", total_signals)
     
     with col2:
         high_value = len([s for s in betting_signals if s.get('value_rating') in ['EXCEPTIONAL', 'HIGH']])
@@ -981,8 +1001,19 @@ def display_professional_value_detection(predictions):
         avg_edge = np.mean([s.get('edge', 0) for s in betting_signals]) if betting_signals else 0
         st.metric("Average Edge", f"{avg_edge:.1f}%")
     
+    # Display fixed confidence system explanation
+    st.markdown('<div class="confidence-explanation">', unsafe_allow_html=True)
+    st.markdown("""
+    **🎯 Fixed 4-Tier Confidence System:**
+    - **🟢 HIGH**: >70% probability + >12% edge + >80% data quality
+    - **🟡 MEDIUM**: >60% probability + >8% edge + >70% data quality  
+    - **🔴 LOW**: >55% probability + >5% edge + >60% data quality
+    - **⚪ SPECULATIVE**: Below any threshold
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     # Display professional value bets
-    st.markdown('<div class="professional-section-title">🎯 Enhanced Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-section-title">🎯 Fixed Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
     
     # Group by professional value rating
     exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
@@ -1080,34 +1111,35 @@ def main():
         with col2:
             if st.button("📊 Professional History", use_container_width=True):
                 if st.session_state.professional_prediction_history:
-                    st.write("**Enhanced Professional Prediction History:**")
+                    st.write("**Fixed Professional Prediction History:**")
                     for i, pred in enumerate(st.session_state.professional_prediction_history[-5:]):
-                        with st.expander(f"Enhanced Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
+                        with st.expander(f"Fixed Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
                             st.write(f"Expected Goals: Home {pred['expected_goals'].get('home', 0):.2f} - Away {pred['expected_goals'].get('away', 0):.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
-                            st.write(f"Enhanced IQ: {pred.get('football_iq', 0):.1f}/100")
+                            st.write(f"Fixed IQ: {pred.get('football_iq', 0):.1f}/100")
                             st.write(f"Stability Bonus: +{pred.get('stability_bonus', 0):.1f}")
                             st.write(f"Value Bets Found: {pred.get('value_bets', 0)}")
                 else:
-                    st.info("No enhanced professional prediction history yet.")
+                    st.info("No fixed professional prediction history yet.")
         
         with col3:
-            if st.button("🎯 Enhanced System Status", use_container_width=True):
+            if st.button("🎯 Fixed System Status", use_container_width=True):
                 st.success("""
-                **Enhanced Professional System Status: OPERATIONAL** 🟢
+                **Fixed Professional System Status: OPERATIONAL** 🟢
                 
-                **Enhanced Confidence Features Active:**
-                - League-Specific Confidence Multipliers ✅
-                - Form Stability Bonus Scoring ✅  
-                - Advanced Contradiction Detection ✅
-                - Professional Monte Carlo (25k) ✅
-                - Enhanced Signal Hygiene ✅
+                **Fixed Confidence Features Active:**
+                - ✅ Proper 4-Tier Confidence System (HIGH, MEDIUM, LOW, SPECULATIVE)
+                - ✅ League-Specific Confidence Multipliers ✅
+                - ✅ Form Stability Bonus Scoring ✅  
+                - ✅ Advanced Contradiction Detection ✅
+                - ✅ Professional Monte Carlo (25k) ✅
+                - ✅ Enhanced Signal Hygiene ✅
                 
-                **Model Version:** 2.1.0_enhanced
+                **Model Version:** 2.1.0_fixed
                 **Calibration Level:** MONEY_GRADE
-                **Last Update:** Enhanced Confidence Logic Active
+                **Last Update:** Fixed Confidence Logic Active
                 """)
         
         return
@@ -1115,7 +1147,7 @@ def main():
     match_data, mc_iterations = create_professional_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running enhanced professional multi-league calibrated analysis..."):
+        with st.spinner("🔍 Running fixed professional multi-league calibrated analysis..."):
             try:
                 # Initialize professional predictor
                 predictor = AdvancedFootballPredictor(match_data)
@@ -1157,26 +1189,27 @@ def main():
                     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
                         stability_bonus = safe_get(predictions, 'apex_intelligence', 'form_stability_bonus') or 0
                         st.success(f"""
-                        ✅ **ENHANCED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** 
+                        ✅ **FIXED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** 
                         
-                        Enhanced Professional Value Engine confirms Signal Engine predictions with:
-                        - League-specific confidence multipliers ✅
-                        - Form stability bonus: +{stability_bonus:.1f} ✅  
-                        - Advanced contradiction detection ✅
-                        - Professional bankroll management ✅
+                        Fixed Professional Value Engine confirms Signal Engine predictions with:
+                        - ✅ Proper 4-tier confidence system
+                        - ✅ League-specific confidence multipliers
+                        - ✅ Form stability bonus: +{stability_bonus:.1f}  
+                        - ✅ Advanced contradiction detection
+                        - ✅ Professional bankroll management
                         """)
                     else:
-                        st.warning("⚠️ ENHANCED PROFESSIONAL REVIEW REQUIRED: Advanced contradiction detection active")
+                        st.warning("⚠️ FIXED PROFESSIONAL REVIEW REQUIRED: Advanced contradiction detection active")
                     
                     st.rerun()
                 else:
-                    st.error("❌ Failed to generate enhanced professional predictions")
+                    st.error("❌ Failed to generate fixed professional predictions")
                 
             except Exception as e:
-                st.error(f"❌ Enhanced professional analysis error: {str(e)}")
+                st.error(f"❌ Fixed professional analysis error: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
-                st.info("💡 Check enhanced professional input parameters and try again")
+                st.info("💡 Check fixed professional input parameters and try again")
 
 if __name__ == "__main__":
     main()

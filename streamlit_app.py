@@ -339,9 +339,9 @@ def create_professional_input_form():
                 key="professional_home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=10, key="professional_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=8, key="professional_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=6, key="professional_home_goals_home")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=7, key="professional_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=4, key="professional_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=4, key="professional_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -353,8 +353,8 @@ def create_professional_input_form():
             )
             
             away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=6, key="professional_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=12, key="professional_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=2, key="professional_away_goals_away")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=10, key="professional_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=5, key="professional_away_goals_away")
         
         # Show professional team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
@@ -370,14 +370,14 @@ def create_professional_input_form():
         with st.expander("📊 Professional Head-to-Head Analysis"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=8, key="professional_h2h_matches")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=6, key="professional_h2h_matches")
                 h2h_home_wins = st.number_input("Home Wins", min_value=0, value=5, key="professional_h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="professional_h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=2, key="professional_h2h_draws")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0, key="professional_h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="professional_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=14, key="professional_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=6, key="professional_h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=13, key="professional_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=5, key="professional_h2h_away_goals")
 
         # Professional Recent Form
         with st.expander("📈 Professional Form Analysis"):

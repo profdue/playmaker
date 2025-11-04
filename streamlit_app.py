@@ -445,7 +445,7 @@ def create_professional_input_form():
             away_absence_impact = st.select_slider(
                 "Away Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Key Player",
+                value="Regular Starter",
                 key="professional_away_absence_impact"
             )
             
@@ -454,7 +454,7 @@ def create_professional_input_form():
             home_motivation = st.select_slider(
                 "Home Team Motivation",
                 options=["Low", "Normal", "High", "Very High"],
-                value="High",
+                value="Normal",
                 key="professional_home_motivation"
             )
             away_motivation = st.select_slider(

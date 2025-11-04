@@ -1,4 +1,4 @@
-# streamlit_app.py - PROFESSIONAL BETTING GRADE (COMPLETELY OVERHAULED)
+# streamlit_app.py - PROFESSIONAL BETTING GRADE (FIXED IMPORT)
 import streamlit as st
 st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
@@ -8,9 +8,9 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the PROFESSIONAL PREDICTION ENGINE
+# Import the PROFESSIONAL PREDICTION ENGINE - FIXED IMPORT
 try:
-    from prediction_engine import ProfessionalFootballPredictor, ProfessionalTeamTierCalibrator
+    from prediction_engine import AdvancedFootballPredictor, ProfessionalTeamTierCalibrator
 except ImportError as e:
     st.error(f"❌ Could not import prediction_engine: {str(e)}")
     st.info("💡 Make sure prediction_engine.py is in the same directory")
@@ -1065,10 +1065,10 @@ def main():
         with st.spinner("🔍 Running professional multi-league calibrated analysis..."):
             try:
                 # Initialize professional predictor
-                predictor = ProfessionalFootballPredictor(match_data)
+                predictor = AdvancedFootballPredictor(match_data)
                 
                 # Generate professional analysis
-                predictions = predictor.generate_professional_analysis(mc_iterations)
+                predictions = predictor.generate_comprehensive_analysis(mc_iterations)
                 
                 if predictions:
                     # Add professional information

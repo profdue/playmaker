@@ -1,4 +1,4 @@
-# prediction_engine.py - PROFESSIONAL BETTING GRADE (COMPLETE ENHANCED VERSION)
+# prediction_engine.py - PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -58,7 +58,7 @@ class BettingSignal:
     value_rating: str
     explanation: List[str]
     alignment: str
-    confidence_reasoning: List[str]  # NEW: Enhanced confidence explanation
+    confidence_reasoning: List[str]
 
 @dataclass
 class MonteCarloResults:
@@ -279,25 +279,25 @@ class ProfessionalLeagueCalibrator:
                 'goal_intensity': 'high', 'defensive_variance': 'medium', 
                 'calibration_factor': 1.02, 'home_advantage': 0.38,
                 'btts_baseline': 0.52, 'over_25_baseline': 0.51, 'tier_impact': 1.0,
-                'confidence_multiplier': 1.0  # NEW: League confidence adjustment
+                'confidence_multiplier': 1.0
             },
             'la_liga': {
                 'goal_intensity': 'medium', 'defensive_variance': 'low', 
                 'calibration_factor': 0.98, 'home_advantage': 0.32,
                 'btts_baseline': 0.48, 'over_25_baseline': 0.47, 'tier_impact': 0.95,
-                'confidence_multiplier': 0.95  # Slightly lower confidence thresholds
+                'confidence_multiplier': 0.95
             },
             'serie_a': {
                 'goal_intensity': 'low', 'defensive_variance': 'low', 
                 'calibration_factor': 0.94, 'home_advantage': 0.42,
                 'btts_baseline': 0.45, 'over_25_baseline': 0.44, 'tier_impact': 1.15,
-                'confidence_multiplier': 1.15  # Higher confidence requirements
+                'confidence_multiplier': 1.15
             },
             'bundesliga': {
                 'goal_intensity': 'very_high', 'defensive_variance': 'high', 
                 'calibration_factor': 1.08, 'home_advantage': 0.28,
                 'btts_baseline': 0.55, 'over_25_baseline': 0.58, 'tier_impact': 0.9,
-                'confidence_multiplier': 0.9  # Lower confidence requirements
+                'confidence_multiplier': 0.9
             },
             'ligue_1': {
                 'goal_intensity': 'low', 'defensive_variance': 'medium', 
@@ -363,7 +363,7 @@ class ProfessionalLeagueCalibrator:
         return np.clip(base_calibrated, 0.025, 0.975)
     
     def get_league_confidence_multiplier(self, league: str) -> float:
-        """NEW: Get league-specific confidence adjustment"""
+        """Get league-specific confidence adjustment"""
         profile = self.league_profiles.get(league, self.league_profiles['premier_league'])
         return profile.get('confidence_multiplier', 1.0)
 
@@ -1038,7 +1038,7 @@ class ApexProfessionalEngine:
         return {'LOW': 0.05, 'MEDIUM': 0.2, 'HIGH': 0.5, 'VERY_HIGH': 0.8}.get(risk_level, 0.3)
 
     def _calculate_form_stability_bonus(self, home_form: List[float], away_form: List[float]) -> float:
-        """NEW: Calculate form stability bonus for confidence enhancement"""
+        """Calculate form stability bonus for confidence enhancement"""
         if not home_form or not away_form:
             return 0.0
         
@@ -1149,7 +1149,7 @@ class ApexProfessionalEngine:
                 'data_quality': round(data_quality, 1),
                 'certainty': round(certainty * 100, 1),
                 'calibration_status': 'PROFESSIONAL',
-                'form_stability_bonus': round(stability_bonus, 1)  # NEW: Show stability impact
+                'form_stability_bonus': round(stability_bonus, 1)
             },
             'probabilities': {
                 'match_outcomes': {
@@ -1243,7 +1243,7 @@ class ProfessionalBettingEngine:
     
     def _assign_professional_confidence(self, probability: float, edge: float, data_quality: float, 
                                      league: str, form_stability: float = 0.5) -> str:
-        """ENHANCED: Professional confidence assignment with league and form adjustments"""
+        """FIXED: Professional confidence assignment with proper tier system"""
         
         # Get league-specific confidence multiplier
         league_calibrator = ProfessionalLeagueCalibrator()
@@ -1262,24 +1262,37 @@ class ProfessionalBettingEngine:
         form_bonus = form_stability * 0.05  # Up to 5% probability boost
         effective_probability = probability + form_bonus
         
-        # ENHANCED: Multi-factor confidence assessment with reasoning
+        # FIXED: Proper multi-tier confidence assessment
         confidence_factors = []
         
-        if effective_probability > adjusted_prob_threshold_high and edge > adjusted_edge_threshold_high and data_quality > 80:
+        # HIGH CONFIDENCE: Strong probability + significant edge + excellent data
+        if (effective_probability > adjusted_prob_threshold_high and 
+            edge > adjusted_edge_threshold_high and 
+            data_quality > 80):
             confidence = 'HIGH'
             confidence_factors.append(f"Strong probability ({effective_probability:.1%})")
             confidence_factors.append(f"Significant edge ({edge:.1f}%)")
             confidence_factors.append("Excellent data quality")
-        elif effective_probability > adjusted_prob_threshold_medium and edge > adjusted_edge_threshold_medium and data_quality > 70:
+            
+        # MEDIUM CONFIDENCE: Good probability + solid edge + good data  
+        elif (effective_probability > adjusted_prob_threshold_medium and 
+              edge > adjusted_edge_threshold_medium and 
+              data_quality > 70):
             confidence = 'MEDIUM'
             confidence_factors.append(f"Good probability ({effective_probability:.1%})")
             confidence_factors.append(f"Solid edge ({edge:.1f}%)")
             confidence_factors.append("Good data quality")
-        elif effective_probability > adjusted_prob_threshold_low and edge > adjusted_edge_threshold_low and data_quality > 60:
+            
+        # LOW CONFIDENCE: Reasonable probability + moderate edge + adequate data
+        elif (effective_probability > adjusted_prob_threshold_low and 
+              edge > adjusted_edge_threshold_low and 
+              data_quality > 60):
             confidence = 'LOW'
             confidence_factors.append(f"Reasonable probability ({effective_probability:.1%})")
             confidence_factors.append(f"Moderate edge ({edge:.1f}%)")
             confidence_factors.append("Adequate data quality")
+            
+        # SPECULATIVE: Below thresholds
         else:
             confidence = 'SPECULATIVE'
             if effective_probability <= adjusted_prob_threshold_low:
@@ -1292,6 +1305,11 @@ class ProfessionalBettingEngine:
         # Apply form stability consideration
         if form_stability > 0.8:
             confidence_factors.append("Excellent form stability")
+            # Boost confidence for excellent form stability
+            if confidence == 'MEDIUM':
+                confidence = 'HIGH'
+            elif confidence == 'LOW':
+                confidence = 'MEDIUM'
         elif form_stability < 0.3:
             confidence_factors.append("Unstable recent form")
             # Downgrade confidence for unstable form
@@ -1305,7 +1323,7 @@ class ProfessionalBettingEngine:
     def _detect_signal_contradictions(self, market_name: str, primary_outcome: str, 
                                     primary_btts: str, primary_over_under: str,
                                     probability: float) -> Tuple[bool, List[str]]:
-        """NEW: Detect contradictions between signals"""
+        """Detect contradictions between signals"""
         contradictions = []
         is_contradiction = False
         
@@ -1337,7 +1355,7 @@ class ProfessionalBettingEngine:
 
     def detect_professional_value_bets(self, pure_probabilities: Dict, market_odds: Dict, 
                                     explanations: Dict, data_quality: float) -> List[BettingSignal]:
-        """ENHANCED: Professional value bet detection with contradiction checking"""
+        """FIXED: Professional value bet detection with proper confidence system"""
         signals = []
         
         outcomes = pure_probabilities.get('probabilities', {}).get('match_outcomes', {})
@@ -1386,12 +1404,12 @@ class ProfessionalBettingEngine:
             edge_percentage = ev_data['edge_percentage']
             
             if edge_percentage >= 4.0:
-                # ENHANCED: Check for signal contradictions
+                # Check for signal contradictions
                 has_contradiction, contradiction_reasons = self._detect_signal_contradictions(
                     market_name, primary_outcome, primary_btts, primary_over_under, pure_prob
                 )
                 
-                # ENHANCED: Apply contradiction penalty to confidence
+                # FIXED: Apply proper confidence assignment with all tiers
                 base_confidence = self._assign_professional_confidence(
                     pure_prob, edge_percentage, data_quality, league, form_stability
                 )
@@ -1429,7 +1447,7 @@ class ProfessionalBettingEngine:
                     value_rating=value_rating,
                     explanation=all_explanations,
                     alignment=alignment,
-                    confidence_reasoning=[f"Confidence: {confidence}"]  # NEW: Track confidence reasoning
+                    confidence_reasoning=[f"Confidence: {confidence}"]
                 )
                 signals.append(signal)
         
@@ -1495,7 +1513,7 @@ class AdvancedFootballPredictor:
             'status': 'PROFESSIONAL', 
             'alignment': alignment_status,
             'engine_sync': 'ELITE',
-            'model_version': '2.1.0_enhanced',  # UPDATED: Enhanced version
+            'model_version': '2.1.0_fixed',  # UPDATED: Fixed version
             'calibration_level': 'MONEY_GRADE'
         }
         
@@ -1527,7 +1545,7 @@ class AdvancedFootballPredictor:
 
 # PROFESSIONAL TEST FUNCTION
 def test_enhanced_predictor():
-    """Test the enhanced professional predictor"""
+    """Test the fixed professional predictor"""
     match_data = {
         'home_team': 'Leicester City', 'away_team': 'Millwall', 'league': 'championship',
         'home_goals': 8, 'away_goals': 5, 'home_conceded': 3, 'away_conceded': 9,
@@ -1548,7 +1566,7 @@ def test_enhanced_predictor():
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("🎯 ENHANCED PROFESSIONAL FOOTBALL PREDICTION RESULTS")
+    print("🎯 FIXED PROFESSIONAL FOOTBALL PREDICTION RESULTS")
     print("=" * 70)
     print(f"Match: {results['match']}")
     print(f"League: {results['league'].upper()}")
@@ -1558,24 +1576,24 @@ def test_enhanced_predictor():
     print(f"Risk Level: {results['risk_assessment']['risk_level']}")
     print()
     
-    print("📊 ENHANCED PROFESSIONAL PROBABILITIES:")
+    print("📊 FIXED PROFESSIONAL PROBABILITIES:")
     outcomes = results['probabilities']['match_outcomes']
     print(f"Home Win: {outcomes['home_win']}% | Draw: {outcomes['draw']}% | Away Win: {outcomes['away_win']}%")
     print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']}%")
     print(f"Over 2.5: {results['probabilities']['over_under']['over_25']}%")
     print()
     
-    print("🎯 ENHANCED PROFESSIONAL NARRATIVE:")
+    print("🎯 FIXED PROFESSIONAL NARRATIVE:")
     narrative = results['match_narrative']
     print(f"Quality Gap: {narrative['quality_gap']} | Pattern: {narrative['primary_pattern']}")
     print(f"Style: {narrative['style_conflict']} | Defense: {narrative['defensive_stability']}")
     print()
     
-    print("📝 ENHANCED PROFESSIONAL SUMMARY:")
+    print("📝 FIXED PROFESSIONAL SUMMARY:")
     print(results['summary'])
     print()
     
-    print("💰 ENHANCED PROFESSIONAL VALUE BETS:")
+    print("💰 FIXED PROFESSIONAL VALUE BETS:")
     for signal in results.get('betting_signals', []):
         alignment_emoji = "✅" if signal['alignment'] == 'aligns_with_primary' else "⚠️"
         contradiction_note = " ⚠️CONTRADICTION" if "contradicts" in signal['alignment'] else ""

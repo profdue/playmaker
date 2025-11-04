@@ -1,4 +1,4 @@
-# prediction_engine.py - PROFESSIONAL BETTING GRADE (COMPLETELY OVERHAULED)
+# prediction_engine.py - PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -1029,6 +1029,90 @@ class ApexProfessionalEngine:
             
         return max(0.0, min(1.0, 0.5 + coherence_score)), alignment
 
+    def _calculate_professional_risk(self, certainty: float, data_quality: float, 
+                                   market_edge: float, alignment: str) -> str:
+        """Professional risk assessment"""
+        base_risk = (1 - certainty) * 0.4 + (1 - data_quality/100) * 0.3 + (1 - market_edge) * 0.3
+        
+        alignment_penalty = {
+            "HIGH": 0.0, "MEDIUM": 0.15, "LOW": 0.3
+        }.get(alignment, 0.2)
+        
+        total_risk = base_risk + alignment_penalty
+        
+        if total_risk < 0.25:
+            return "LOW"
+        elif total_risk < 0.45:
+            return "MEDIUM"
+        elif total_risk < 0.65:
+            return "HIGH"
+        else:
+            return "VERY_HIGH"
+    
+    def _generate_professional_summary(self, narrative: MatchNarrative, predictions: Dict, 
+                                    home_team: str, away_team: str, home_tier: str, away_tier: str) -> str:
+        """Professional match summary"""
+        home_win = predictions.get('home_win', 0.33)
+        btts_yes = predictions.get('btts_yes', 0.5)
+        over_25 = predictions.get('over_25', 0.5)
+        
+        quality_gap = narrative.quality_gap
+        
+        if quality_gap == "extreme":
+            if home_win > 0.6:
+                return f"{home_team} ({home_tier}) are overwhelming favorites against {away_team} ({away_tier}). The significant quality gap suggests comprehensive home dominance, with the hosts expected to control proceedings and secure a comfortable victory."
+            else:
+                return f"{away_team} ({away_tier}) possess clear superiority over {home_team} ({home_tier}). Despite home advantage, the visitors' quality should prevail in what appears to be a mismatch on paper."
+                
+        elif quality_gap == "significant":
+            if home_win > 0.55:
+                return f"{home_team} ({home_tier}) hold a clear advantage over {away_team} ({away_tier}). Home advantage combined with superior quality should see the hosts control this encounter, though the visitors may offer periods of resistance."
+            else:
+                return f"{away_team} ({away_tier}) are favored despite traveling to {home_team} ({home_tier}). The visitors' quality edge may overcome home advantage, suggesting an away win or hard-fought draw is the most likely outcome."
+                
+        elif narrative.primary_pattern == "home_dominance":
+            if over_25 > 0.6:
+                return f"{home_team} are expected to dominate possession and create numerous chances against {away_team}. The home side's attacking quality combined with the visitors' defensive vulnerabilities points toward a convincing home victory with multiple goals."
+            else:
+                return f"{home_team} should control this match against {away_team}, but may face organized defensive resistance. A patient, probing performance could yield a narrow victory rather than a goal-filled rout."
+                
+        elif narrative.style_conflict == "attacking_vs_attacking":
+            if btts_yes > 0.65:
+                return f"An entertaining, open contest awaits as two attack-minded teams face off. Both {home_team} and {away_team} have shown defensive frailties, suggesting goals at both ends in what could be a high-scoring affair decided by attacking quality."
+            else:
+                return f"Despite both teams' attacking intentions, this could become a tactical battle where chances are limited. The offensive quality on display may cancel out, leading to a tighter encounter than the attacking reputations suggest."
+                
+        else:
+            return f"A competitive match expected between {home_team} and {away_team}, with small margins likely deciding the outcome. Both teams will seek to establish control in what promises to be a closely-fought encounter where tactical discipline could prove decisive."
+    
+    def _get_professional_risk_explanation(self, risk_level: str) -> str:
+        explanations = {
+            'LOW': "High prediction coherence with strong data support and clear match patterns. Professional confidence level.",
+            'MEDIUM': "Reasonable prediction alignment with some data uncertainties. Professional assessment with standard confidence.",
+            'HIGH': "Multiple uncertainties present with some conflicting signals. Professional caution advised.",
+            'VERY_HIGH': "Significant unpredictability with limited data quality. Professional discretion strongly recommended."
+        }
+        return explanations.get(risk_level, "Professional risk assessment unavailable")
+    
+    def _get_professional_risk_recommendation(self, risk_level: str) -> str:
+        recommendations = {
+            'LOW': "PROFESSIONAL CONFIDENT STAKE",
+            'MEDIUM': "PROFESSIONAL STANDARD STAKE", 
+            'HIGH': "PROFESSIONAL CAUTIOUS STAKE",
+            'VERY_HIGH': "PROFESSIONAL MINIMAL STAKE"
+        }
+        return recommendations.get(risk_level, "PROFESSIONAL ASSESSMENT REQUIRED")
+    
+    def _get_professional_intelligence_breakdown(self) -> str:
+        return (f"Professional IQ: {self.intelligence.football_iq_score:.1f}/100 | "
+                f"Coherence: {self.intelligence.narrative_coherence:.1%} | "
+                f"Alignment: {self.intelligence.prediction_alignment} | "
+                f"Risk: {self.intelligence.risk_level} | "
+                f"Calibration: {self.intelligence.calibration_status}")
+    
+    def _risk_to_penalty(self, risk_level: str) -> float:
+        return {'LOW': 0.05, 'MEDIUM': 0.2, 'HIGH': 0.5, 'VERY_HIGH': 0.8}.get(risk_level, 0.3)
+
     def generate_professional_predictions(self, mc_iterations: int = 25000) -> Dict[str, Any]:
         """Generate professional-grade predictions"""
         logger.info(f"Starting professional prediction for {self.data['home_team']} vs {self.data['away_team']}")
@@ -1158,90 +1242,6 @@ class ApexProfessionalEngine:
                 'away_win_prob': mc_results.away_win_prob,
             }
         }
-    
-    def _calculate_professional_risk(self, certainty: float, data_quality: float, 
-                                   market_edge: float, alignment: str) -> str:
-        """Professional risk assessment"""
-        base_risk = (1 - certainty) * 0.4 + (1 - data_quality/100) * 0.3 + (1 - market_edge) * 0.3
-        
-        alignment_penalty = {
-            "HIGH": 0.0, "MEDIUM": 0.15, "LOW": 0.3
-        }.get(alignment, 0.2)
-        
-        total_risk = base_risk + alignment_penalty
-        
-        if total_risk < 0.25:
-            return "LOW"
-        elif total_risk < 0.45:
-            return "MEDIUM"
-        elif total_risk < 0.65:
-            return "HIGH"
-        else:
-            return "VERY_HIGH"
-    
-    def _generate_professional_summary(self, narrative: MatchNarrative, predictions: Dict, 
-                                    home_team: str, away_team: str, home_tier: str, away_tier: str) -> str:
-        """Professional match summary"""
-        home_win = predictions.get('home_win', 0.33)
-        btts_yes = predictions.get('btts_yes', 0.5)
-        over_25 = predictions.get('over_25', 0.5)
-        
-        quality_gap = narrative.quality_gap
-        
-        if quality_gap == "extreme":
-            if home_win > 0.6:
-                return f"{home_team} ({home_tier}) are overwhelming favorites against {away_team} ({away_tier}). The significant quality gap suggests comprehensive home dominance, with the hosts expected to control proceedings and secure a comfortable victory."
-            else:
-                return f"{away_team} ({away_tier}) possess clear superiority over {home_team} ({home_tier}). Despite home advantage, the visitors' quality should prevail in what appears to be a mismatch on paper."
-                
-        elif quality_gap == "significant":
-            if home_win > 0.55:
-                return f"{home_team} ({home_tier}) hold a clear advantage over {away_team} ({away_tier}). Home advantage combined with superior quality should see the hosts control this encounter, though the visitors may offer periods of resistance."
-            else:
-                return f"{away_team} ({away_tier}) are favored despite traveling to {home_team} ({home_tier}). The visitors' quality edge may overcome home advantage, suggesting an away win or hard-fought draw is the most likely outcome."
-                
-        elif narrative.primary_pattern == "home_dominance":
-            if over_25 > 0.6:
-                return f"{home_team} are expected to dominate possession and create numerous chances against {away_team}. The home side's attacking quality combined with the visitors' defensive vulnerabilities points toward a convincing home victory with multiple goals."
-            else:
-                return f"{home_team} should control this match against {away_team}, but may face organized defensive resistance. A patient, probing performance could yield a narrow victory rather than a goal-filled rout."
-                
-        elif narrative.style_conflict == "attacking_vs_attacking":
-            if btts_yes > 0.65:
-                return f"An entertaining, open contest awaits as two attack-minded teams face off. Both {home_team} and {away_team} have shown defensive frailties, suggesting goals at both ends in what could be a high-scoring affair decided by attacking quality."
-            else:
-                return f"Despite both teams' attacking intentions, this could become a tactical battle where chances are limited. The offensive quality on display may cancel out, leading to a tighter encounter than the attacking reputations suggest."
-                
-        else:
-            return f"A competitive match expected between {home_team} and {away_team}, with small margins likely deciding the outcome. Both teams will seek to establish control in what promises to be a closely-fought encounter where tactical discipline could prove decisive."
-    
-    def _get_professional_risk_explanation(self, risk_level: str) -> str:
-        explanations = {
-            'LOW': "High prediction coherence with strong data support and clear match patterns. Professional confidence level.",
-            'MEDIUM': "Reasonable prediction alignment with some data uncertainties. Professional assessment with standard confidence.",
-            'HIGH': "Multiple uncertainties present with some conflicting signals. Professional caution advised.",
-            'VERY_HIGH': "Significant unpredictability with limited data quality. Professional discretion strongly recommended."
-        }
-        return explanations.get(risk_level, "Professional risk assessment unavailable")
-    
-    def _get_professional_risk_recommendation(self, risk_level: str) -> str:
-        recommendations = {
-            'LOW': "PROFESSIONAL CONFIDENT STAKE",
-            'MEDIUM': "PROFESSIONAL STANDARD STAKE", 
-            'HIGH': "PROFESSIONAL CAUTIOUS STAKE",
-            'VERY_HIGH': "PROFESSIONAL MINIMAL STAKE"
-        }
-        return recommendations.get(risk_level, "PROFESSIONAL ASSESSMENT REQUIRED")
-    
-    def _get_professional_intelligence_breakdown(self) -> str:
-        return (f"Professional IQ: {self.intelligence.football_iq_score:.1f}/100 | "
-                f"Coherence: {self.intelligence.narrative_coherence:.1%} | "
-                f"Alignment: {self.intelligence.prediction_alignment} | "
-                f"Risk: {self.intelligence.risk_level} | "
-                f"Calibration: {self.intelligence.calibration_status}")
-    
-    def _risk_to_penalty(self, risk_level: str) -> float:
-        return {'LOW': 0.05, 'MEDIUM': 0.2, 'HIGH': 0.5, 'VERY_HIGH': 0.8}.get(risk_level, 0.3)
 
 class ProfessionalBettingEngine:
     """PROFESSIONAL Betting Decision Engine"""
@@ -1426,7 +1426,7 @@ class ProfessionalBettingEngine:
         weights = {'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'SPECULATIVE': 0}
         return weights.get(confidence, 0)
 
-class ProfessionalFootballPredictor:
+class AdvancedFootballPredictor:
     """MAIN PROFESSIONAL PREDICTOR - Money-Grade Analysis"""
     
     def __init__(self, match_data: Dict[str, Any]):
@@ -1442,7 +1442,7 @@ class ProfessionalFootballPredictor:
         )
         self.predictions = None
 
-    def generate_professional_analysis(self, mc_iterations: int = 25000) -> Dict[str, Any]:
+    def generate_comprehensive_analysis(self, mc_iterations: int = 25000) -> Dict[str, Any]:
         """Generate professional-grade analysis"""
         football_predictions = self.apex_engine.generate_professional_predictions(mc_iterations)
         
@@ -1514,8 +1514,8 @@ def test_professional_predictor():
         'kelly_fraction': 0.2
     }
     
-    predictor = ProfessionalFootballPredictor(match_data)
-    results = predictor.generate_professional_analysis()
+    predictor = AdvancedFootballPredictor(match_data)
+    results = predictor.generate_comprehensive_analysis()
     
     print("🎯 PROFESSIONAL FOOTBALL PREDICTION RESULTS")
     print("=" * 70)

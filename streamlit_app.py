@@ -429,7 +429,7 @@ def create_professional_input_form():
         
         with model_col1:
             st.write("**Professional Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 1, key="professional_home_injuries")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 4, key="professional_home_injuries")
             away_injuries = st.slider("Away Key Absences", 0, 5, 3, key="professional_away_injuries")
             
             home_absence_impact = st.select_slider(

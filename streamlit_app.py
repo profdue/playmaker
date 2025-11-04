@@ -1,6 +1,5 @@
-# streamlit_app.py - PROFESSIONAL BETTING GRADE (FIXED STREAMLIT DEPRECATION)
+# streamlit_app.py - PROFESSIONAL BETTING GRADE (COMPLETE UPDATED VERSION)
 import streamlit as st
-st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -8,7 +7,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the PROFESSIONAL PREDICTION ENGINE - FIXED IMPORT
+# Import the PROFESSIONAL PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, ProfessionalTeamTierCalibrator
 except ImportError as e:
@@ -60,6 +59,7 @@ st.markdown("""
     .brasileirao { background: #FFCC00; color: black; }
     .liga-mx { background: #006847; }
     .eredivisie { background: #FF6B00; }
+    .championship { background: #8B0000; }
     
     .money-grade-banner {
         background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
@@ -229,7 +229,8 @@ def get_league_display_name(league_id: str) -> str:
         'liga_portugal': 'Liga Portugal 🇵🇹',
         'brasileirao': 'Brasileirão 🇧🇷',
         'liga_mx': 'Liga MX 🇲🇽',
-        'eredivisie': 'Eredivisie 🇳🇱'
+        'eredivisie': 'Eredivisie 🇳🇱',
+        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿'  # NEW Championship
     }
     return league_names.get(league_id, league_id)
 
@@ -244,7 +245,8 @@ def get_league_badge(league_id: str) -> str:
         'liga_portugal': 'liga-portugal',
         'brasileirao': 'brasileirao',
         'liga_mx': 'liga-mx',
-        'eredivisie': 'eredivisie'
+        'eredivisie': 'eredivisie',
+        'championship': 'championship'  # NEW Championship
     }
     return league_classes.get(league_id, 'premier-league')
 
@@ -270,11 +272,12 @@ def display_professional_architecture():
         - **Kelly Criterion** - Professional bankroll management
         
         **Professional League Calibration** 🌍
-        - **Serie A** 🇮🇹: High home advantage + Strong tier impact
         - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Balanced competitive model
+        - **Serie A** 🇮🇹: High home advantage + Strong tier impact
         - **La Liga** 🇪🇸: Technical style adjustments
         - **Bundesliga** 🇩🇪: High-scoring bias
         - **Ligue 1** 🇫🇷: Defensive league adjustments
+        - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Strong home advantage + Physical style
         """)
 
 def create_professional_input_form():
@@ -300,7 +303,8 @@ def create_professional_input_form():
         'liga_portugal': 'Liga Portugal 🇵🇹',
         'brasileirao': 'Brasileirão 🇧🇷',
         'liga_mx': 'Liga MX 🇲🇽',
-        'eredivisie': 'Eredivisie 🇳🇱'
+        'eredivisie': 'Eredivisie 🇳🇱',
+        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿'  # NEW Championship
     }
     
     selected_league = st.selectbox(
@@ -339,9 +343,9 @@ def create_professional_input_form():
                 key="professional_home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=7, key="professional_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=4, key="professional_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=4, key="professional_home_goals_home")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="professional_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=3, key="professional_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="professional_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -352,9 +356,9 @@ def create_professional_input_form():
                 key="professional_away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=6, key="professional_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=10, key="professional_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=5, key="professional_away_goals_away")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=5, key="professional_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="professional_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="professional_away_goals_away")
         
         # Show professional team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
@@ -370,14 +374,14 @@ def create_professional_input_form():
         with st.expander("📊 Professional Head-to-Head Analysis"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=6, key="professional_h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=5, key="professional_h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="professional_h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3, key="professional_h2h_home_wins")
             with h2h_col2:
                 h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0, key="professional_h2h_away_wins")
                 h2h_draws = st.number_input("Draws", min_value=0, value=1, key="professional_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=13, key="professional_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=5, key="professional_h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8, key="professional_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2, key="professional_h2h_away_goals")
 
         # Professional Recent Form
         with st.expander("📈 Professional Form Analysis"):
@@ -388,7 +392,7 @@ def create_professional_input_form():
                 home_form = st.multiselect(
                     f"{home_team} Recent Results",
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Win (3 pts)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)"],
+                    default=["Win (3 pts)", "Win (3 pts)", "Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)"],
                     key="professional_home_form"
                 )
             with form_col2:
@@ -407,20 +411,20 @@ def create_professional_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.62, step=0.01, key="professional_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.60, step=0.01, key="professional_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=6.00, step=0.01, key="professional_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.45, step=0.01, key="professional_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=4.20, step=0.01, key="professional_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=8.50, step=0.01, key="professional_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
             over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.36, step=0.01, key="professional_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="professional_over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=4.00, step=0.01, key="professional_over_35_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.95, step=0.01, key="professional_over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="professional_over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.05, step=0.01, key="professional_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.70, step=0.01, key="professional_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.20, step=0.01, key="professional_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.65, step=0.01, key="professional_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Professional Configuration")
@@ -429,13 +433,13 @@ def create_professional_input_form():
         
         with model_col1:
             st.write("**Professional Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 4, key="professional_home_injuries")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="professional_home_injuries")
             away_injuries = st.slider("Away Key Absences", 0, 5, 3, key="professional_away_injuries")
             
             home_absence_impact = st.select_slider(
                 "Home Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Rotation Player",
+                value="Regular Starter",
                 key="professional_home_absence_impact"
             )
             away_absence_impact = st.select_slider(
@@ -473,8 +477,8 @@ def create_professional_input_form():
             bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="professional_bankroll")
             kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="professional_kelly_fraction")
 
-    # Professional Submit button - FIXED: use width='stretch' instead of use_container_width=True
-    submitted = st.button("🎯 GENERATE PROFESSIONAL ANALYSIS", type="primary", width='stretch')
+    # Professional Submit button
+    submitted = st.button("🎯 GENERATE PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -1021,14 +1025,12 @@ def main():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            # FIXED: use width='stretch' instead of use_container_width=True
-            if st.button("🔄 New Professional Analysis", width='stretch'):
+            if st.button("🔄 New Professional Analysis", use_container_width=True):
                 st.session_state.professional_predictions = None
                 st.rerun()
         
         with col2:
-            # FIXED: use width='stretch' instead of use_container_width=True
-            if st.button("📊 Professional History", width='stretch'):
+            if st.button("📊 Professional History", use_container_width=True):
                 if st.session_state.professional_prediction_history:
                     st.write("**Professional Prediction History:**")
                     for i, pred in enumerate(st.session_state.professional_prediction_history[-5:]):
@@ -1043,8 +1045,7 @@ def main():
                     st.info("No professional prediction history yet.")
         
         with col3:
-            # FIXED: use width='stretch' instead of use_container_width=True
-            if st.button("🎯 System Status", width='stretch'):
+            if st.button("🎯 System Status", use_container_width=True):
                 st.success("""
                 **Professional System Status: OPERATIONAL** 🟢
                 

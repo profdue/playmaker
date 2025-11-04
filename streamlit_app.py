@@ -1,4 +1,4 @@
-# streamlit_app.py - PROFESSIONAL BETTING GRADE (FIXED IMPORT)
+# streamlit_app.py - PROFESSIONAL BETTING GRADE (FIXED STREAMLIT DEPRECATION)
 import streamlit as st
 st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
@@ -473,8 +473,8 @@ def create_professional_input_form():
             bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="professional_bankroll")
             kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="professional_kelly_fraction")
 
-    # Professional Submit button
-    submitted = st.button("🎯 GENERATE PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
+    # Professional Submit button - FIXED: use width='stretch' instead of use_container_width=True
+    submitted = st.button("🎯 GENERATE PROFESSIONAL ANALYSIS", type="primary", width='stretch')
     
     if submitted:
         if not home_team or not away_team:
@@ -1021,12 +1021,14 @@ def main():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🔄 New Professional Analysis", use_container_width=True):
+            # FIXED: use width='stretch' instead of use_container_width=True
+            if st.button("🔄 New Professional Analysis", width='stretch'):
                 st.session_state.professional_predictions = None
                 st.rerun()
         
         with col2:
-            if st.button("📊 Professional History", use_container_width=True):
+            # FIXED: use width='stretch' instead of use_container_width=True
+            if st.button("📊 Professional History", width='stretch'):
                 if st.session_state.professional_prediction_history:
                     st.write("**Professional Prediction History:**")
                     for i, pred in enumerate(st.session_state.professional_prediction_history[-5:]):
@@ -1041,7 +1043,8 @@ def main():
                     st.info("No professional prediction history yet.")
         
         with col3:
-            if st.button("🎯 System Status", use_container_width=True):
+            # FIXED: use width='stretch' instead of use_container_width=True
+            if st.button("🎯 System Status", width='stretch'):
                 st.success("""
                 **Professional System Status: OPERATIONAL** 🟢
                 

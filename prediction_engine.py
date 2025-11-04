@@ -1499,16 +1499,16 @@ def test_professional_predictor():
     """Professional test function"""
     match_data = {
         'home_team': 'Lazio', 'away_team': 'Cagliari', 'league': 'serie_a',
-        'home_goals': 10, 'away_goals': 6, 'home_conceded': 8, 'away_conceded': 12,
-        'home_goals_home': 6, 'away_goals_away': 2,
+        'home_goals': 7, 'away_goals': 6, 'home_conceded': 4, 'away_conceded': 10,
+        'home_goals_home': 4, 'away_goals_away': 5,
         'home_form': [3, 3, 0, 3, 1, 3], 'away_form': [0, 1, 0, 1, 0, 0],
-        'h2h_data': {'matches': 8, 'home_wins': 5, 'away_wins': 1, 'draws': 2, 'home_goals': 14, 'away_goals': 6},
+        'h2h_data': {'matches': 6, 'home_wins': 5, 'away_wins': 0, 'draws': 1, 'home_goals': 13, 'away_goals': 5},
         'motivation': {'home': 'High', 'away': 'Normal'},
-        'injuries': {'home': 1, 'away': 3},
+        'injuries': {'home': 4, 'away': 3},
         'market_odds': {
-            '1x2 Home': 1.70, '1x2 Draw': 3.60, '1x2 Away': 5.00,
-            'Over 2.5 Goals': 1.90, 'Under 2.5 Goals': 1.90,
-            'BTTS Yes': 1.80, 'BTTS No': 1.90
+            '1x2 Home': 1.62, '1x2 Draw': 3.60, '1x2 Away': 6.00,
+            'Over 2.5 Goals': 2.10, 'Under 2.5 Goals': 1.73,
+            'BTTS Yes': 2.05, 'BTTS No': 1.70
         },
         'bankroll': 1000,
         'kelly_fraction': 0.2

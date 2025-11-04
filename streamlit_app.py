@@ -407,20 +407,20 @@ def create_professional_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.70, step=0.01, key="professional_home_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.62, step=0.01, key="professional_home_odds")
             draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.60, step=0.01, key="professional_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=5.00, step=0.01, key="professional_away_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=6.00, step=0.01, key="professional_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.30, step=0.01, key="professional_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.90, step=0.01, key="professional_over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.00, step=0.01, key="professional_over_35_odds")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.36, step=0.01, key="professional_over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="professional_over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=4.00, step=0.01, key="professional_over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.80, step=0.01, key="professional_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01, key="professional_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.05, step=0.01, key="professional_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.70, step=0.01, key="professional_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Professional Configuration")

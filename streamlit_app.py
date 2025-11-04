@@ -1,6 +1,5 @@
-# streamlit_app.py - PROFESSIONAL BETTING GRADE (COMPLETE UPDATED VERSION)
+# streamlit_app.py - PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
 import streamlit as st
-st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -202,14 +201,6 @@ st.markdown("""
     }
     
     /* ENHANCED CONFIDENCE FEATURES */
-    .enhanced-confidence-reasoning {
-        background: #f0f8ff;
-        border-left: 4px solid #2196F3;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        font-size: 0.9rem;
-    }
     .contradiction-warning {
         background: #fff3e0;
         border-left: 4px solid #FF9800;
@@ -226,6 +217,7 @@ st.markdown("""
         border-radius: 12px;
         font-size: 0.8rem;
         margin-left: 0.5rem;
+        border: 1px solid #4CAF50;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -606,15 +598,15 @@ def display_professional_predictions(predictions):
     stability_bonus = intelligence.get('form_stability_bonus', 0)
     
     st.markdown(f'''
-    <p style="text-align: center; font-size: 1.5rem; font-weight: 600;">
+    <div style="text-align: center; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">
         {predictions.get("match", "Unknown Match")} 
         <span class="professional-tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
         <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         {f'<span class="stability-bonus">Stability: +{stability_bonus:.1f}</span>' if stability_bonus > 0 else ''}
-    </p>
-    <p style="text-align: center; margin-top: 0.5rem;">
+    </div>
+    <div style="text-align: center; margin-top: 0.5rem;">
         <span class="professional-badge {league_badge_class}">{league_display_name}</span>
-    </p>
+    </div>
     ''', unsafe_allow_html=True)
     
     # Professional metrics
@@ -671,38 +663,41 @@ def display_professional_predictions(predictions):
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        home_win_prob = outcomes.get('home_win', 0)
         st.markdown(f'''
         <div style="margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
                 <span><strong>Home Win</strong></span>
-                <span><strong>{outcomes.get('home_win', 0):.1f}%</strong></span>
+                <span><strong>{home_win_prob:.1f}%</strong></span>
             </div>
             <div class="professional-probability-bar">
-                <div class="professional-probability-fill" style="width: {outcomes.get('home_win', 0)}%;"></div>
+                <div class="professional-probability-fill" style="width: {home_win_prob}%;"></div>
             </div>
         </div>
         ''', unsafe_allow_html=True)
     with col2:
+        draw_prob = outcomes.get('draw', 0)
         st.markdown(f'''
         <div style="margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
                 <span><strong>Draw</strong></span>
-                <span><strong>{outcomes.get('draw', 0):.1f}%</strong></span>
+                <span><strong>{draw_prob:.1f}%</strong></span>
             </div>
             <div class="professional-probability-bar">
-                <div class="professional-probability-fill" style="width: {outcomes.get('draw', 0)}%; background: #FF9800;"></div>
+                <div class="professional-probability-fill" style="width: {draw_prob}%; background: #FF9800;"></div>
             </div>
         </div>
         ''', unsafe_allow_html=True)
     with col3:
+        away_win_prob = outcomes.get('away_win', 0)
         st.markdown(f'''
         <div style="margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
                 <span><strong>Away Win</strong></span>
-                <span><strong>{outcomes.get('away_win', 0):.1f}%</strong></span>
+                <span><strong>{away_win_prob:.1f}%</strong></span>
             </div>
             <div class="professional-probability-bar">
-                <div class="professional-probability-fill" style="width: {outcomes.get('away_win', 0)}%; background: #2196F3;"></div>
+                <div class="professional-probability-fill" style="width: {away_win_prob}%; background: #2196F3;"></div>
             </div>
         </div>
         ''', unsafe_allow_html=True)
@@ -1016,30 +1011,37 @@ def display_professional_value_detection(predictions):
                 safe_explanations = [exp for exp in explanations if exp and "contradict" not in exp.lower()]
                 contradiction_explanations = [exp for exp in explanations if exp and "contradict" in exp.lower()]
                 
-                st.markdown(f'''
-                <div class="professional-bet-card {value_class}">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div style="flex: 2;">
-                            <strong>{bet.get('market', 'Unknown')}</strong>
-                            {f'<span style="color: #FF5722; margin-left: 0.5rem;">⚠️ CONTRADICTION</span>' if contradiction_explanations else ''}
-                            <br>
-                            <small>Model: {bet.get('model_prob', 0)}% | Market: {bet.get('book_prob', 0)}%</small>
-                            <div style="margin-top: 0.5rem;">
-                                <small>{alignment_emoji} <strong>{alignment_text}</strong> with Signal Engine</small>
-                            </div>
-                            <div style="margin-top: 0.8rem;">
-                                {''.join([f'<span class="professional-feature-badge">💡 {exp}</span>' for exp in safe_explanations[:1]])}
-                            </div>
-                            {''.join([f'<div class="enhanced-confidence-reasoning">⚠️ {exp}</div>' for exp in contradiction_explanations[:1]])}
-                        </div>
-                        <div style="flex: 1; text-align: right;">
-                            <strong style="color: #4CAF50; font-size: 1.2rem;">+{bet.get('edge', 0)}% Edge</strong><br>
-                            <small>Stake: ${bet.get('recommended_stake', 0):.2f}</small><br>
-                            <small>{confidence_emoji} {bet.get('confidence', 'Unknown')}</small>
-                        </div>
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                # Create the bet card using Streamlit components instead of raw HTML
+                with st.container():
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        # Market name and contradiction warning
+                        market_text = f"**{bet.get('market', 'Unknown')}**"
+                        if contradiction_explanations:
+                            market_text += " 🚨 CONTRADICTION"
+                        st.markdown(market_text)
+                        
+                        # Probability info
+                        st.caption(f"Model: {bet.get('model_prob', 0)}% | Market: {bet.get('book_prob', 0)}%")
+                        
+                        # Alignment info
+                        st.caption(f"{alignment_emoji} {alignment_text} with Signal Engine")
+                        
+                        # Safe explanations
+                        for exp in safe_explanations[:1]:
+                            st.markdown(f'<div class="professional-feature-badge">💡 {exp}</div>', unsafe_allow_html=True)
+                        
+                        # Contradiction explanations
+                        for exp in contradiction_explanations[:1]:
+                            st.warning(exp)
+                            
+                    with col2:
+                        # Edge and stake info
+                        st.markdown(f"<h3 style='color: #4CAF50; margin: 0;'>+{bet.get('edge', 0)}% Edge</h3>", unsafe_allow_html=True)
+                        st.caption(f"Stake: ${bet.get('recommended_stake', 0):.2f}")
+                        st.caption(f"{confidence_emoji} {bet.get('confidence', 'Unknown')}")
+                    
+                    st.markdown("---")
     
     display_professional_bet_group(exceptional_bets, "Exceptional", "🔥")
     display_professional_bet_group(high_bets, "High", "⭐")

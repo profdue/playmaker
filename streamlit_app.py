@@ -1,4 +1,4 @@
-# streamlit_app.py - PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
+# streamlit_app.py - ENHANCED PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
 import streamlit as st
 st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the FIXED PROFESSIONAL PREDICTION ENGINE
+# Import the ENHANCED PROFESSIONAL PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, ProfessionalTeamTierCalibrator
 except ImportError as e:
@@ -18,13 +18,13 @@ except ImportError as e:
 
 # Professional page configuration
 st.set_page_config(
-    page_title="🎯 Professional Football Predictor",
+    page_title="🎯 Enhanced Professional Football Predictor",
     page_icon="⚽", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Professional CSS styling
+# Enhanced Professional CSS styling
 st.markdown("""
 <style>
     .professional-header { 
@@ -202,7 +202,7 @@ st.markdown("""
         display: inline-block;
     }
     
-    /* FIXED CONFIDENCE FEATURES */
+    /* ENHANCED CONFIDENCE FEATURES */
     .contradiction-warning {
         background: #fff3e0;
         border-left: 4px solid #FF9800;
@@ -230,6 +230,16 @@ st.markdown("""
         margin: 0.5rem 0;
         font-size: 0.85rem;
         color: #1565C0;
+    }
+    
+    .enhanced-feature {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin: 0.2rem;
+        display: inline-block;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -282,51 +292,56 @@ def get_league_badge(league_id: str) -> str:
     }
     return league_classes.get(league_id, 'premier-league')
 
-def display_professional_banner():
-    """Display professional banner"""
+def display_enhanced_banner():
+    """Display enhanced professional banner"""
     st.markdown("""
     <div class="money-grade-banner">
-        🎯 FIXED PROFESSIONAL BETTING GRADE • PROPER CONFIDENCE SYSTEM • LEAGUE-SPECIFIC CALIBRATION • MONEY-GRADE ACCURACY
+        🎯 ENHANCED PROFESSIONAL BETTING GRADE • AGGRESSIVE AWAY COUNTER BOOST • IMPROVED CONFIDENCE SYSTEM • MONEY-GRADE ACCURACY
     </div>
     """, unsafe_allow_html=True)
 
-def display_professional_architecture():
-    """Display professional system architecture"""
-    with st.expander("🏗️ FIXED PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
+def display_enhanced_architecture():
+    """Display enhanced system architecture"""
+    with st.expander("🏗️ ENHANCED PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
         st.markdown("""
-        ### 🎯 FIXED MONEY-GRADE PREDICTION ENGINE
+        ### 🎯 ENHANCED MONEY-GRADE PREDICTION ENGINE
         
-        **Fixed Confidence Features:**
-        - **✅ Proper 4-Tier Confidence System** - HIGH, MEDIUM, LOW, SPECULATIVE
-        - **✅ League-Specific Confidence Multipliers** - Dynamic thresholds per league
-        - **✅ Form Stability Bonus** - Rewards consistent team performance  
-        - **✅ Contradiction Detection** - Automatically detects conflicting signals
-        - **✅ Enhanced Confidence Reasoning** - Transparent confidence assignment
+        **Enhanced Confidence Features:**
+        - **🚀 Aggressive Away Counter Boost** - 15% xG boost for strong away teams
+        - **🎯 Lowered Confidence Thresholds** - More signals, higher stakes
+        - **📈 Enhanced Form Stability** - Up to +5.0 bonus points
+        - **⚡ Reduced Contradiction Penalties** - More nuanced signal assessment
+        - **💰 Lower Edge Thresholds** - 2.5% vs 4.0% previously
         
-        **Fixed Confidence Thresholds:**
-        - **HIGH**: >70% probability + >12% edge + >80% data quality
-        - **MEDIUM**: >60% probability + >8% edge + >70% data quality  
-        - **LOW**: >55% probability + >5% edge + >60% data quality
+        **Enhanced Confidence Thresholds:**
+        - **HIGH**: >65% probability + >10% edge + >75% data quality
+        - **MEDIUM**: >55% probability + >6% edge + >65% data quality  
+        - **LOW**: >50% probability + >3% edge + >55% data quality
         - **SPECULATIVE**: Below any threshold
         
+        **Away Counter Enhancements:**
+        - **15% xG boost** for STRONG/ELITE away teams vs WEAK/MEDIUM home teams
+        - **More aggressive probability adjustments** 
+        - **Enhanced market value detection** for away wins/draws
+        
         **Professional League Calibration** 🌍
-        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline confidence model
+        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline enhanced model
         - **Serie A** 🇮🇹: +15% confidence requirements (defensive league)
         - **Bundesliga** 🇩🇪: -10% confidence requirements (high-scoring)
         - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: +8% requirements (unpredictable)
         """)
 
-def create_professional_input_form():
-    """Create professional input form"""
+def create_enhanced_input_form():
+    """Create enhanced professional input form"""
     
-    st.markdown('<p class="professional-header">🎯 Professional Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="professional-subheader">Fixed Money-Grade Multi-League Analysis with Proper Confidence System</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-subheader">Enhanced Money-Grade Multi-League Analysis with Aggressive Away Counter Boost</p>', unsafe_allow_html=True)
     
-    # Display professional banner
-    display_professional_banner()
+    # Display enhanced banner
+    display_enhanced_banner()
     
-    # Display professional architecture
-    display_professional_architecture()
+    # Display enhanced architecture
+    display_enhanced_architecture()
     
     # Professional League Selection
     st.markdown("### 🌍 Professional League Selection")
@@ -347,7 +362,7 @@ def create_professional_input_form():
         "Select League",
         options=list(league_options.keys()),
         format_func=lambda x: league_options[x],
-        key="professional_league_selection"
+        key="enhanced_league_selection"
     )
     
     # Display professional league badge
@@ -376,12 +391,12 @@ def create_professional_input_form():
                 "Team Name", 
                 options=league_teams,
                 index=min(5, len(league_teams) - 1),
-                key="professional_home_team"
+                key="enhanced_home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="professional_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=3, key="professional_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="professional_home_goals_home")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="enhanced_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=10, key="enhanced_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="enhanced_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -389,12 +404,12 @@ def create_professional_input_form():
                 "Team Name",
                 options=league_teams,
                 index=0,
-                key="professional_away_team"
+                key="enhanced_away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=5, key="professional_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="professional_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="professional_away_goals_away")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=12, key="enhanced_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=8, key="enhanced_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=6, key="enhanced_away_goals_away")
         
         # Show professional team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
@@ -406,18 +421,23 @@ def create_professional_input_form():
         <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
         
+        # Enhanced: Show away counter potential
+        if away_tier in ['STRONG', 'ELITE'] and home_tier in ['WEAK', 'MEDIUM']:
+            st.markdown('<div class="enhanced-feature">🚀 POTENTIAL AWAY COUNTER DETECTED</div>', unsafe_allow_html=True)
+            st.info(f"**Enhanced Away Counter Boost Active:** {away_team} will receive 15% xG boost against {home_team}")
+        
         # Professional Head-to-head section
         with st.expander("📊 Professional Head-to-Head Analysis"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="professional_h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=3, key="professional_h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="enhanced_h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=1, key="enhanced_h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=0, key="professional_h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="professional_h2h_draws")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=2, key="enhanced_h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="enhanced_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=8, key="professional_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=2, key="professional_h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=4, key="enhanced_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=6, key="enhanced_h2h_away_goals")
 
         # Professional Recent Form
         with st.expander("📈 Professional Form Analysis"):
@@ -428,16 +448,16 @@ def create_professional_input_form():
                 home_form = st.multiselect(
                     f"{home_team} Recent Results",
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Win (3 pts)", "Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)"],
-                    key="professional_home_form"
+                    default=["Win (3 pts)", "Draw (1 pt)", "Win (3 pts)", "Loss (0 pts)", "Draw (1 pt)", "Draw (1 pt)"],
+                    key="enhanced_home_form"
                 )
             with form_col2:
                 st.write(f"**{away_team} Last 6 Matches**")
                 away_form = st.multiselect(
                     f"{away_team} Recent Results", 
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Loss (0 pts)", "Draw (1 pt)", "Loss (0 pts)", "Draw (1 pt)", "Loss (0 pts)", "Loss (0 pts)"],
-                    key="professional_away_form"
+                    default=["Win (3 pts)", "Win (3 pts)", "Draw (1 pt)", "Win (3 pts)", "Loss (0 pts)", "Win (3 pts)"],
+                    key="enhanced_away_form"
                 )
 
     with tab2:
@@ -447,20 +467,20 @@ def create_professional_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.45, step=0.01, key="professional_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=4.20, step=0.01, key="professional_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=8.50, step=0.01, key="professional_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=3.50, step=0.01, key="enhanced_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.40, step=0.01, key="enhanced_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.10, step=0.01, key="enhanced_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.36, step=0.01, key="professional_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.95, step=0.01, key="professional_over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="professional_over_35_odds")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.36, step=0.01, key="enhanced_over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.95, step=0.01, key="enhanced_over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="enhanced_over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.20, step=0.01, key="professional_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.65, step=0.01, key="professional_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.80, step=0.01, key="enhanced_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.95, step=0.01, key="enhanced_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Professional Configuration")
@@ -469,20 +489,20 @@ def create_professional_input_form():
         
         with model_col1:
             st.write("**Professional Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="professional_home_injuries")
-            away_injuries = st.slider("Away Key Absences", 0, 5, 3, key="professional_away_injuries")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="enhanced_home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 1, key="enhanced_away_injuries")
             
             home_absence_impact = st.select_slider(
                 "Home Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
                 value="Regular Starter",
-                key="professional_home_absence_impact"
+                key="enhanced_home_absence_impact"
             )
             away_absence_impact = st.select_slider(
                 "Away Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Regular Starter",
-                key="professional_away_absence_impact"
+                value="Rotation Player",
+                key="enhanced_away_absence_impact"
             )
             
         with model_col2:
@@ -490,14 +510,14 @@ def create_professional_input_form():
             home_motivation = st.select_slider(
                 "Home Team Motivation",
                 options=["Low", "Normal", "High", "Very High"],
-                value="Normal",
-                key="professional_home_motivation"
+                value="High",
+                key="enhanced_home_motivation"
             )
             away_motivation = st.select_slider(
                 "Away Team Motivation", 
                 options=["Low", "Normal", "High", "Very High"],
                 value="Normal", 
-                key="professional_away_motivation"
+                key="enhanced_away_motivation"
             )
             
             # Professional simulation settings
@@ -506,15 +526,15 @@ def create_professional_input_form():
                 "Monte Carlo Iterations",
                 options=[10000, 25000, 50000],
                 value=25000,
-                key="professional_mc_iterations"
+                key="enhanced_mc_iterations"
             )
             
             # Professional bankroll management
-            bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="professional_bankroll")
-            kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="professional_kelly_fraction")
+            bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="enhanced_bankroll")
+            kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="enhanced_kelly_fraction")
 
     # Professional Submit button
-    submitted = st.button("🎯 GENERATE PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE ENHANCED PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -592,15 +612,15 @@ def create_professional_input_form():
     
     return None, None
 
-def display_professional_predictions(predictions):
-    """Display professional predictions"""
+def display_enhanced_predictions(predictions):
+    """Display enhanced professional predictions"""
     
     if not predictions:
-        st.error("❌ No professional predictions available")
+        st.error("❌ No enhanced professional predictions available")
         return
         
-    st.markdown('<p class="professional-header">🎯 Professional Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-system-card"><h3>🟢 FIXED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Money-Grade Multi-League Analysis with Proper Confidence System</div>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictions</p>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-system-card"><h3>🟢 ENHANCED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Enhanced Money-Grade Multi-League Analysis with Aggressive Away Counter Boost</div>', unsafe_allow_html=True)
     
     # Professional team tiers display
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -616,12 +636,19 @@ def display_professional_predictions(predictions):
     intelligence = safe_get(predictions, 'apex_intelligence') or {}
     stability_bonus = intelligence.get('form_stability_bonus', 0)
     
+    # Enhanced: Show away counter boost if applicable
+    match_context = safe_get(predictions, 'match_context')
+    away_counter_boost = ""
+    if match_context == "away_counter":
+        away_counter_boost = '<span class="enhanced-feature">🚀 AWAY COUNTER BOOST ACTIVE</span>'
+    
     st.markdown(f'''
     <div style="text-align: center; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">
         {predictions.get("match", "Unknown Match")} 
         <span class="professional-tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
         <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         {f'<span class="stability-bonus">Stability: +{stability_bonus:.1f}</span>' if stability_bonus > 0 else ''}
+        {away_counter_boost}
     </div>
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="professional-badge {league_badge_class}">{league_display_name}</span>
@@ -634,7 +661,7 @@ def display_professional_predictions(predictions):
     confidence_score = safe_get(predictions, 'confidence_score') or 0
     data_quality = safe_get(predictions, 'data_quality_score') or 0
     football_iq = safe_get(predictions, 'apex_intelligence', 'football_iq_score') or 0
-    calibration_status = safe_get(predictions, 'apex_intelligence', 'calibration_status') or 'STANDARD'
+    calibration_status = safe_get(predictions, 'apex_intelligence', 'calibration_status') or 'ENHANCED'
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -651,32 +678,32 @@ def display_professional_predictions(predictions):
             'tactical_stalemate': '⚔️',
             'unpredictable': '❓'
         }.get(match_context, '❓')
-        st.metric("Professional Context", f"{context_emoji} {match_context.replace('_', ' ').title()}")
+        st.metric("Enhanced Context", f"{context_emoji} {match_context.replace('_', ' ').title()}")
     with col4:
-        st.metric("Fixed IQ", f"{football_iq:.1f}/100")
+        st.metric("Enhanced IQ", f"{football_iq:.1f}/100")
     
-    # Professional system validation
+    # Enhanced system validation
     system_validation = safe_get(predictions, 'system_validation') or {}
     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    calibration_level = system_validation.get('calibration_level', 'STANDARD')
+    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
         st.markdown(f'''
         <div class="professional-alignment-perfect">
-            ✅ <strong>FIXED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions
-            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.1.0_fixed')} | Stability Bonus: +{stability_bonus:.1f}</small>
+            ✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions
+            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.2.0_enhanced')} | Stability Bonus: +{stability_bonus:.1f}</small>
         </div>
         ''', unsafe_allow_html=True)
     else:
         st.markdown(f'''
         <div class="professional-alignment-warning">
-            ⚠️ <strong>FIXED PROFESSIONAL REVIEW REQUIRED:</strong> Some inconsistencies detected
-            <br><small>Calibration: {calibration_level} | Fixed professional discretion advised</small>
+            ⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Some inconsistencies detected
+            <br><small>Calibration: {calibration_level} | Enhanced professional discretion advised</small>
         </div>
         ''', unsafe_allow_html=True)
     
     # Professional Match Outcomes
-    st.markdown('<div class="professional-section-title">📈 Professional Outcome Probabilities</div>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-section-title">📈 Enhanced Outcome Probabilities</div>', unsafe_allow_html=True)
     
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {'home_win': 0, 'draw': 0, 'away_win': 0}
     col1, col2, col3 = st.columns(3)
@@ -721,8 +748,8 @@ def display_professional_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
     
-    # Professional Goals Analysis
-    st.markdown('<div class="professional-section-title">⚽ Professional Goals Analysis</div>', unsafe_allow_html=True)
+    # Enhanced Goals Analysis
+    st.markdown('<div class="professional-section-title">⚽ Enhanced Goals Analysis</div>', unsafe_allow_html=True)
     
     # Get probabilities with safe defaults
     btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes') or 0
@@ -734,7 +761,7 @@ def display_professional_predictions(predictions):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # Professional BTTS with explanations
+        # Enhanced BTTS with explanations
         if btts_no > btts_yes:
             recommendation = "NO"
             primary_prob = btts_no
@@ -748,8 +775,8 @@ def display_professional_predictions(predictions):
             card_class = "risk-low"
             emoji = "✅"
         
-        # FIXED: Proper confidence calculation
-        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        # ENHANCED: More assertive confidence calculation
+        confidence = "HIGH" if abs(primary_prob - 50) > 25 else "MEDIUM" if abs(primary_prob - 50) > 15 else "LOW"
         
         st.markdown(f'''
         <div class="professional-card {card_class}">
@@ -766,14 +793,14 @@ def display_professional_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
         
-        # Show professional explanations
+        # Show enhanced explanations
         explanations = safe_get(predictions, 'explanations', 'btts') or []
-        for explanation in explanations[:2]:
+        for explanation in explanations[:3]:  # Show more explanations
             if explanation:
                 st.markdown(f'<div class="professional-explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col2:
-        # Professional Over/Under with explanations
+        # Enhanced Over/Under with explanations
         if under_25 > over_25:
             recommendation = "UNDER"
             primary_prob = under_25
@@ -787,8 +814,8 @@ def display_professional_predictions(predictions):
             card_class = "risk-low"
             emoji = "✅"
         
-        # FIXED: Proper confidence calculation
-        confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        # ENHANCED: More assertive confidence calculation
+        confidence = "HIGH" if abs(primary_prob - 50) > 25 else "MEDIUM" if abs(primary_prob - 50) > 15 else "LOW"
         
         st.markdown(f'''
         <div class="professional-card {card_class}">
@@ -805,14 +832,14 @@ def display_professional_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
         
-        # Show professional explanations
+        # Show enhanced explanations
         explanations = safe_get(predictions, 'explanations', 'over_under') or []
-        for explanation in explanations[:2]:
+        for explanation in explanations[:3]:  # Show more explanations
             if explanation:
                 st.markdown(f'<div class="professional-explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col3:
-        # Professional Expected Goals display
+        # Enhanced Expected Goals display
         xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
         total_xg = xg.get('home', 0) + xg.get('away', 0)
         
@@ -832,7 +859,7 @@ def display_professional_predictions(predictions):
         ''', unsafe_allow_html=True)
     
     with col4:
-        # Professional Match Context
+        # Enhanced Match Context
         context = safe_get(predictions, 'match_context') or 'balanced'
         narrative = safe_get(predictions, 'match_narrative') or {}
         quality_gap = narrative.get('quality_gap', 'even')
@@ -854,7 +881,7 @@ def display_professional_predictions(predictions):
         
         st.markdown(f'''
         <div class="professional-card">
-            <h4>{context_emoji} Professional Context</h4>
+            <h4>{context_emoji} Enhanced Context</h4>
             <div style="font-size: 1.2rem; font-weight: bold; color: #333; margin: 0.8rem 0;">
                 {context.replace('_', ' ').title()}
             </div>
@@ -870,7 +897,7 @@ def display_professional_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
     
-    # Professional Exact Scores
+    # Enhanced Exact Scores
     st.markdown('<div class="professional-section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
     exact_scores = safe_get(predictions, 'probabilities', 'exact_scores') or {}
@@ -884,7 +911,7 @@ def display_professional_predictions(predictions):
     else:
         st.info("No exact score data available")
     
-    # Professional Risk Assessment
+    # Enhanced Risk Assessment
     risk = safe_get(predictions, 'risk_assessment') or {'risk_level': 'UNKNOWN', 'explanation': 'No data'}
     risk_class = f"risk-{risk.get('risk_level', 'unknown').lower()}"
     
@@ -892,10 +919,10 @@ def display_professional_predictions(predictions):
     
     st.markdown(f'''
     <div class="professional-card {risk_class}">
-        <h3>📊 Fixed Professional Risk Assessment</h3>
+        <h3>📊 Enhanced Professional Risk Assessment</h3>
         <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
-        <strong>Fixed Explanation:</strong> {risk.get("explanation", "No data available")}<br>
-        <strong>Fixed Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
+        <strong>Enhanced Explanation:</strong> {risk.get("explanation", "No data available")}<br>
+        <strong>Enhanced Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
         <strong>Certainty:</strong> {risk.get("certainty", "N/A")}<br>
         <strong>Narrative Coherence:</strong> {intelligence.get('narrative_coherence', 'N/A')}%<br>
         <strong>Prediction Alignment:</strong> {intelligence.get('prediction_alignment', 'N/A')}<br>
@@ -904,20 +931,20 @@ def display_professional_predictions(predictions):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Professional Summary
-    st.markdown('<div class="professional-section-title">📝 Professional Match Summary</div>', unsafe_allow_html=True)
-    summary = safe_get(predictions, 'summary') or "No professional summary available."
+    # Enhanced Summary
+    st.markdown('<div class="professional-section-title">📝 Enhanced Match Summary</div>', unsafe_allow_html=True)
+    summary = safe_get(predictions, 'summary') or "No enhanced professional summary available."
     st.info(summary)
 
-def display_professional_value_detection(predictions):
-    """Display professional value detection"""
+def display_enhanced_value_detection(predictions):
+    """Display enhanced professional value detection"""
     
     if not predictions:
-        st.error("❌ No professional predictions available for value detection")
+        st.error("❌ No enhanced professional predictions available for value detection")
         return
         
-    st.markdown('<p class="professional-header">💰 Professional Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-value-card"><h3>🟠 FIXED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Proper confidence system with 4-tier assessment</div>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">💰 Enhanced Professional Value Betting Detection</p>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-value-card"><h3>🟠 ENHANCED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Aggressive confidence system with improved thresholds</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals') or []
     
@@ -932,7 +959,7 @@ def display_professional_value_detection(predictions):
     primary_btts = 'yes' if btts.get('yes', 0) > btts.get('no', 0) else 'no'
     primary_over_under = 'over_25' if over_under.get('over_25', 0) > over_under.get('under_25', 0) else 'under_25'
     
-    # Display professional primary predictions context
+    # Display enhanced primary predictions context
     st.markdown('<div class="professional-section-title">🎯 Signal Engine Primary Predictions</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
@@ -944,50 +971,50 @@ def display_professional_value_detection(predictions):
     with col3:
         st.metric("Primary Over/Under", "OVER 2.5" if primary_over_under == 'over_25' else "UNDER 2.5")
     with col4:
-        st.metric("Professional League", get_league_display_name(league))
+        st.metric("Enhanced League", get_league_display_name(league))
     
     if not betting_signals:
         st.markdown('<div class="professional-alignment-perfect">', unsafe_allow_html=True)
         st.info("""
-        ## ✅ FIXED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
+        ## ✅ ENHANCED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
         
-        **Fixed Professional Assessment:**
+        **Enhanced Professional Assessment:**
         - Pure probabilities align with market expectations  
-        - No significant edges above fixed professional thresholds
+        - No significant edges above enhanced professional thresholds
         - Advanced contradiction detection confirms signal coherence
-        - **FIXED PERFECT ALIGNMENT ACHIEVED**
+        - **ENHANCED PERFECT ALIGNMENT ACHIEVED**
         
-        **Fixed Professional Value Engine with proper 4-tier confidence system is properly confirming predictions!**
+        **Enhanced Professional Value Engine with aggressive confidence system is properly confirming predictions!**
         """)
         st.markdown('</div>', unsafe_allow_html=True)
         return
     
-    # Professional alignment status
+    # Enhanced alignment status
     system_validation = safe_get(predictions, 'system_validation') or {}
     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    calibration_level = system_validation.get('calibration_level', 'STANDARD')
+    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
-        st.markdown('<div class="professional-alignment-perfect">✅ <strong>FIXED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with proper validation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-perfect">✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with enhanced validation</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>FIXED PROFESSIONAL REVIEW REQUIRED:</strong> Advanced contradiction detection active</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Advanced contradiction detection active</div>', unsafe_allow_html=True)
     
     # Enhanced: Show contradiction warnings
     contradictory_signals = [s for s in betting_signals if any("contradict" in exp.lower() for exp in s.get('explanation', []))]
     if contradictory_signals:
         st.markdown(f'''
         <div class="contradiction-warning">
-            ⚠️ <strong>CONTRADICTION DETECTION:</strong> {len(contradictory_signals)} signal(s) contradict primary predictions
-            <br><small>Fixed confidence system has automatically adjusted stakes and confidence levels</small>
+            ⚠️ <strong>ENHANCED CONTRADICTION DETECTION:</strong> {len(contradictory_signals)} signal(s) contradict primary predictions
+            <br><small>Enhanced confidence system has automatically adjusted stakes and confidence levels</small>
         </div>
         ''', unsafe_allow_html=True)
     
-    # Professional Value Bet Summary
+    # Enhanced Value Bet Summary
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         total_signals = len(betting_signals)
-        st.metric("Fixed Signals", total_signals)
+        st.metric("Enhanced Signals", total_signals)
     
     with col2:
         high_value = len([s for s in betting_signals if s.get('value_rating') in ['EXCEPTIONAL', 'HIGH']])
@@ -1001,27 +1028,33 @@ def display_professional_value_detection(predictions):
         avg_edge = np.mean([s.get('edge', 0) for s in betting_signals]) if betting_signals else 0
         st.metric("Average Edge", f"{avg_edge:.1f}%")
     
-    # Display fixed confidence system explanation
+    # Display enhanced confidence system explanation
     st.markdown('<div class="confidence-explanation">', unsafe_allow_html=True)
     st.markdown("""
-    **🎯 Fixed 4-Tier Confidence System:**
-    - **🟢 HIGH**: >70% probability + >12% edge + >80% data quality
-    - **🟡 MEDIUM**: >60% probability + >8% edge + >70% data quality  
-    - **🔴 LOW**: >55% probability + >5% edge + >60% data quality
+    **🎯 Enhanced 4-Tier Confidence System:**
+    - **🟢 HIGH**: >65% probability + >10% edge + >75% data quality
+    - **🟡 MEDIUM**: >55% probability + >6% edge + >65% data quality  
+    - **🔴 LOW**: >50% probability + >3% edge + >55% data quality
     - **⚪ SPECULATIVE**: Below any threshold
+    
+    **Enhanced Features:**
+    - 🚀 Lowered edge threshold to 2.5% (was 4.0%)
+    - 📈 Increased stake multipliers for MEDIUM/LOW confidence
+    - ⚡ Reduced contradiction penalties
+    - 🎯 More aggressive away counter detection
     """)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Display professional value bets
-    st.markdown('<div class="professional-section-title">🎯 Fixed Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
+    # Display enhanced value bets
+    st.markdown('<div class="professional-section-title">🎯 Enhanced Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
     
-    # Group by professional value rating
+    # Group by enhanced value rating
     exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
     high_bets = [s for s in betting_signals if s.get('value_rating') == 'HIGH']
     good_bets = [s for s in betting_signals if s.get('value_rating') == 'GOOD']
     moderate_bets = [s for s in betting_signals if s.get('value_rating') == 'MODERATE']
     
-    def display_professional_bet_group(bets, title, emoji):
+    def display_enhanced_bet_group(bets, title, emoji):
         if bets:
             st.subheader(f"{emoji} {title} Value Bets")
             for bet in bets:
@@ -1033,7 +1066,7 @@ def display_professional_value_detection(predictions):
                     'SPECULATIVE': '⚪'
                 }.get(bet.get('confidence', 'SPECULATIVE'), '⚪')
                 
-                # Professional alignment assessment
+                # Enhanced alignment assessment
                 alignment = bet.get('alignment', 'neutral')
                 alignment_emoji = "✅" if alignment == 'aligns_with_primary' else "⚠️"
                 alignment_text = "ALIGNS" if alignment == 'aligns_with_primary' else "CONTRADICTS"
@@ -1060,11 +1093,11 @@ def display_professional_value_detection(predictions):
                         st.caption(f"{alignment_emoji} {alignment_text} with Signal Engine")
                         
                         # Safe explanations
-                        for exp in safe_explanations[:1]:
+                        for exp in safe_explanations[:2]:  # Show more explanations
                             st.markdown(f'<div class="professional-feature-badge">💡 {exp}</div>', unsafe_allow_html=True)
                         
                         # Contradiction explanations
-                        for exp in contradiction_explanations[:1]:
+                        for exp in contradiction_explanations[:2]:  # Show more explanations
                             st.warning(exp)
                             
                     with col2:
@@ -1075,97 +1108,97 @@ def display_professional_value_detection(predictions):
                     
                     st.markdown("---")
     
-    display_professional_bet_group(exceptional_bets, "Exceptional", "🔥")
-    display_professional_bet_group(high_bets, "High", "⭐")
-    display_professional_bet_group(good_bets, "Good", "✅")
-    display_professional_bet_group(moderate_bets, "Moderate", "📊")
+    display_enhanced_bet_group(exceptional_bets, "Exceptional", "🔥")
+    display_enhanced_bet_group(high_bets, "High", "⭐")
+    display_enhanced_bet_group(good_bets, "Good", "✅")
+    display_enhanced_bet_group(moderate_bets, "Moderate", "📊")
 
 def main():
-    """Professional main application function"""
+    """Enhanced main application function"""
     
-    # Initialize professional session state
-    if 'professional_predictions' not in st.session_state:
-        st.session_state.professional_predictions = None
+    # Initialize enhanced session state
+    if 'enhanced_predictions' not in st.session_state:
+        st.session_state.enhanced_predictions = None
     
-    if 'professional_prediction_history' not in st.session_state:
-        st.session_state.professional_prediction_history = []
+    if 'enhanced_prediction_history' not in st.session_state:
+        st.session_state.enhanced_prediction_history = []
     
-    if st.session_state.professional_predictions:
-        # Create professional tabs
-        tab1, tab2 = st.tabs(["🎯 Professional Predictions", "💰 Professional Value Detection"])
+    if st.session_state.enhanced_predictions:
+        # Create enhanced tabs
+        tab1, tab2 = st.tabs(["🎯 Enhanced Predictions", "💰 Enhanced Value Detection"])
         
         with tab1:
-            display_professional_predictions(st.session_state.professional_predictions)
+            display_enhanced_predictions(st.session_state.enhanced_predictions)
         
         with tab2:
-            display_professional_value_detection(st.session_state.professional_predictions)
+            display_enhanced_value_detection(st.session_state.enhanced_predictions)
         
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🔄 New Professional Analysis", use_container_width=True):
-                st.session_state.professional_predictions = None
+            if st.button("🔄 New Enhanced Analysis", use_container_width=True):
+                st.session_state.enhanced_predictions = None
                 st.rerun()
         
         with col2:
-            if st.button("📊 Professional History", use_container_width=True):
-                if st.session_state.professional_prediction_history:
-                    st.write("**Fixed Professional Prediction History:**")
-                    for i, pred in enumerate(st.session_state.professional_prediction_history[-5:]):
-                        with st.expander(f"Fixed Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
+            if st.button("📊 Enhanced History", use_container_width=True):
+                if st.session_state.enhanced_prediction_history:
+                    st.write("**Enhanced Professional Prediction History:**")
+                    for i, pred in enumerate(st.session_state.enhanced_prediction_history[-5:]):
+                        with st.expander(f"Enhanced Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
                             st.write(f"Expected Goals: Home {pred['expected_goals'].get('home', 0):.2f} - Away {pred['expected_goals'].get('away', 0):.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
-                            st.write(f"Fixed IQ: {pred.get('football_iq', 0):.1f}/100")
+                            st.write(f"Enhanced IQ: {pred.get('football_iq', 0):.1f}/100")
                             st.write(f"Stability Bonus: +{pred.get('stability_bonus', 0):.1f}")
                             st.write(f"Value Bets Found: {pred.get('value_bets', 0)}")
                 else:
-                    st.info("No fixed professional prediction history yet.")
+                    st.info("No enhanced professional prediction history yet.")
         
         with col3:
-            if st.button("🎯 Fixed System Status", use_container_width=True):
+            if st.button("🎯 Enhanced System Status", use_container_width=True):
                 st.success("""
-                **Fixed Professional System Status: OPERATIONAL** 🟢
+                **Enhanced Professional System Status: OPERATIONAL** 🟢
                 
-                **Fixed Confidence Features Active:**
-                - ✅ Proper 4-Tier Confidence System (HIGH, MEDIUM, LOW, SPECULATIVE)
-                - ✅ League-Specific Confidence Multipliers ✅
-                - ✅ Form Stability Bonus Scoring ✅  
-                - ✅ Advanced Contradiction Detection ✅
-                - ✅ Professional Monte Carlo (25k) ✅
-                - ✅ Enhanced Signal Hygiene ✅
+                **Enhanced Confidence Features Active:**
+                - ✅ Aggressive Away Counter Boost (15% xG) ✅
+                - ✅ Lowered Confidence Thresholds ✅
+                - ✅ Enhanced Form Stability Bonus (+5.0 max) ✅  
+                - ✅ Reduced Contradiction Penalties ✅
+                - ✅ Lower Edge Threshold (2.5%) ✅
+                - ✅ Enhanced Professional Monte Carlo (25k) ✅
                 
-                **Model Version:** 2.1.0_fixed
+                **Model Version:** 2.2.0_enhanced
                 **Calibration Level:** MONEY_GRADE
-                **Last Update:** Fixed Confidence Logic Active
+                **Last Update:** Enhanced Away Counter Logic Active
                 """)
         
         return
     
-    match_data, mc_iterations = create_professional_input_form()
+    match_data, mc_iterations = create_enhanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running fixed professional multi-league calibrated analysis..."):
+        with st.spinner("🔍 Running enhanced professional multi-league calibrated analysis..."):
             try:
-                # Initialize professional predictor
+                # Initialize enhanced predictor
                 predictor = AdvancedFootballPredictor(match_data)
                 
-                # Generate professional analysis
+                # Generate enhanced analysis
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
                 
                 if predictions:
-                    # Add professional information
+                    # Add enhanced information
                     predictions['league'] = match_data['league']
                     predictions['bankroll'] = match_data.get('bankroll', 1000)
                     predictions['kelly_fraction'] = match_data.get('kelly_fraction', 0.2)
                     
-                    st.session_state.professional_predictions = predictions
+                    st.session_state.enhanced_predictions = predictions
                     
-                    # Store in professional history
-                    if 'professional_prediction_history' not in st.session_state:
-                        st.session_state.professional_prediction_history = []
+                    # Store in enhanced history
+                    if 'enhanced_prediction_history' not in st.session_state:
+                        st.session_state.enhanced_prediction_history = []
                     
                     prediction_record = {
                         'timestamp': datetime.now().isoformat(),
@@ -1179,37 +1212,40 @@ def main():
                         'value_bets': len(predictions.get('betting_signals', []))
                     }
                     
-                    st.session_state.professional_prediction_history.append(prediction_record)
+                    st.session_state.enhanced_prediction_history.append(prediction_record)
                     
-                    # Professional alignment status check
+                    # Enhanced alignment status check
                     system_validation = safe_get(predictions, 'system_validation') or {}
                     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-                    calibration_level = system_validation.get('calibration_level', 'STANDARD')
+                    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
                     
                     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
                         stability_bonus = safe_get(predictions, 'apex_intelligence', 'form_stability_bonus') or 0
-                        st.success(f"""
-                        ✅ **FIXED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** 
+                        away_counter_active = safe_get(predictions, 'match_context') == 'away_counter'
+                        away_counter_msg = " 🚀 AWAY COUNTER BOOST ACTIVE" if away_counter_active else ""
                         
-                        Fixed Professional Value Engine confirms Signal Engine predictions with:
-                        - ✅ Proper 4-tier confidence system
-                        - ✅ League-specific confidence multipliers
+                        st.success(f"""
+                        ✅ **ENHANCED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** {away_counter_msg}
+                        
+                        Enhanced Professional Value Engine confirms Signal Engine predictions with:
+                        - ✅ Aggressive away counter detection
+                        - ✅ Enhanced 4-tier confidence system
                         - ✅ Form stability bonus: +{stability_bonus:.1f}  
-                        - ✅ Advanced contradiction detection
-                        - ✅ Professional bankroll management
+                        - ✅ Reduced contradiction penalties
+                        - ✅ Enhanced professional bankroll management
                         """)
                     else:
-                        st.warning("⚠️ FIXED PROFESSIONAL REVIEW REQUIRED: Advanced contradiction detection active")
+                        st.warning("⚠️ ENHANCED PROFESSIONAL REVIEW REQUIRED: Advanced contradiction detection active")
                     
                     st.rerun()
                 else:
-                    st.error("❌ Failed to generate fixed professional predictions")
+                    st.error("❌ Failed to generate enhanced professional predictions")
                 
             except Exception as e:
-                st.error(f"❌ Fixed professional analysis error: {str(e)}")
+                st.error(f"❌ Enhanced professional analysis error: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
-                st.info("💡 Check fixed professional input parameters and try again")
+                st.info("💡 Check enhanced professional input parameters and try again")
 
 if __name__ == "__main__":
     main()

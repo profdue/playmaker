@@ -1,4 +1,4 @@
-# streamlit_app.py - BALANCED ENHANCED PROFESSIONAL BETTING GRADE
+# streamlit_app.py - ENHANCED OUTCOME-BASED PROFESSIONAL BETTING GRADE
 import streamlit as st
 st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the BALANCED PROFESSIONAL PREDICTION ENGINE
+# Import the ENHANCED PROFESSIONAL PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, ProfessionalTeamTierCalibrator
 except ImportError as e:
@@ -18,13 +18,13 @@ except ImportError as e:
 
 # Professional page configuration
 st.set_page_config(
-    page_title="🎯 Balanced Professional Football Predictor",
+    page_title="🎯 Enhanced Professional Football Predictor",
     page_icon="⚽", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Balanced Enhanced Professional CSS styling
+# Enhanced Professional CSS styling
 st.markdown("""
 <style>
     .professional-header { 
@@ -202,16 +202,35 @@ st.markdown("""
         display: inline-block;
     }
     
-    /* BALANCED CONFIDENCE FEATURES */
-    .contradiction-warning {
-        background: #fff3e0;
-        border-left: 4px solid #FF9800;
+    /* ENHANCED CONTEXT FEATURES */
+    .context-perfect {
+        background: #e8f5e8;
+        border-left: 4px solid #4CAF50;
         padding: 0.8rem;
         border-radius: 8px;
         margin: 0.5rem 0;
         font-size: 0.9rem;
-        color: #E65100;
+        color: #2E7D32;
     }
+    .context-strong {
+        background: #e3f2fd;
+        border-left: 4px solid #2196F3;
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        color: #1565C0;
+    }
+    .context-contradictory {
+        background: #ffebee;
+        border-left: 4px solid #f44336;
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        color: #c62828;
+    }
+    
     .stability-bonus {
         background: #e8f5e8;
         color: #2E7D32;
@@ -232,7 +251,7 @@ st.markdown("""
         color: #1565C0;
     }
     
-    .balanced-feature {
+    .enhanced-feature {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 0.5rem 1rem;
@@ -245,6 +264,31 @@ st.markdown("""
     .context-emoji {
         font-size: 1.5rem;
         margin-right: 0.5rem;
+    }
+    
+    .betting-priority {
+        background: #fff3e0;
+        border-left: 4px solid #FF9800;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .context-confidence-high {
+        background: #e8f5e8;
+        color: #2E7D32;
+        padding: 0.3rem 0.7rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        border: 1px solid #4CAF50;
+    }
+    .context-confidence-medium {
+        background: #fff3e0;
+        color: #EF6C00;
+        padding: 0.3rem 0.7rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        border: 1px solid #FF9800;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -309,58 +353,77 @@ def get_context_emoji(context: str) -> str:
     }
     return context_emojis.get(context, '⚖️')
 
-def display_balanced_banner():
-    """Display balanced professional banner"""
+def get_context_display_name(context: str) -> str:
+    """Get display name for context"""
+    context_names = {
+        'home_dominance': 'Home Dominance',
+        'away_counter': 'Away Counter', 
+        'offensive_showdown': 'Offensive Showdown',
+        'defensive_battle': 'Defensive Battle',
+        'tactical_stalemate': 'Tactical Stalemate',
+        'balanced': 'Balanced Match'
+    }
+    return context_names.get(context, context.replace('_', ' ').title())
+
+def display_enhanced_banner():
+    """Display enhanced professional banner"""
     st.markdown("""
     <div class="money-grade-banner">
-        🎯 BALANCED PROFESSIONAL BETTING GRADE • CONSERVATIVE CONTEXT DETECTION • IMPROVED RISK MANAGEMENT • MONEY-GRADE ACCURACY
+        🎯 ENHANCED PROFESSIONAL BETTING GRADE • OUTCOME-BASED CONTEXT DETECTION • CONTEXT-AWARE CONFIDENCE • MONEY-GRADE ACCURACY
     </div>
     """, unsafe_allow_html=True)
 
-def display_balanced_architecture():
-    """Display balanced system architecture"""
-    with st.expander("🏗️ BALANCED PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
+def display_enhanced_architecture():
+    """Display enhanced system architecture"""
+    with st.expander("🏗️ ENHANCED PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
         st.markdown("""
-        ### 🎯 BALANCED MONEY-GRADE PREDICTION ENGINE
+        ### 🎯 ENHANCED OUTCOME-BASED PREDICTION ENGINE
         
-        **Balanced Context Detection:**
-        - **⚖️ Conservative Away Counter** - Only triggers with clear xG & form advantage (≥0.35 gap)
-        - **🏠 Reactivated Home Dominance** - Proper home advantage recognition
-        - **🎯 Dynamic Thresholds** - xG difference + form gap requirements
-        - **🔍 Nuanced Contexts** - Offensive showdown, defensive battle, tactical stalemate
-        
-        **Balanced Confidence Thresholds:**
-        - **HIGH**: >68% probability + >8% edge + >80% data quality
-        - **MEDIUM**: >58% probability + >5% edge + >70% data quality  
-        - **LOW**: >52% probability + >2.5% edge + >60% data quality
-        - **SPECULATIVE**: Below any threshold
+        **Enhanced Context Detection:**
+        - **🏠 Home Dominance** → Expect comfortable home win
+        - **✈️ Away Counter** → Expect away win/upset  
+        - **🔥 Offensive Showdown** → Expect high-scoring game
+        - **🛡️ Defensive Battle** → Expect low-scoring game
+        - **⚔️ Tactical Stalemate** → Expect draw
+        - **⚖️ Balanced** → No strong outcome bias
         
         **Context Detection Logic:**
-        - **🏠 Home Dominance**: xG diff ≥ +0.35 AND form gap ≥ +0.25
-        - **✈️ Away Counter**: xG diff ≤ -0.35 AND form gap ≤ -0.25  
-        - **🔥 Offensive Showdown**: Near parity + high tempo + leaky defense
-        - **🛡️ Defensive Battle**: Near parity + low tempo + solid defense
-        - **⚔️ Tactical Stalemate**: Transitional area + low tempo
-        - **⚖️ Balanced**: Default for uncertain matches
+        - **Home Dominance**: xG diff ≥ +0.35 AND quality gap = significant/extreme
+        - **Away Counter**: xG diff ≤ -0.35 AND quality gap = significant/extreme
+        - **Offensive Showdown**: Total xG > 3.2 AND avg defense > 1.3
+        - **Defensive Battle**: Total xG < 2.2 AND avg defense < 0.9
+        - **Tactical Stalemate**: xG diff < 0.2 AND total xG < 2.8
+        
+        **Enhanced Confidence System:**
+        - **Context Alignment**: Perfect/Strong/Moderate/Weak/Contradictory
+        - **Context Confidence**: 0-100% based on quality gap, xG difference, total xG
+        - **Stake Multipliers**: Context-aware Kelly Criterion
+        
+        **Betting Priorities by Context:**
+        - 🏠 **Home Dominance**: Home Win, Home -1 Handicap, Under 3.5
+        - ✈️ **Away Counter**: Away Win, Double Chance Away/Draw, BTTS Yes  
+        - 🔥 **Offensive Showdown**: Over 2.5, BTTS Yes, Both Teams to Score & Over 2.5
+        - 🛡️ **Defensive Battle**: Under 2.5, BTTS No, Under 1.5
+        - ⚔️ **Tactical Stalemate**: Draw, Under 2.5, Correct Score 0-0/1-1
         
         **Professional League Calibration** 🌍
-        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline balanced model
+        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline enhanced model
         - **Serie A** 🇮🇹: +15% confidence requirements (defensive league)
         - **Bundesliga** 🇩🇪: -10% confidence requirements (high-scoring)
         - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: +8% requirements (unpredictable)
         """)
 
-def create_balanced_input_form():
-    """Create balanced professional input form"""
+def create_enhanced_input_form():
+    """Create enhanced professional input form"""
     
-    st.markdown('<p class="professional-header">🎯 Balanced Professional Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="professional-subheader">Balanced Money-Grade Multi-League Analysis with Conservative Context Detection</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-subheader">Enhanced Outcome-Based Multi-League Analysis with Context-Aware Betting</p>', unsafe_allow_html=True)
     
-    # Display balanced banner
-    display_balanced_banner()
+    # Display enhanced banner
+    display_enhanced_banner()
     
-    # Display balanced architecture
-    display_balanced_architecture()
+    # Display enhanced architecture
+    display_enhanced_architecture()
     
     # Professional League Selection
     st.markdown("### 🌍 Professional League Selection")
@@ -381,7 +444,7 @@ def create_balanced_input_form():
         "Select League",
         options=list(league_options.keys()),
         format_func=lambda x: league_options[x],
-        key="balanced_league_selection"
+        key="enhanced_league_selection"
     )
     
     # Display professional league badge
@@ -410,12 +473,12 @@ def create_balanced_input_form():
                 "Team Name", 
                 options=league_teams,
                 index=min(5, len(league_teams) - 1),
-                key="balanced_home_team"
+                key="enhanced_home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="balanced_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="balanced_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="balanced_home_goals_home")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="enhanced_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="enhanced_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="enhanced_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -423,12 +486,12 @@ def create_balanced_input_form():
                 "Team Name",
                 options=league_teams,
                 index=0,
-                key="balanced_away_team"
+                key="enhanced_away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="balanced_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="balanced_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="balanced_away_goals_away")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="enhanced_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="enhanced_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="enhanced_away_goals_away")
         
         # Show professional team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
@@ -440,31 +503,40 @@ def create_balanced_input_form():
         <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
         
-        # Balanced: Show context potential
+        # ENHANCED: Show context potential with improved detection
         xg_diff_estimate = (home_goals/6.0) - (away_goals/6.0)
-        home_form_est = np.mean([3, 1, 0, 3, 1, 1])  # Example form
-        away_form_est = np.mean([1, 3, 1, 0, 3, 1])  # Example form  
+        home_form_est = np.mean([3, 1, 0, 3, 1, 1])
+        away_form_est = np.mean([1, 3, 1, 0, 3, 1])  
         form_gap_est = home_form_est - away_form_est
+        total_xg_est = (home_goals + away_goals) / 6.0
+        avg_defense_est = (home_conceded + away_conceded) / 12.0
         
-        if xg_diff_estimate >= 0.35 and form_gap_est >= 0.25:
-            st.markdown('<div class="balanced-feature">🏠 POTENTIAL HOME DOMINANCE DETECTED</div>', unsafe_allow_html=True)
-        elif xg_diff_estimate <= -0.35 and form_gap_est <= -0.25:
-            st.markdown('<div class="balanced-feature">✈️ POTENTIAL AWAY COUNTER DETECTED</div>', unsafe_allow_html=True)
-        elif abs(xg_diff_estimate) < 0.15 and abs(form_gap_est) < 0.15:
-            st.markdown('<div class="balanced-feature">⚖️ POTENTIAL BALANCED MATCH</div>', unsafe_allow_html=True)
+        # Enhanced context detection
+        if xg_diff_estimate >= 0.35 and home_tier in ['STRONG', 'ELITE'] and away_tier in ['WEAK', 'MEDIUM']:
+            st.markdown('<div class="enhanced-feature">🏠 POTENTIAL HOME DOMINANCE CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif xg_diff_estimate <= -0.35 and away_tier in ['STRONG', 'ELITE'] and home_tier in ['WEAK', 'MEDIUM']:
+            st.markdown('<div class="enhanced-feature">✈️ POTENTIAL AWAY COUNTER CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif total_xg_est > 3.2 and avg_defense_est > 1.3:
+            st.markdown('<div class="enhanced-feature">🔥 POTENTIAL OFFENSIVE SHOWDOWN CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif total_xg_est < 2.2 and avg_defense_est < 0.9:
+            st.markdown('<div class="enhanced-feature">🛡️ POTENTIAL DEFENSIVE BATTLE CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif abs(xg_diff_estimate) < 0.2 and total_xg_est < 2.8:
+            st.markdown('<div class="enhanced-feature">⚔️ POTENTIAL TACTICAL STALEMATE CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="enhanced-feature">⚖️ POTENTIAL BALANCED MATCH CONTEXT</div>', unsafe_allow_html=True)
         
         # Professional Head-to-head section
         with st.expander("📊 Professional Head-to-Head Analysis"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="balanced_h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="balanced_h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="enhanced_h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="enhanced_h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="balanced_h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="balanced_h2h_draws")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="enhanced_h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="enhanced_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=6, key="balanced_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="balanced_h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=6, key="enhanced_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="enhanced_h2h_away_goals")
 
         # Professional Recent Form
         with st.expander("📈 Professional Form Analysis"):
@@ -476,7 +548,7 @@ def create_balanced_input_form():
                     f"{home_team} Recent Results",
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
                     default=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Draw (1 pt)"],
-                    key="balanced_home_form"
+                    key="enhanced_home_form"
                 )
             with form_col2:
                 st.write(f"**{away_team} Last 6 Matches**")
@@ -484,7 +556,7 @@ def create_balanced_input_form():
                     f"{away_team} Recent Results", 
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
                     default=["Draw (1 pt)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)"],
-                    key="balanced_away_form"
+                    key="enhanced_away_form"
                 )
 
     with tab2:
@@ -494,20 +566,20 @@ def create_balanced_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.30, step=0.01, key="balanced_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.20, step=0.01, key="balanced_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.10, step=0.01, key="balanced_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.30, step=0.01, key="enhanced_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.20, step=0.01, key="enhanced_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.10, step=0.01, key="enhanced_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="balanced_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="balanced_over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="balanced_over_35_odds")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="enhanced_over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="enhanced_over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="enhanced_over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.85, step=0.01, key="balanced_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.95, step=0.01, key="balanced_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.85, step=0.01, key="enhanced_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.95, step=0.01, key="enhanced_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Professional Configuration")
@@ -516,20 +588,20 @@ def create_balanced_input_form():
         
         with model_col1:
             st.write("**Professional Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="balanced_home_injuries")
-            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="balanced_away_injuries")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="enhanced_home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="enhanced_away_injuries")
             
             home_absence_impact = st.select_slider(
                 "Home Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
                 value="Regular Starter",
-                key="balanced_home_absence_impact"
+                key="enhanced_home_absence_impact"
             )
             away_absence_impact = st.select_slider(
                 "Away Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
                 value="Regular Starter",
-                key="balanced_away_absence_impact"
+                key="enhanced_away_absence_impact"
             )
             
         with model_col2:
@@ -538,13 +610,13 @@ def create_balanced_input_form():
                 "Home Team Motivation",
                 options=["Low", "Normal", "High", "Very High"],
                 value="Normal",
-                key="balanced_home_motivation"
+                key="enhanced_home_motivation"
             )
             away_motivation = st.select_slider(
                 "Away Team Motivation", 
                 options=["Low", "Normal", "High", "Very High"],
                 value="Normal", 
-                key="balanced_away_motivation"
+                key="enhanced_away_motivation"
             )
             
             # Professional simulation settings
@@ -553,15 +625,15 @@ def create_balanced_input_form():
                 "Monte Carlo Iterations",
                 options=[10000, 25000, 50000],
                 value=25000,
-                key="balanced_mc_iterations"
+                key="enhanced_mc_iterations"
             )
             
             # Professional bankroll management
-            bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="balanced_bankroll")
-            kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="balanced_kelly_fraction")
+            bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="enhanced_bankroll")
+            kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="enhanced_kelly_fraction")
 
     # Professional Submit button
-    submitted = st.button("🎯 GENERATE BALANCED PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 GENERATE ENHANCED PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -639,15 +711,15 @@ def create_balanced_input_form():
     
     return None, None
 
-def display_balanced_predictions(predictions):
-    """Display balanced professional predictions"""
+def display_enhanced_predictions(predictions):
+    """Display enhanced professional predictions"""
     
     if not predictions:
-        st.error("❌ No balanced professional predictions available")
+        st.error("❌ No enhanced professional predictions available")
         return
         
-    st.markdown('<p class="professional-header">🎯 Balanced Professional Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-system-card"><h3>🟢 BALANCED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Balanced Money-Grade Multi-League Analysis with Conservative Context Detection</div>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictions</p>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-system-card"><h3>🟢 ENHANCED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Enhanced Outcome-Based Multi-League Analysis with Context-Aware Betting</div>', unsafe_allow_html=True)
     
     # Professional team tiers display
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -659,13 +731,19 @@ def display_balanced_predictions(predictions):
     league_display_name = get_league_display_name(league)
     league_badge_class = get_league_badge(league)
     
-    # Balanced: Show stability bonus if available
+    # ENHANCED: Show context information
     intelligence = safe_get(predictions, 'apex_intelligence') or {}
     stability_bonus = intelligence.get('form_stability_bonus', 0)
+    context_confidence = intelligence.get('context_confidence', 0)
     
-    # Balanced: Show context with emoji
-    match_context = safe_get(predictions, 'match_context')
-    context_emoji = get_context_emoji(match_context)
+    # ENHANCED: Show betting context
+    betting_context = safe_get(predictions, 'betting_context') or {}
+    primary_context = betting_context.get('primary_context', 'balanced')
+    recommended_markets = betting_context.get('recommended_markets', [])
+    expected_outcome = betting_context.get('expected_outcome', 'balanced')
+    
+    context_emoji = get_context_emoji(primary_context)
+    context_display = get_context_display_name(primary_context)
     
     st.markdown(f'''
     <div style="text-align: center; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">
@@ -673,20 +751,28 @@ def display_balanced_predictions(predictions):
         <span class="professional-tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
         <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         {f'<span class="stability-bonus">Stability: +{stability_bonus:.1f}</span>' if stability_bonus > 0 else ''}
+        {f'<span class="context-confidence-{"high" if context_confidence > 70 else "medium"}">Context: {context_confidence}%</span>' if context_confidence else ''}
     </div>
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="professional-badge {league_badge_class}">{league_display_name}</span>
-        <span class="balanced-feature">{context_emoji} {match_context.replace('_', ' ').title() if match_context else 'Balanced'}</span>
+        <span class="enhanced-feature">{context_emoji} {context_display}</span>
     </div>
     ''', unsafe_allow_html=True)
     
+    # ENHANCED: Display betting priorities
+    if recommended_markets:
+        st.markdown('<div class="betting-priority">', unsafe_allow_html=True)
+        st.markdown(f"**🎯 Recommended Betting Markets for {context_display}:**")
+        for market in recommended_markets[:3]:
+            st.markdown(f"- **{market}**")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
     # Professional metrics
     xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
-    match_context = safe_get(predictions, 'match_context') or 'Unknown'
     confidence_score = safe_get(predictions, 'confidence_score') or 0
     data_quality = safe_get(predictions, 'data_quality_score') or 0
     football_iq = safe_get(predictions, 'apex_intelligence', 'football_iq_score') or 0
-    calibration_status = safe_get(predictions, 'apex_intelligence', 'calibration_status') or 'BALANCED'
+    calibration_status = safe_get(predictions, 'apex_intelligence', 'calibration_status') or 'ENHANCED'
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -695,33 +781,32 @@ def display_balanced_predictions(predictions):
     with col2:
         st.metric("✈️ Expected Goals", f"{xg.get('away', 0):.2f}")
     with col3:
-        context_emoji_display = get_context_emoji(match_context)
-        st.metric("Balanced Context", f"{context_emoji_display} {match_context.replace('_', ' ').title()}")
+        st.metric("Enhanced Context", f"{context_emoji} {context_display}")
     with col4:
-        st.metric("Balanced IQ", f"{football_iq:.1f}/100")
+        st.metric("Enhanced IQ", f"{football_iq:.1f}/100")
     
-    # Balanced system validation
+    # Enhanced system validation
     system_validation = safe_get(predictions, 'system_validation') or {}
     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    calibration_level = system_validation.get('calibration_level', 'BALANCED')
+    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
         st.markdown(f'''
         <div class="professional-alignment-perfect">
-            ✅ <strong>BALANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions
-            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.3.0_balanced')} | Stability Bonus: +{stability_bonus:.1f}</small>
+            ✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions with context validation
+            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.4.0_enhanced')} | Context Confidence: {context_confidence}%</small>
         </div>
         ''', unsafe_allow_html=True)
     else:
         st.markdown(f'''
         <div class="professional-alignment-warning">
-            ⚠️ <strong>BALANCED PROFESSIONAL REVIEW REQUIRED:</strong> Some inconsistencies detected
-            <br><small>Calibration: {calibration_level} | Balanced professional discretion advised</small>
+            ⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Context-aware contradiction detection active
+            <br><small>Calibration: {calibration_level} | Enhanced professional discretion advised</small>
         </div>
         ''', unsafe_allow_html=True)
     
     # Professional Match Outcomes
-    st.markdown('<div class="professional-section-title">📈 Balanced Outcome Probabilities</div>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-section-title">📈 Enhanced Outcome Probabilities</div>', unsafe_allow_html=True)
     
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {'home_win': 0, 'draw': 0, 'away_win': 0}
     col1, col2, col3 = st.columns(3)
@@ -766,8 +851,8 @@ def display_balanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
     
-    # Balanced Goals Analysis
-    st.markdown('<div class="professional-section-title">⚽ Balanced Goals Analysis</div>', unsafe_allow_html=True)
+    # Enhanced Goals Analysis
+    st.markdown('<div class="professional-section-title">⚽ Enhanced Goals Analysis</div>', unsafe_allow_html=True)
     
     # Get probabilities with safe defaults
     btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes') or 0
@@ -779,26 +864,45 @@ def display_balanced_predictions(predictions):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # Balanced BTTS with explanations
-        if btts_no > btts_yes:
-            recommendation = "NO"
-            primary_prob = btts_no
-            secondary_prob = btts_yes
-            card_class = "risk-high"
-            emoji = "❌"
-        else:
+        # Enhanced BTTS with context explanations
+        if primary_context == 'offensive_showdown':
             recommendation = "YES"
             primary_prob = btts_yes
             secondary_prob = btts_no
             card_class = "risk-low"
-            emoji = "✅"
+            emoji = "🔥"
+            context_note = "Offensive Context"
+        elif primary_context == 'defensive_battle':
+            recommendation = "NO"
+            primary_prob = btts_no
+            secondary_prob = btts_yes
+            card_class = "risk-high"
+            emoji = "🛡️"
+            context_note = "Defensive Context"
+        else:
+            if btts_no > btts_yes:
+                recommendation = "NO"
+                primary_prob = btts_no
+                secondary_prob = btts_yes
+                card_class = "risk-high"
+                emoji = "❌"
+                context_note = "Standard Analysis"
+            else:
+                recommendation = "YES"
+                primary_prob = btts_yes
+                secondary_prob = btts_no
+                card_class = "risk-low"
+                emoji = "✅"
+                context_note = "Standard Analysis"
         
-        # BALANCED: Conservative confidence calculation
+        # ENHANCED: Context-aware confidence calculation
         confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        if primary_context in ['offensive_showdown', 'defensive_battle'] and context_confidence > 70:
+            confidence = "HIGH"
         
         st.markdown(f'''
         <div class="professional-card {card_class}">
-            <h4>{emoji} Both Teams Score</h4>
+            <h4>{emoji} Both Teams Score {f"({context_note})" if context_note else ""}</h4>
             <div style="font-size: 2rem; font-weight: bold; color: #333; margin: 0.8rem 0;">
                 {recommendation}: {primary_prob:.1f}%
             </div>
@@ -811,33 +915,52 @@ def display_balanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
         
-        # Show balanced explanations
+        # Show enhanced explanations
         explanations = safe_get(predictions, 'explanations', 'btts') or []
         for explanation in explanations[:2]:
             if explanation:
                 st.markdown(f'<div class="professional-explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col2:
-        # Balanced Over/Under with explanations
-        if under_25 > over_25:
-            recommendation = "UNDER"
-            primary_prob = under_25
-            secondary_prob = over_25
-            card_class = "risk-high"
-            emoji = "❌"
-        else:
+        # Enhanced Over/Under with context explanations
+        if primary_context == 'offensive_showdown':
             recommendation = "OVER"
             primary_prob = over_25
             secondary_prob = under_25
             card_class = "risk-low"
-            emoji = "✅"
+            emoji = "🔥"
+            context_note = "Offensive Context"
+        elif primary_context == 'defensive_battle':
+            recommendation = "UNDER"
+            primary_prob = under_25
+            secondary_prob = over_25
+            card_class = "risk-high"
+            emoji = "🛡️"
+            context_note = "Defensive Context"
+        else:
+            if under_25 > over_25:
+                recommendation = "UNDER"
+                primary_prob = under_25
+                secondary_prob = over_25
+                card_class = "risk-high"
+                emoji = "❌"
+                context_note = "Standard Analysis"
+            else:
+                recommendation = "OVER"
+                primary_prob = over_25
+                secondary_prob = under_25
+                card_class = "risk-low"
+                emoji = "✅"
+                context_note = "Standard Analysis"
         
-        # BALANCED: Conservative confidence calculation
+        # ENHANCED: Context-aware confidence calculation
         confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
+        if primary_context in ['offensive_showdown', 'defensive_battle'] and context_confidence > 70:
+            confidence = "HIGH"
         
         st.markdown(f'''
         <div class="professional-card {card_class}">
-            <h4>{emoji} Over/Under 2.5</h4>
+            <h4>{emoji} Over/Under 2.5 {f"({context_note})" if context_note else ""}</h4>
             <div style="font-size: 2rem; font-weight: bold; color: #333; margin: 0.8rem 0;">
                 {recommendation}: {primary_prob:.1f}%
             </div>
@@ -850,16 +973,27 @@ def display_balanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
         
-        # Show balanced explanations
+        # Show enhanced explanations
         explanations = safe_get(predictions, 'explanations', 'over_under') or []
         for explanation in explanations[:2]:
             if explanation:
                 st.markdown(f'<div class="professional-explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col3:
-        # Balanced Expected Goals display
+        # Enhanced Expected Goals display
         xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
         total_xg = xg.get('home', 0) + xg.get('away', 0)
+        
+        # Context-based xG interpretation
+        if total_xg > 3.2:
+            xg_context = "High Scoring"
+            xg_emoji = "🔥"
+        elif total_xg < 2.2:
+            xg_context = "Low Scoring" 
+            xg_emoji = "🛡️"
+        else:
+            xg_context = "Average"
+            xg_emoji = "⚖️"
         
         st.markdown(f'''
         <div class="professional-card">
@@ -871,44 +1005,48 @@ def display_balanced_predictions(predictions):
                 Away: {xg.get('away', 0):.2f}
             </div>
             <div style="font-size: 1.1rem; color: #666; margin: 0.5rem 0;">
-                Total: {total_xg:.2f}
+                Total: {total_xg:.2f} {xg_emoji}
+            </div>
+            <div style="font-size: 0.9rem; color: #888; margin: 0.5rem 0;">
+                {xg_context} Expected
             </div>
         </div>
         ''', unsafe_allow_html=True)
     
     with col4:
-        # Balanced Match Context
+        # Enhanced Match Context
         context = safe_get(predictions, 'match_context') or 'balanced'
         narrative = safe_get(predictions, 'match_narrative') or {}
         quality_gap = narrative.get('quality_gap', 'even')
+        expected_outcome = narrative.get('expected_outcome', 'balanced')
         
         context_emoji = get_context_emoji(context)
         
         quality_emoji = {
             'extreme': '🔥',
-            'significant': '⭐',
+            'significant': '⭐', 
             'even': '⚖️'
         }.get(quality_gap, '⚖️')
         
         st.markdown(f'''
         <div class="professional-card">
-            <h4>{context_emoji} Balanced Context</h4>
+            <h4>{context_emoji} Enhanced Context</h4>
             <div style="font-size: 1.2rem; font-weight: bold; color: #333; margin: 0.8rem 0;">
-                {context.replace('_', ' ').title()}
+                {get_context_display_name(context)}
             </div>
             <div style="font-size: 1rem; color: #666; margin: 0.5rem 0;">
                 {quality_emoji} Quality Gap: {quality_gap.title()}
             </div>
             <div style="font-size: 1rem; color: #666; margin: 0.5rem 0;">
-                Tempo: {narrative.get('expected_tempo', 'medium').title()}
+                🎯 Expected: {expected_outcome.replace('_', ' ').title()}
             </div>
             <div style="font-size: 1rem; color: #666; margin: 0.5rem 0;">
-                Defense: {narrative.get('defensive_stability', 'mixed').title()}
+                📊 Confidence: {context_confidence}%
             </div>
         </div>
         ''', unsafe_allow_html=True)
     
-    # Balanced Exact Scores
+    # Enhanced Exact Scores
     st.markdown('<div class="professional-section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
     exact_scores = safe_get(predictions, 'probabilities', 'exact_scores') or {}
@@ -922,7 +1060,7 @@ def display_balanced_predictions(predictions):
     else:
         st.info("No exact score data available")
     
-    # Balanced Risk Assessment
+    # Enhanced Risk Assessment
     risk = safe_get(predictions, 'risk_assessment') or {'risk_level': 'UNKNOWN', 'explanation': 'No data'}
     risk_class = f"risk-{risk.get('risk_level', 'unknown').lower()}"
     
@@ -930,11 +1068,12 @@ def display_balanced_predictions(predictions):
     
     st.markdown(f'''
     <div class="professional-card {risk_class}">
-        <h3>📊 Balanced Professional Risk Assessment</h3>
+        <h3>📊 Enhanced Professional Risk Assessment</h3>
         <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
-        <strong>Balanced Explanation:</strong> {risk.get("explanation", "No data available")}<br>
-        <strong>Balanced Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
+        <strong>Enhanced Explanation:</strong> {risk.get("explanation", "No data available")}<br>
+        <strong>Enhanced Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
         <strong>Certainty:</strong> {risk.get("certainty", "N/A")}<br>
+        <strong>Context Confidence:</strong> {context_confidence}%<br>
         <strong>Narrative Coherence:</strong> {intelligence.get('narrative_coherence', 'N/A')}%<br>
         <strong>Prediction Alignment:</strong> {intelligence.get('prediction_alignment', 'N/A')}<br>
         <strong>Form Stability Bonus:</strong> +{intelligence.get('form_stability_bonus', 0):.1f}<br>
@@ -942,38 +1081,42 @@ def display_balanced_predictions(predictions):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Balanced Summary
-    st.markdown('<div class="professional-section-title">📝 Balanced Match Summary</div>', unsafe_allow_html=True)
-    summary = safe_get(predictions, 'summary') or "No balanced professional summary available."
+    # Enhanced Summary
+    st.markdown('<div class="professional-section-title">📝 Enhanced Match Summary</div>', unsafe_allow_html=True)
+    summary = safe_get(predictions, 'summary') or "No enhanced professional summary available."
     st.info(summary)
 
-def display_balanced_value_detection(predictions):
-    """Display balanced professional value detection"""
+def display_enhanced_value_detection(predictions):
+    """Display enhanced professional value detection"""
     
     if not predictions:
-        st.error("❌ No balanced professional predictions available for value detection")
+        st.error("❌ No enhanced professional predictions available for value detection")
         return
         
-    st.markdown('<p class="professional-header">💰 Balanced Professional Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-value-card"><h3>🟠 BALANCED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Conservative confidence system with improved risk management</div>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">💰 Enhanced Professional Value Betting Detection</p>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-value-card"><h3>🟠 ENHANCED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Context-aware confidence system with outcome-based betting priorities</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals') or []
     
-    # Get primary predictions for professional context
+    # Get enhanced context information
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {}
     btts = safe_get(predictions, 'probabilities', 'both_teams_score') or {}
     over_under = safe_get(predictions, 'probabilities', 'over_under') or {}
     team_tiers = safe_get(predictions, 'team_tiers') or {}
     league = safe_get(predictions, 'league', 'premier_league')
+    betting_context = safe_get(predictions, 'betting_context') or {}
     
     primary_outcome = max(outcomes, key=outcomes.get) if outcomes else 'unknown'
     primary_btts = 'yes' if btts.get('yes', 0) > btts.get('no', 0) else 'no'
     primary_over_under = 'over_25' if over_under.get('over_25', 0) > over_under.get('under_25', 0) else 'under_25'
+    primary_context = betting_context.get('primary_context', 'balanced')
+    recommended_markets = betting_context.get('recommended_markets', [])
+    context_confidence = betting_context.get('context_confidence', 50)
     
-    # Display balanced primary predictions context
+    # Display enhanced primary predictions context
     st.markdown('<div class="professional-section-title">🎯 Signal Engine Primary Predictions</div>', unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         outcome_map = {'home_win': 'Home Win', 'draw': 'Draw', 'away_win': 'Away Win'}
         st.metric("Primary Outcome", outcome_map.get(primary_outcome, 'Unknown'))
@@ -982,90 +1125,123 @@ def display_balanced_value_detection(predictions):
     with col3:
         st.metric("Primary Over/Under", "OVER 2.5" if primary_over_under == 'over_25' else "UNDER 2.5")
     with col4:
-        st.metric("Balanced League", get_league_display_name(league))
+        context_emoji = get_context_emoji(primary_context)
+        st.metric("Enhanced Context", f"{context_emoji} {get_context_display_name(primary_context)}")
+    with col5:
+        st.metric("Context Confidence", f"{context_confidence}%")
+    
+    # Display betting priorities
+    if recommended_markets:
+        st.markdown('<div class="betting-priority">', unsafe_allow_html=True)
+        st.markdown(f"**🎯 Recommended Betting Markets for {get_context_display_name(primary_context)}:**")
+        for market in recommended_markets:
+            st.markdown(f"- **{market}**")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     if not betting_signals:
         st.markdown('<div class="professional-alignment-perfect">', unsafe_allow_html=True)
         st.info("""
-        ## ✅ BALANCED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
+        ## ✅ ENHANCED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
         
-        **Balanced Professional Assessment:**
+        **Enhanced Professional Assessment:**
         - Pure probabilities align with market expectations  
-        - No significant edges above balanced professional thresholds
-        - Conservative contradiction detection confirms signal coherence
-        - **BALANCED PERFECT ALIGNMENT ACHIEVED**
+        - No significant edges above enhanced professional thresholds
+        - Context-aware contradiction detection confirms signal coherence
+        - **ENHANCED PERFECT ALIGNMENT ACHIEVED**
         
-        **Balanced Professional Value Engine with conservative confidence system is properly confirming predictions!**
+        **Enhanced Professional Value Engine with context-aware confidence system is properly confirming predictions!**
         """)
         st.markdown('</div>', unsafe_allow_html=True)
         return
     
-    # Balanced alignment status
+    # Enhanced alignment status
     system_validation = safe_get(predictions, 'system_validation') or {}
     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    calibration_level = system_validation.get('calibration_level', 'BALANCED')
+    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
-        st.markdown('<div class="professional-alignment-perfect">✅ <strong>BALANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with balanced validation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-perfect">✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with context validation</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>BALANCED PROFESSIONAL REVIEW REQUIRED:</strong> Conservative contradiction detection active</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Context-aware contradiction detection active</div>', unsafe_allow_html=True)
     
-    # Balanced: Show contradiction warnings
-    contradictory_signals = [s for s in betting_signals if any("contradict" in exp.lower() for exp in s.get('explanation', []))]
-    if contradictory_signals:
+    # ENHANCED: Show context alignment analysis
+    perfect_context_signals = [s for s in betting_signals if s.get('context_alignment') == 'perfect']
+    strong_context_signals = [s for s in betting_signals if s.get('context_alignment') == 'strong']
+    contradictory_context_signals = [s for s in betting_signals if s.get('context_alignment') == 'contradictory']
+    
+    if perfect_context_signals:
         st.markdown(f'''
-        <div class="contradiction-warning">
-            ⚠️ <strong>BALANCED CONTRADICTION DETECTION:</strong> {len(contradictory_signals)} signal(s) contradict primary predictions
-            <br><small>Balanced confidence system has automatically adjusted stakes and confidence levels</small>
+        <div class="context-perfect">
+            🎯 <strong>PERFECT CONTEXT ALIGNMENT:</strong> {len(perfect_context_signals)} signal(s) perfectly match {get_context_display_name(primary_context)} context
+            <br><small>These bets receive maximum confidence and stake multipliers</small>
         </div>
         ''', unsafe_allow_html=True)
     
-    # Balanced Value Bet Summary
-    col1, col2, col3, col4 = st.columns(4)
+    if contradictory_context_signals:
+        st.markdown(f'''
+        <div class="context-contradictory">
+            ⚠️ <strong>CONTEXT CONTRADICTIONS:</strong> {len(contradictory_signals)} signal(s) contradict {get_context_display_name(primary_context)} context
+            <br><small>Enhanced confidence system has automatically reduced stakes and confidence levels</small>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    # Enhanced Value Bet Summary
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
         total_signals = len(betting_signals)
-        st.metric("Balanced Signals", total_signals)
+        st.metric("Enhanced Signals", total_signals)
     
     with col2:
         high_value = len([s for s in betting_signals if s.get('value_rating') in ['EXCEPTIONAL', 'HIGH']])
         st.metric("High Value Signals", high_value)
     
     with col3:
-        contradictory_count = len(contradictory_signals)
-        st.metric("Contradictory Signals", contradictory_count)
+        perfect_context = len(perfect_context_signals)
+        st.metric("Perfect Context", perfect_context)
     
     with col4:
+        contradictory_count = len(contradictory_context_signals)
+        st.metric("Context Warnings", contradictory_count)
+    
+    with col5:
         avg_edge = np.mean([s.get('edge', 0) for s in betting_signals]) if betting_signals else 0
         st.metric("Average Edge", f"{avg_edge:.1f}%")
     
-    # Display balanced confidence system explanation
+    # Display enhanced confidence system explanation
     st.markdown('<div class="confidence-explanation">', unsafe_allow_html=True)
     st.markdown("""
-    **🎯 Balanced 4-Tier Confidence System:**
-    - **🟢 HIGH**: >68% probability + >8% edge + >80% data quality
-    - **🟡 MEDIUM**: >58% probability + >5% edge + >70% data quality  
+    **🎯 Enhanced 4-Tier Confidence System with Context Awareness:**
+    - **🟢 HIGH**: >68% probability + >8% edge + >80% data quality + Context alignment
+    - **🟡 MEDIUM**: >58% probability + >5% edge + >70% data quality + Context consideration  
     - **🔴 LOW**: >52% probability + >2.5% edge + >60% data quality
     - **⚪ SPECULATIVE**: Below any threshold
     
-    **Balanced Features:**
-    - ⚖️ Conservative edge threshold at 3.0% (was 2.5%)
-    - 🎯 Reduced stake multipliers for risk management
-    - 🔍 Conservative contradiction penalties
-    - 📈 Improved context detection with dynamic thresholds
+    **🎯 Context Alignment Multipliers:**
+    - **Perfect**: 1.2x stake (matches context perfectly)
+    - **Strong**: 1.1x stake (aligns with context theme)
+    - **Moderate**: 1.0x stake (neutral in balanced context)
+    - **Weak**: 0.8x stake (weak context alignment)
+    - **Contradictory**: 0.5x stake (contradicts context)
+    
+    **Enhanced Features:**
+    - 🎯 Context-aware stake sizing
+    - 🔍 Enhanced contradiction detection
+    - 📈 Outcome-based betting priorities
+    - ⚖️ Conservative edge threshold at 3.0%
     """)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Display balanced value bets
-    st.markdown('<div class="professional-section-title">🎯 Balanced Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
+    # Display enhanced value bets
+    st.markdown('<div class="professional-section-title">🎯 Enhanced Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
     
-    # Group by balanced value rating
+    # Group by enhanced value rating and context alignment
     exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
     high_bets = [s for s in betting_signals if s.get('value_rating') == 'HIGH']
     good_bets = [s for s in betting_signals if s.get('value_rating') == 'GOOD']
     moderate_bets = [s for s in betting_signals if s.get('value_rating') == 'MODERATE']
     
-    def display_balanced_bet_group(bets, title, emoji):
+    def display_enhanced_bet_group(bets, title, emoji):
         if bets:
             st.subheader(f"{emoji} {title} Value Bets")
             for bet in bets:
@@ -1077,35 +1253,53 @@ def display_balanced_value_detection(predictions):
                     'SPECULATIVE': '⚪'
                 }.get(bet.get('confidence', 'SPECULATIVE'), '⚪')
                 
-                # Balanced alignment assessment
+                # Enhanced alignment assessment
                 alignment = bet.get('alignment', 'neutral')
                 alignment_emoji = "✅" if alignment == 'aligns_with_primary' else "⚠️"
                 alignment_text = "ALIGNS" if alignment == 'aligns_with_primary' else "CONTRADICTS"
                 
-                # Balanced: Check for contradiction explanations
+                # Enhanced context alignment
+                context_alignment = bet.get('context_alignment', 'moderate')
+                context_emoji = {
+                    'perfect': '🎯',
+                    'strong': '⭐',
+                    'moderate': '⚖️',
+                    'weak': '📊',
+                    'contradictory': '⚠️'
+                }.get(context_alignment, '⚖️')
+                
+                # Enhanced: Check for explanations
                 explanations = bet.get('explanation', [])
                 safe_explanations = [exp for exp in explanations if exp and "contradict" not in exp.lower()]
                 contradiction_explanations = [exp for exp in explanations if exp and "contradict" in exp.lower()]
+                context_explanations = [exp for exp in explanations if exp and "context" in exp.lower()]
                 
-                # Create the bet card using Streamlit components instead of raw HTML
+                # Create the enhanced bet card
                 with st.container():
                     col1, col2 = st.columns([3, 1])
                     with col1:
-                        # Market name and contradiction warning
-                        market_text = f"**{bet.get('market', 'Unknown')}**"
-                        if contradiction_explanations:
+                        # Market name with context alignment
+                        market_text = f"**{bet.get('market', 'Unknown')}** {context_emoji}"
+                        if context_alignment == 'perfect':
+                            market_text += " 🎯 PERFECT CONTEXT"
+                        elif context_alignment == 'contradictory':
                             market_text += " 🚨 CONTRADICTION"
                         st.markdown(market_text)
                         
                         # Probability info
                         st.caption(f"Model: {bet.get('model_prob', 0)}% | Market: {bet.get('book_prob', 0)}%")
                         
-                        # Alignment info
-                        st.caption(f"{alignment_emoji} {alignment_text} with Signal Engine")
+                        # Enhanced alignment info
+                        st.caption(f"{alignment_emoji} {alignment_text} | {context_emoji} Context: {context_alignment}")
                         
                         # Safe explanations
                         for exp in safe_explanations[:1]:
-                            st.markdown(f'<div class="professional-feature-badge">💡 {exp}</div>', unsafe_allow_html=True)
+                            if "context" not in exp.lower():
+                                st.markdown(f'<div class="professional-feature-badge">💡 {exp}</div>', unsafe_allow_html=True)
+                        
+                        # Context explanations
+                        for exp in context_explanations[:1]:
+                            st.markdown(f'<div class="professional-feature-badge">🎯 {exp}</div>', unsafe_allow_html=True)
                         
                         # Contradiction explanations
                         for exp in contradiction_explanations[:1]:
@@ -1113,150 +1307,161 @@ def display_balanced_value_detection(predictions):
                             
                     with col2:
                         # Edge and stake info
+                        stake_multiplier = {
+                            'perfect': 1.2, 'strong': 1.1, 'moderate': 1.0, 'weak': 0.8, 'contradictory': 0.5
+                        }.get(context_alignment, 1.0)
+                        
                         st.markdown(f"<h3 style='color: #4CAF50; margin: 0;'>+{bet.get('edge', 0)}% Edge</h3>", unsafe_allow_html=True)
                         st.caption(f"Stake: ${bet.get('recommended_stake', 0):.2f}")
                         st.caption(f"{confidence_emoji} {bet.get('confidence', 'Unknown')}")
+                        if stake_multiplier != 1.0:
+                            st.caption(f"Context: {stake_multiplier}x")
                     
                     st.markdown("---")
     
-    display_balanced_bet_group(exceptional_bets, "Exceptional", "🔥")
-    display_balanced_bet_group(high_bets, "High", "⭐")
-    display_balanced_bet_group(good_bets, "Good", "✅")
-    display_balanced_bet_group(moderate_bets, "Moderate", "📊")
+    display_enhanced_bet_group(exceptional_bets, "Exceptional", "🔥")
+    display_enhanced_bet_group(high_bets, "High", "⭐")
+    display_enhanced_bet_group(good_bets, "Good", "✅")
+    display_enhanced_bet_group(moderate_bets, "Moderate", "📊")
 
 def main():
-    """Balanced main application function"""
+    """Enhanced main application function"""
     
-    # Initialize balanced session state
-    if 'balanced_predictions' not in st.session_state:
-        st.session_state.balanced_predictions = None
+    # Initialize enhanced session state
+    if 'enhanced_predictions' not in st.session_state:
+        st.session_state.enhanced_predictions = None
     
-    if 'balanced_prediction_history' not in st.session_state:
-        st.session_state.balanced_prediction_history = []
+    if 'enhanced_prediction_history' not in st.session_state:
+        st.session_state.enhanced_prediction_history = []
     
-    if st.session_state.balanced_predictions:
-        # Create balanced tabs
-        tab1, tab2 = st.tabs(["🎯 Balanced Predictions", "💰 Balanced Value Detection"])
+    if st.session_state.enhanced_predictions:
+        # Create enhanced tabs
+        tab1, tab2 = st.tabs(["🎯 Enhanced Predictions", "💰 Enhanced Value Detection"])
         
         with tab1:
-            display_balanced_predictions(st.session_state.balanced_predictions)
+            display_enhanced_predictions(st.session_state.enhanced_predictions)
         
         with tab2:
-            display_balanced_value_detection(st.session_state.balanced_predictions)
+            display_enhanced_value_detection(st.session_state.enhanced_predictions)
         
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🔄 New Balanced Analysis", use_container_width=True):
-                st.session_state.balanced_predictions = None
+            if st.button("🔄 New Enhanced Analysis", use_container_width=True):
+                st.session_state.enhanced_predictions = None
                 st.rerun()
         
         with col2:
-            if st.button("📊 Balanced History", use_container_width=True):
-                if st.session_state.balanced_prediction_history:
-                    st.write("**Balanced Professional Prediction History:**")
-                    for i, pred in enumerate(st.session_state.balanced_prediction_history[-5:]):
-                        with st.expander(f"Balanced Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
+            if st.button("📊 Enhanced History", use_container_width=True):
+                if st.session_state.enhanced_prediction_history:
+                    st.write("**Enhanced Professional Prediction History:**")
+                    for i, pred in enumerate(st.session_state.enhanced_prediction_history[-5:]):
+                        with st.expander(f"Enhanced Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
+                            st.write(f"Context: {get_context_display_name(pred.get('primary_context', 'balanced'))}")
                             st.write(f"Expected Goals: Home {pred['expected_goals'].get('home', 0):.2f} - Away {pred['expected_goals'].get('away', 0):.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
-                            st.write(f"Balanced IQ: {pred.get('football_iq', 0):.1f}/100")
-                            st.write(f"Stability Bonus: +{pred.get('stability_bonus', 0):.1f}")
+                            st.write(f"Enhanced IQ: {pred.get('football_iq', 0):.1f}/100")
+                            st.write(f"Context Confidence: {pred.get('context_confidence', 0)}%")
                             st.write(f"Value Bets Found: {pred.get('value_bets', 0)}")
                 else:
-                    st.info("No balanced professional prediction history yet.")
+                    st.info("No enhanced professional prediction history yet.")
         
         with col3:
-            if st.button("🎯 Balanced System Status", use_container_width=True):
+            if st.button("🎯 Enhanced System Status", use_container_width=True):
                 st.success("""
-                **Balanced Professional System Status: OPERATIONAL** 🟢
+                **Enhanced Professional System Status: OPERATIONAL** 🟢
                 
-                **Balanced Confidence Features Active:**
-                - ✅ Conservative Context Detection (0.35 xG threshold) ✅
-                - ✅ Balanced Confidence Thresholds ✅
-                - ✅ Improved Risk Management ✅  
-                - ✅ Conservative Contradiction Penalties ✅
-                - ✅ Balanced Edge Threshold (3.0%) ✅
-                - ✅ Balanced Professional Monte Carlo (25k) ✅
+                **Enhanced Context Features Active:**
+                - ✅ Outcome-Based Context Detection ✅
+                - ✅ Context-Aware Confidence System ✅
+                - ✅ Enhanced Risk Management ✅  
+                - ✅ Context Alignment Stake Multipliers ✅
+                - ✅ Enhanced Edge Threshold (3.0%) ✅
+                - ✅ Context Confidence Scoring ✅
                 
-                **Model Version:** 2.3.0_balanced
+                **Model Version:** 2.4.0_enhanced
                 **Calibration Level:** MONEY_GRADE
-                **Last Update:** Balanced Context Logic Active
+                **Last Update:** Enhanced Context Logic Active
                 """)
         
         return
     
-    match_data, mc_iterations = create_balanced_input_form()
+    match_data, mc_iterations = create_enhanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running balanced professional multi-league calibrated analysis..."):
+        with st.spinner("🔍 Running enhanced professional multi-league calibrated analysis..."):
             try:
-                # Initialize balanced predictor
+                # Initialize enhanced predictor
                 predictor = AdvancedFootballPredictor(match_data)
                 
-                # Generate balanced analysis
+                # Generate enhanced analysis
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
                 
                 if predictions:
-                    # Add balanced information
+                    # Add enhanced information
                     predictions['league'] = match_data['league']
                     predictions['bankroll'] = match_data.get('bankroll', 1000)
                     predictions['kelly_fraction'] = match_data.get('kelly_fraction', 0.2)
                     
-                    st.session_state.balanced_predictions = predictions
+                    st.session_state.enhanced_predictions = predictions
                     
-                    # Store in balanced history
-                    if 'balanced_prediction_history' not in st.session_state:
-                        st.session_state.balanced_prediction_history = []
+                    # Store in enhanced history
+                    if 'enhanced_prediction_history' not in st.session_state:
+                        st.session_state.enhanced_prediction_history = []
                     
                     prediction_record = {
                         'timestamp': datetime.now().isoformat(),
                         'match': predictions.get('match', 'Unknown Match'),
                         'league': predictions.get('league', 'premier_league'),
+                        'primary_context': predictions.get('match_context', 'balanced'),
                         'expected_goals': predictions.get('expected_goals', {'home': 0, 'away': 0}),
                         'team_tiers': predictions.get('team_tiers', {}),
                         'probabilities': safe_get(predictions, 'probabilities', 'match_outcomes') or {},
                         'football_iq': safe_get(predictions, 'apex_intelligence', 'football_iq_score') or 0,
+                        'context_confidence': safe_get(predictions, 'apex_intelligence', 'context_confidence') or 0,
                         'stability_bonus': safe_get(predictions, 'apex_intelligence', 'form_stability_bonus') or 0,
                         'value_bets': len(predictions.get('betting_signals', []))
                     }
                     
-                    st.session_state.balanced_prediction_history.append(prediction_record)
+                    st.session_state.enhanced_prediction_history.append(prediction_record)
                     
-                    # Balanced alignment status check
+                    # Enhanced alignment status check
                     system_validation = safe_get(predictions, 'system_validation') or {}
                     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-                    calibration_level = system_validation.get('calibration_level', 'BALANCED')
+                    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
                     
                     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
                         stability_bonus = safe_get(predictions, 'apex_intelligence', 'form_stability_bonus') or 0
                         match_context = safe_get(predictions, 'match_context')
                         context_emoji = get_context_emoji(match_context)
+                        context_confidence = safe_get(predictions, 'apex_intelligence', 'context_confidence') or 0
                         
                         st.success(f"""
-                        ✅ **BALANCED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** {context_emoji}
+                        ✅ **ENHANCED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** {context_emoji}
                         
-                        Balanced Professional Value Engine confirms Signal Engine predictions with:
-                        - ✅ Conservative context detection
-                        - ✅ Balanced 4-tier confidence system
+                        Enhanced Professional Value Engine confirms Signal Engine predictions with:
+                        - ✅ Outcome-based context detection
+                        - ✅ Context-aware confidence system
+                        - ✅ Context confidence: {context_confidence}%
                         - ✅ Form stability bonus: +{stability_bonus:.1f}  
-                        - ✅ Improved risk management
-                        - ✅ Balanced professional bankroll management
+                        - ✅ Enhanced risk management
+                        - ✅ Professional bankroll management
                         """)
                     else:
-                        st.warning("⚠️ BALANCED PROFESSIONAL REVIEW REQUIRED: Conservative contradiction detection active")
+                        st.warning("⚠️ ENHANCED PROFESSIONAL REVIEW REQUIRED: Context-aware contradiction detection active")
                     
                     st.rerun()
                 else:
-                    st.error("❌ Failed to generate balanced professional predictions")
+                    st.error("❌ Failed to generate enhanced professional predictions")
                 
             except Exception as e:
-                st.error(f"❌ Balanced professional analysis error: {str(e)}")
+                st.error(f"❌ Enhanced professional analysis error: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
-                st.info("💡 Check balanced professional input parameters and try again")
+                st.info("💡 Check enhanced professional input parameters and try again")
 
 if __name__ == "__main__":
     main()

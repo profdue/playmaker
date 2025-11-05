@@ -1,4 +1,4 @@
-# prediction_engine.py - PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
+# prediction_engine.py - ENHANCED PROFESSIONAL BETTING GRADE (COMPLETE FIXED VERSION)
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -25,7 +25,7 @@ class MatchContext(Enum):
     UNPREDICTABLE = "unpredictable"
 
 class MatchNarrative:
-    """PROFESSIONAL MATCH NARRATIVE - Elite Football Intelligence"""
+    """ENHANCED PROFESSIONAL MATCH NARRATIVE - Elite Football Intelligence"""
     
     def __init__(self):
         self.dominance = "balanced"
@@ -83,7 +83,7 @@ class IntelligenceMetrics:
     calibration_status: str
 
 class EliteFeatureEngine:
-    """ELITE Feature Engineering with Professional Calibration"""
+    """ENHANCED Feature Engineering with Professional Calibration"""
     
     def __init__(self):
         self.feature_metadata = {}
@@ -112,7 +112,7 @@ class EliteFeatureEngine:
             'away_form_defense': self._professional_form_weight(away_data.get('xga_last_5', [1.4]*5), is_home=False),
         })
         
-        # ELITE: Professional interaction features
+        # ENHANCED: Professional interaction features
         features.update({
             'home_attack_vs_away_defense': features['home_xg_for'] * (1 - (features['away_xg_against'] / 3.0)),
             'away_attack_vs_home_defense': features['away_xg_for'] * (1 - (features['home_xg_against'] / 3.0)),
@@ -151,22 +151,22 @@ class EliteFeatureEngine:
         impact_multiplier = league_confidence_multipliers.get(league, 1.0)
         quality_gap_score *= impact_multiplier
         
-        # Calculate multipliers with professional bounds
-        if strength_ratio > 1.2:
-            home_attack_multiplier = 1.0 + (min(0.3, (strength_ratio - 1.2) * 0.5))
-            away_attack_multiplier = 1.0 - (min(0.25, (strength_ratio - 1.2) * 0.4))
-            home_defense_multiplier = 1.0 + (min(0.2, (strength_ratio - 1.2) * 0.3))
-            away_defense_multiplier = 1.0 - (min(0.3, (strength_ratio - 1.2) * 0.5))
-        elif strength_ratio < 0.8:
-            home_attack_multiplier = 1.0 - (min(0.25, (1.2 - strength_ratio) * 0.4))
-            away_attack_multiplier = 1.0 + (min(0.3, (1.2 - strength_ratio) * 0.5))
-            home_defense_multiplier = 1.0 - (min(0.3, (1.2 - strength_ratio) * 0.5))
-            away_defense_multiplier = 1.0 + (min(0.2, (1.2 - strength_ratio) * 0.3))
-        else:
-            home_attack_multiplier = 1.05
-            away_attack_multiplier = 0.95
-            home_defense_multiplier = 1.05
-            away_defense_multiplier = 0.95
+        # ENHANCED: More aggressive away counter adjustments
+        if strength_ratio < 0.8:  # Away team stronger
+            home_attack_multiplier = 0.85  # Reduced from 0.9
+            away_attack_multiplier = 1.25  # Increased from 1.2
+            home_defense_multiplier = 0.80  # Reduced from 0.85  
+            away_defense_multiplier = 1.20  # Increased from 1.15
+        elif strength_ratio > 1.2:  # Home team stronger
+            home_attack_multiplier = 1.25
+            away_attack_multiplier = 0.80
+            home_defense_multiplier = 1.20
+            away_defense_multiplier = 0.85
+        else:  # Even matchup
+            home_attack_multiplier = 1.08
+            away_attack_multiplier = 0.92
+            home_defense_multiplier = 1.08
+            away_defense_multiplier = 0.92
         
         return {
             'home_attack_multiplier': home_attack_multiplier,
@@ -217,13 +217,13 @@ class EliteFeatureEngine:
         return features
 
 class ProfessionalMatchSimulator:
-    """PROFESSIONAL Monte Carlo Simulation with Realistic Dependencies"""
+    """ENHANCED Monte Carlo Simulation with Realistic Dependencies"""
     
     def __init__(self, n_simulations: int = 25000):
         self.n_simulations = n_simulations
         
     def simulate_match_dixon_coles(self, home_xg: float, away_xg: float, correlation: float = 0.2):
-        """Professional Dixon-Coles implementation"""
+        """Enhanced Dixon-Coles implementation"""
         goal_sum = home_xg + away_xg
         dynamic_correlation = correlation * min(1.0, goal_sum / 3.0)
         
@@ -241,7 +241,7 @@ class ProfessionalMatchSimulator:
         return home_goals, away_goals
     
     def get_market_probabilities(self, home_goals: np.array, away_goals: np.array) -> Dict[str, float]:
-        """Professional market probability calculation"""
+        """Enhanced market probability calculation"""
         
         btts_yes = np.mean((home_goals > 0) & (away_goals > 0))
         btts_no = 1 - btts_yes
@@ -271,7 +271,7 @@ class ProfessionalMatchSimulator:
         }
 
 class ProfessionalLeagueCalibrator:
-    """PROFESSIONAL League-Specific Calibration"""
+    """ENHANCED League-Specific Calibration"""
     
     def __init__(self):
         self.league_profiles = {
@@ -338,7 +338,7 @@ class ProfessionalLeagueCalibrator:
         }
     
     def calibrate_probability(self, raw_prob: float, league: str, market_type: str) -> float:
-        """Professional probability calibration"""
+        """Enhanced probability calibration"""
         profile = self.league_profiles.get(league, self.league_profiles['premier_league'])
         base_calibrated = raw_prob * profile['calibration_factor']
         
@@ -368,7 +368,7 @@ class ProfessionalLeagueCalibrator:
         return profile.get('confidence_multiplier', 1.0)
 
 class ProfessionalPredictionExplainer:
-    """PROFESSIONAL Explanation Engine"""
+    """ENHANCED Explanation Engine"""
     
     def __init__(self):
         self.feature_descriptions = {
@@ -383,7 +383,7 @@ class ProfessionalPredictionExplainer:
         }
     
     def generate_explanation(self, features: Dict, probabilities: Dict, narrative: Dict, home_tier: str, away_tier: str) -> Dict[str, List[str]]:
-        """Generate professional explanations"""
+        """Generate enhanced explanations"""
         
         explanations = {}
         
@@ -395,68 +395,83 @@ class ProfessionalPredictionExplainer:
         quality_gap = features.get('quality_gap_metric', 1.0)
         
         btts_prob = probabilities.get('btts_yes', 0.5)
+        
+        # ENHANCED: More assertive BTTS explanations
         if btts_prob > 0.65:
             explanations['btts'] = [
-                f"Both teams demonstrate strong attacking capabilities (Home: {home_attack:.1f}, Away: {away_attack:.1f} xG)",
-                f"Defensive vulnerabilities evident (Home concedes: {home_defense:.1f}, Away concedes: {away_defense:.1f} xG)"
+                f"Strong attacking capabilities from both teams (Home: {home_attack:.1f}, Away: {away_attack:.1f} xG)",
+                f"Defensive vulnerabilities suggest high BTTS probability ({btts_prob:.1%})",
+                f"Expected goal volume supports both teams scoring"
             ]
         elif btts_prob < 0.35:
             if quality_gap > 1.3:
                 explanations['btts'] = [
-                    f"Significant quality gap favors {home_tier} home team over {away_tier} away side",
-                    f"Defensive organization likely to limit scoring opportunities for weaker team"
+                    f"Significant quality gap favors {home_tier} home team",
+                    f"Defensive organization likely to limit away team scoring",
+                    f"BTTS probability reduced due to quality disparity"
                 ]
             else:
                 explanations['btts'] = [
                     f"Strong defensive organization from one or both teams",
-                    f"Limited attacking threat reduces BTTS probability"
+                    f"Limited attacking threat reduces BTTS probability ({btts_prob:.1%})",
+                    f"Expected low-scoring affair"
                 ]
         else:
             explanations['btts'] = [
                 f"Balanced attacking and defensive capabilities",
-                f"Moderate chance for both teams to score"
+                f"Moderate BTTS probability ({btts_prob:.1%}) reflects evenly matched teams",
+                f"Game could go either way for both teams scoring"
             ]
         
         over_prob = probabilities.get('over_25', 0.5)
+        # ENHANCED: More confident over/under explanations
         if over_prob > 0.65:
             explanations['over_under'] = [
                 f"High expected goal volume (Total xG: {total_xg:.2f})",
-                f"Attacking styles and defensive vulnerabilities suggest multiple goals"
+                f"Attacking styles suggest multiple goals (Over 2.5: {over_prob:.1%})",
+                f"Defensive vulnerabilities support high-scoring match"
             ]
         elif over_prob < 0.35:
             if quality_gap > 1.4:
                 explanations['over_under'] = [
                     f"One-sided contest expected with {home_tier} team dominating",
-                    f"Game management may limit total goals despite quality gap"
+                    f"Game management may limit total goals despite quality gap",
+                    f"Under 2.5 probability: {1-over_prob:.1%}"
                 ]
             else:
                 explanations['over_under'] = [
-                    f"Defensive organization likely to limit scoring opportunities",
-                    f"Tactical approach suggests lower-scoring affair"
+                    f"Defensive organization likely to limit scoring",
+                    f"Tactical approach suggests lower-scoring affair",
+                    f"Expected total goals: {total_xg:.2f}"
                 ]
         else:
             explanations['over_under'] = [
                 f"Average expected goal volume (Total xG: {total_xg:.2f})",
-                f"Game could go either way in terms of total goals"
+                f"Game could go either way in terms of total goals",
+                f"Balanced probability for over/under 2.5"
             ]
             
         style_conflict = narrative.get('style_conflict', 'balanced')
         quality_gap_level = narrative.get('quality_gap', 'even')
         
         if quality_gap_level in ['significant', 'extreme']:
-            explanations['quality'] = [f"Significant quality gap between {home_tier} and {away_tier} teams"]
+            explanations['quality'] = [f"Significant quality gap between {home_tier} and {away_tier} teams",
+                                     f"Quality disparity will likely influence match outcome"]
             
         if style_conflict == "attacking_vs_attacking":
-            explanations['style'] = ["Open game expected with both teams prioritizing attack"]
+            explanations['style'] = ["Open game expected with both teams prioritizing attack",
+                                   "High-tempo match with scoring opportunities at both ends"]
         elif style_conflict == "attacking_vs_defensive":
-            explanations['style'] = ["Tactical battle between attacking initiative and defensive organization"]
+            explanations['style'] = ["Tactical battle between attacking initiative and defensive organization",
+                                   "Match outcome depends on which style prevails"]
         else:
-            explanations['style'] = ["Balanced tactical approach from both teams"]
+            explanations['style'] = ["Balanced tactical approach from both teams",
+                                   "Neutral style conflict suggests evenly matched encounter"]
             
         return explanations
 
 class ProfessionalTeamTierCalibrator:
-    """PROFESSIONAL Team Tier Calibration"""
+    """ENHANCED Team Tier Calibration"""
     
     def __init__(self):
         self.league_baselines = {
@@ -572,7 +587,7 @@ class ProfessionalTeamTierCalibrator:
         return league_teams.get(team, 'MEDIUM')
 
 class ProfessionalGoalModel:
-    """PROFESSIONAL Goal Prediction Model"""
+    """ENHANCED Goal Prediction Model"""
     
     def __init__(self):
         self.feature_engine = EliteFeatureEngine()
@@ -582,10 +597,10 @@ class ProfessionalGoalModel:
         self.tier_calibrator = ProfessionalTeamTierCalibrator()
         
     def calculate_team_strength(self, team_data: Dict, is_home: bool = True) -> Dict[str, float]:
-        """Professional team strength calculation"""
+        """Enhanced team strength calculation"""
         prior_games = 8
         prior_strength = 1.5
-        
+
         xg_data = team_data.get('xg_last_6', [1.5] * 6)
         xga_data = team_data.get('xga_last_6', [1.3] * 6)
         
@@ -607,7 +622,7 @@ class ProfessionalGoalModel:
         }
 
 class ApexProfessionalEngine:
-    """APEX PROFESSIONAL ENGINE - Money-Grade Predictions"""
+    """APEX ENHANCED ENGINE - Money-Grade Predictions"""
     
     def __init__(self, match_data: Dict[str, Any]):
         self.data = self._professional_data_validation(match_data)
@@ -692,7 +707,7 @@ class ApexProfessionalEngine:
         }
 
     def _calculate_professional_xg(self) -> Tuple[float, float]:
-        """PROFESSIONAL xG calculation with elite calibration"""
+        """ENHANCED xG calculation with elite calibration"""
         league = self.data.get('league', 'premier_league')
         league_baseline = self.calibrator.league_baselines.get(league, {'avg_goals': 2.7, 'home_advantage': 0.35})
         
@@ -740,16 +755,23 @@ class ApexProfessionalEngine:
         
         h2h_data = self.data.get('h2h_data', {})
         if h2h_data and h2h_data.get('matches', 0) >= 2:
-            home_xg, away_xg = self._apply_professional_h2h_adjustment(home_xg, away_xg, h2h_data, home_tier, away_tier)
+            home_xg, away_xg = self._apply_enhanced_h2h_adjustment(home_xg, away_xg, h2h_data, home_tier, away_tier)
+        
+        # ENHANCED: More aggressive away counter adjustments
+        if home_tier in ['WEAK', 'MEDIUM'] and away_tier in ['STRONG', 'ELITE']:
+            # Away team significantly stronger - boost away xG
+            away_xg *= 1.15
+            home_xg *= 0.90
+            logger.info(f"Applied away counter boost: {self.data['away_team']} xG increased by 15%")
         
         home_xg = max(0.25, min(3.5, home_xg))
         away_xg = max(0.25, min(3.0, away_xg))
         
-        logger.info(f"Professional xG calculated: {self.data['home_team']} {home_xg:.2f} - {self.data['away_team']} {away_xg:.2f}")
+        logger.info(f"Enhanced xG calculated: {self.data['home_team']} {home_xg:.2f} - {self.data['away_team']} {away_xg:.2f}")
         return round(home_xg, 3), round(away_xg, 3)
 
-    def _apply_professional_h2h_adjustment(self, home_xg: float, away_xg: float, h2h_data: Dict, home_tier: str, away_tier: str) -> Tuple[float, float]:
-        """Professional H2H adjustment"""
+    def _apply_enhanced_h2h_adjustment(self, home_xg: float, away_xg: float, h2h_data: Dict, home_tier: str, away_tier: str) -> Tuple[float, float]:
+        """Enhanced H2H adjustment"""
         matches = h2h_data.get('matches', 0)
         if matches < 2:
             return home_xg, away_xg
@@ -764,6 +786,12 @@ class ApexProfessionalEngine:
             home_tier_strength = tier_strength.get(home_tier, 1.0)
             away_tier_strength = tier_strength.get(away_tier, 1.0)
             
+            # ENHANCED: More aggressive H2H weighting for clear patterns
+            if h2h_home_avg > h2h_away_avg + 0.5:  # Clear home dominance
+                h2h_weight = min(0.35, h2h_weight * 1.2)
+            elif h2h_away_avg > h2h_home_avg + 0.5:  # Clear away dominance
+                h2h_weight = min(0.35, h2h_weight * 1.2)
+            
             adjusted_home_xg = (home_xg * (1 - h2h_weight)) + (h2h_home_avg * h2h_weight * home_tier_strength)
             adjusted_away_xg = (away_xg * (1 - h2h_weight)) + (h2h_away_avg * h2h_weight * away_tier_strength)
             
@@ -772,7 +800,7 @@ class ApexProfessionalEngine:
         return home_xg, away_xg
 
     def _determine_professional_narrative(self, home_xg: float, away_xg: float) -> MatchNarrative:
-        """Professional match narrative determination"""
+        """Enhanced match narrative determination"""
         narrative = MatchNarrative()
         total_xg = home_xg + away_xg
         xg_difference = home_xg - away_xg
@@ -787,22 +815,20 @@ class ApexProfessionalEngine:
         
         strength_difference = home_strength - away_strength
         
-        if strength_difference >= 2:
-            narrative.quality_gap = "extreme"
-            narrative.dominance = "home"
-            narrative.primary_pattern = "home_dominance"
-        elif strength_difference >= 1:
+        # ENHANCED: More sensitive away counter detection
+        if strength_difference <= -1:  # Away team stronger
+            narrative.quality_gap = "significant"
+            narrative.dominance = "away"
+            narrative.primary_pattern = "away_counter"
+            # ENHANCED: Boost away counter confidence
+            if strength_difference <= -2:
+                narrative.quality_gap = "extreme"
+        elif strength_difference >= 1:  # Home team stronger
             narrative.quality_gap = "significant"
             narrative.dominance = "home"
             narrative.primary_pattern = "home_dominance"
-        elif strength_difference <= -2:
-            narrative.quality_gap = "extreme"
-            narrative.dominance = "away"
-            narrative.primary_pattern = "away_counter"
-        elif strength_difference <= -1:
-            narrative.quality_gap = "significant" 
-            narrative.dominance = "away"
-            narrative.primary_pattern = "away_counter"
+            if strength_difference >= 2:
+                narrative.quality_gap = "extreme"
         else:
             narrative.quality_gap = "even"
             if xg_difference > 0.6:
@@ -861,7 +887,7 @@ class ApexProfessionalEngine:
         return narrative
 
     def _run_professional_monte_carlo(self, home_xg: float, away_xg: float, iterations: int = 25000) -> MonteCarloResults:
-        """Professional Monte Carlo simulation"""
+        """Enhanced Monte Carlo simulation"""
         home_goals, away_goals = self.goal_model.simulator.simulate_match_dixon_coles(home_xg, away_xg)
         market_probs = self.goal_model.simulator.get_market_probabilities(home_goals, away_goals)
         
@@ -881,7 +907,7 @@ class ApexProfessionalEngine:
         )
 
     def _calculate_professional_data_quality(self) -> float:
-        """Professional data quality assessment"""
+        """Enhanced data quality assessment"""
         score = 0
         max_score = 100
         
@@ -914,109 +940,104 @@ class ApexProfessionalEngine:
         return min(100, score)
 
     def _assess_professional_coherence(self, predictions: Dict) -> Tuple[float, str]:
-        """Professional prediction coherence assessment"""
+        """Enhanced prediction coherence assessment"""
         btts_yes = predictions.get('btts_yes', 0.5)
         over_25 = predictions.get('over_25', 0.5)
         home_win = predictions.get('home_win', 0.33)
         
         coherence_score = 0.0
         
-        # ENHANCED: Contradiction detection with confidence penalty
+        # ENHANCED: More nuanced contradiction detection
         if btts_yes > 0.7 and over_25 < 0.4:
-            coherence_score -= 0.4
+            coherence_score -= 0.3  # Reduced penalty
         elif btts_yes < 0.3 and over_25 > 0.7:
-            coherence_score -= 0.4
+            coherence_score -= 0.3  # Reduced penalty
         else:
-            coherence_score += 0.3
+            coherence_score += 0.4  # Increased reward
             
         if home_win > 0.65 and over_25 < 0.35:
-            coherence_score -= 0.3
+            coherence_score -= 0.2  # Reduced penalty
         elif home_win < 0.25 and over_25 > 0.65:
-            coherence_score -= 0.3
+            coherence_score -= 0.2  # Reduced penalty
         else:
-            coherence_score += 0.2
+            coherence_score += 0.3  # Increased reward
             
         narrative = self.narrative.to_dict()
         if narrative.get('primary_pattern') == 'home_dominance' and home_win < 0.45:
-            coherence_score -= 0.2
+            coherence_score -= 0.1  # Reduced penalty
         elif narrative.get('primary_pattern') == 'away_counter' and home_win > 0.55:
-            coherence_score -= 0.2
+            coherence_score -= 0.1  # Reduced penalty
         else:
-            coherence_score += 0.2
+            coherence_score += 0.3  # Increased reward
             
-        if coherence_score >= 0.5:
+        if coherence_score >= 0.6:  # Higher threshold for HIGH
             alignment = "HIGH"
-        elif coherence_score >= 0.2:
+        elif coherence_score >= 0.3:  # Adjusted threshold
             alignment = "MEDIUM"
         else:
             alignment = "LOW"
             
-        return max(0.0, min(1.0, 0.5 + coherence_score)), alignment
+        return max(0.0, min(1.0, 0.6 + coherence_score)), alignment  # Higher base score
 
     def _calculate_professional_risk(self, certainty: float, data_quality: float, 
                                    market_edge: float, alignment: str) -> str:
-        """Professional risk assessment"""
+        """Enhanced risk assessment"""
         base_risk = (1 - certainty) * 0.4 + (1 - data_quality/100) * 0.3 + (1 - market_edge) * 0.3
         
         alignment_penalty = {
-            "HIGH": 0.0, "MEDIUM": 0.15, "LOW": 0.3
-        }.get(alignment, 0.2)
+            "HIGH": 0.0, "MEDIUM": 0.10, "LOW": 0.20  # Reduced penalties
+        }.get(alignment, 0.15)
         
         total_risk = base_risk + alignment_penalty
         
-        if total_risk < 0.25:
+        if total_risk < 0.20:  # Tighter thresholds
             return "LOW"
-        elif total_risk < 0.45:
+        elif total_risk < 0.40:
             return "MEDIUM"
-        elif total_risk < 0.65:
+        elif total_risk < 0.60:
             return "HIGH"
         else:
             return "VERY_HIGH"
     
     def _generate_professional_summary(self, narrative: MatchNarrative, predictions: Dict, 
                                     home_team: str, away_team: str, home_tier: str, away_tier: str) -> str:
-        """Professional match summary"""
+        """Enhanced match summary"""
         home_win = predictions.get('home_win', 0.33)
         btts_yes = predictions.get('btts_yes', 0.5)
         over_25 = predictions.get('over_25', 0.5)
         
         quality_gap = narrative.quality_gap
         
-        if quality_gap == "extreme":
-            if home_win > 0.6:
-                return f"{home_team} ({home_tier}) are overwhelming favorites against {away_team} ({away_tier}). The significant quality gap suggests comprehensive home dominance, with the hosts expected to control proceedings and secure a comfortable victory."
+        # ENHANCED: More assertive summaries for away counter
+        if narrative.primary_pattern == "away_counter":
+            if home_win < 0.4:
+                return f"{away_team} ({away_tier}) are STRONGLY favored despite being away at {home_team} ({home_tier}). The significant quality gap combined with tactical setup suggests the visitors should secure at least a draw, with an away win being the most probable outcome."
             else:
-                return f"{away_team} ({away_tier}) possess clear superiority over {home_team} ({home_tier}). Despite home advantage, the visitors' quality should prevail in what appears to be a mismatch on paper."
-                
-        elif quality_gap == "significant":
-            if home_win > 0.55:
-                return f"{home_team} ({home_tier}) hold a clear advantage over {away_team} ({away_tier}). Home advantage combined with superior quality should see the hosts control this encounter, though the visitors may offer periods of resistance."
-            else:
-                return f"{away_team} ({away_tier}) are favored despite traveling to {home_team} ({home_tier}). The visitors' quality edge may overcome home advantage, suggesting an away win or hard-fought draw is the most likely outcome."
+                return f"{away_team} ({away_tier}) possess clear tactical advantages at {home_team} ({home_tier}). Despite home advantage, the visitors' superior quality and counter-attacking threat make them dangerous underdogs with excellent chances of avoiding defeat."
                 
         elif narrative.primary_pattern == "home_dominance":
-            if over_25 > 0.6:
-                return f"{home_team} are expected to dominate possession and create numerous chances against {away_team}. The home side's attacking quality combined with the visitors' defensive vulnerabilities points toward a convincing home victory with multiple goals."
+            if home_win > 0.65:
+                return f"{home_team} ({home_tier}) are EXPECTED to dominate {away_team} ({away_tier}) comprehensively. Home advantage combined with superior quality should result in a comfortable victory, potentially by multiple goals given the expected control and scoring opportunities."
             else:
-                return f"{home_team} should control this match against {away_team}, but may face organized defensive resistance. A patient, probing performance could yield a narrow victory rather than a goal-filled rout."
+                return f"{home_team} should control proceedings against {away_team}, with organized defensive resistance expected from the visitors. A patient, possession-based performance should yield a home victory, though the margin may be narrower than quality alone suggests."
                 
         elif narrative.style_conflict == "attacking_vs_attacking":
             if btts_yes > 0.65:
-                return f"An entertaining, open contest awaits as two attack-minded teams face off. Both {home_team} and {away_team} have shown defensive frailties, suggesting goals at both ends in what could be a high-scoring affair decided by attacking quality."
+                return f"An ENTERTAINING, OPEN contest awaits as two attack-minded teams face off. Both {home_team} and {away_team} have demonstrated defensive vulnerabilities, strongly suggesting goals at both ends in what could be a high-scoring affair decided by attacking quality."
             else:
                 return f"Despite both teams' attacking intentions, this could become a tactical battle where chances are limited. The offensive quality on display may cancel out, leading to a tighter encounter than the attacking reputations suggest."
                 
         else:
-            return f"A competitive match expected between {home_team} and {away_team}, with small margins likely deciding the outcome. Both teams will seek to establish control in what promises to be a closely-fought encounter where tactical discipline could prove decisive."
+            return f"A COMPETITIVE match expected between {home_team} and {away_team}, with small margins likely deciding the outcome. Both teams will seek to establish control in what promises to be a closely-fought encounter where tactical discipline could prove decisive."
     
     def _get_professional_risk_explanation(self, risk_level: str) -> str:
         explanations = {
-            'LOW': "High prediction coherence with strong data support and clear match patterns. Professional confidence level.",
-            'MEDIUM': "Reasonable prediction alignment with some data uncertainties. Professional assessment with standard confidence.",
-            'HIGH': "Multiple uncertainties present with some conflicting signals. Professional caution advised.",
-            'VERY_HIGH': "Significant unpredictability with limited data quality. Professional discretion strongly recommended."
+            'LOW': "HIGH prediction coherence with excellent data support and clear match patterns. ENHANCED professional confidence level.",
+            'MEDIUM': "REASONABLE prediction alignment with minor data uncertainties. Professional assessment with good confidence.",
+            'HIGH': "Several uncertainties present requiring professional attention. Enhanced caution advised.",
+            'VERY_HIGH': "Significant unpredictability with data limitations. Professional discretion strongly recommended."
         }
-        return explanations.get(risk_level, "Professional risk assessment unavailable")
+        return explanations.get(risk_level, "Enhanced risk assessment unavailable")
     
     def _get_professional_risk_recommendation(self, risk_level: str) -> str:
         recommendations = {
@@ -1028,14 +1049,14 @@ class ApexProfessionalEngine:
         return recommendations.get(risk_level, "PROFESSIONAL ASSESSMENT REQUIRED")
     
     def _get_professional_intelligence_breakdown(self) -> str:
-        return (f"Professional IQ: {self.intelligence.football_iq_score:.1f}/100 | "
+        return (f"Enhanced IQ: {self.intelligence.football_iq_score:.1f}/100 | "
                 f"Coherence: {self.intelligence.narrative_coherence:.1%} | "
                 f"Alignment: {self.intelligence.prediction_alignment} | "
                 f"Risk: {self.intelligence.risk_level} | "
                 f"Calibration: {self.intelligence.calibration_status}")
     
     def _risk_to_penalty(self, risk_level: str) -> float:
-        return {'LOW': 0.05, 'MEDIUM': 0.2, 'HIGH': 0.5, 'VERY_HIGH': 0.8}.get(risk_level, 0.3)
+        return {'LOW': 0.02, 'MEDIUM': 0.15, 'HIGH': 0.35, 'VERY_HIGH': 0.65}.get(risk_level, 0.2)  # Reduced penalties
 
     def _calculate_form_stability_bonus(self, home_form: List[float], away_form: List[float]) -> float:
         """Calculate form stability bonus for confidence enhancement"""
@@ -1053,11 +1074,11 @@ class ApexProfessionalEngine:
         max_expected_variance = 2.0  # Based on form point range 0-3
         stability_score = max(0, 1 - (avg_variance / max_expected_variance))
         
-        return stability_score
+        return stability_score * 5  # Enhanced: Increased from 4 to 5
 
     def generate_professional_predictions(self, mc_iterations: int = 25000) -> Dict[str, Any]:
-        """Generate professional-grade predictions"""
-        logger.info(f"Starting professional prediction for {self.data['home_team']} vs {self.data['away_team']}")
+        """Generate enhanced professional-grade predictions"""
+        logger.info(f"Starting enhanced prediction for {self.data['home_team']} vs {self.data['away_team']}")
         
         home_xg, away_xg = self._calculate_professional_xg()
         self.narrative = self._determine_professional_narrative(home_xg, away_xg)
@@ -1098,7 +1119,7 @@ class ApexProfessionalEngine:
         coherence, alignment = self._assess_professional_coherence(prediction_set)
         certainty = max(mc_results.home_win_prob, mc_results.away_win_prob, mc_results.draw_prob)
         data_quality = self._calculate_professional_data_quality()
-        market_edge = 0.4 + (data_quality/100 * 0.3) + (coherence * 0.3)
+        market_edge = 0.5 + (data_quality/100 * 0.3) + (coherence * 0.2)  # Enhanced base
         
         risk_level = self._calculate_professional_risk(certainty, data_quality, market_edge, alignment)
         
@@ -1107,7 +1128,7 @@ class ApexProfessionalEngine:
             self.data.get('home_form', []), 
             self.data.get('away_form', [])
         )
-        stability_bonus = form_stability * 5  # Add up to 5 points for form stability
+        stability_bonus = form_stability  # Already multiplied by 5
         
         football_iq_score = (coherence * 35 + (data_quality/100) * 30 + 
                            (1 - self._risk_to_penalty(risk_level)) * 25 + certainty * 10 + stability_bonus)
@@ -1120,7 +1141,7 @@ class ApexProfessionalEngine:
             market_edge_score=market_edge, 
             risk_level=risk_level,
             football_iq_score=football_iq_score,
-            calibration_status="PROFESSIONAL"
+            calibration_status="ENHANCED"
         )
         
         summary = self._generate_professional_summary(
@@ -1131,7 +1152,7 @@ class ApexProfessionalEngine:
         
         match_context = self.narrative.primary_pattern or "balanced"
         
-        logger.info(f"Professional prediction complete: {self.data['home_team']} {home_xg:.2f}xG - {self.data['away_team']} {away_xg:.2f}xG")
+        logger.info(f"Enhanced prediction complete: {self.data['home_team']} {home_xg:.2f}xG - {self.data['away_team']} {away_xg:.2f}xG")
         
         return {
             'match': f"{self.data['home_team']} vs {self.data['away_team']}",
@@ -1148,7 +1169,7 @@ class ApexProfessionalEngine:
                 'football_iq_score': round(football_iq_score, 1),
                 'data_quality': round(data_quality, 1),
                 'certainty': round(certainty * 100, 1),
-                'calibration_status': 'PROFESSIONAL',
+                'calibration_status': 'ENHANCED',
                 'form_stability_bonus': round(stability_bonus, 1)
             },
             'probabilities': {
@@ -1184,17 +1205,17 @@ class ApexProfessionalEngine:
         }
 
 class ProfessionalBettingEngine:
-    """PROFESSIONAL Betting Decision Engine"""
+    """ENHANCED Betting Decision Engine"""
     
     def __init__(self, bankroll: float = 1000, kelly_fraction: float = 0.2):
         self.bankroll = bankroll
         self.kelly_fraction = kelly_fraction
         self.value_thresholds = {
-            'EXCEPTIONAL': 20.0, 'HIGH': 12.0, 'GOOD': 7.0, 'MODERATE': 4.0,
+            'EXCEPTIONAL': 15.0, 'HIGH': 10.0, 'GOOD': 6.0, 'MODERATE': 3.0,  # Lowered thresholds
         }
         
     def calculate_expected_value(self, model_prob: float, market_odds: float) -> Dict[str, float]:
-        """Professional expected value calculation"""
+        """Enhanced expected value calculation"""
         if market_odds <= 1:
             return {'edge_percentage': 0, 'expected_value': 0, 'implied_probability': 0}
             
@@ -1209,7 +1230,7 @@ class ProfessionalBettingEngine:
         }
     
     def professional_kelly_stake(self, model_prob: float, market_odds: float, confidence: str) -> float:
-        """Professional Kelly Criterion with confidence adjustment"""
+        """Enhanced Kelly Criterion with confidence adjustment"""
         if market_odds <= 1:
             return 0
             
@@ -1222,20 +1243,20 @@ class ProfessionalBettingEngine:
             
         confidence_multiplier = {
             'HIGH': 1.0,
-            'MEDIUM': 0.7, 
-            'LOW': 0.4,
-            'SPECULATIVE': 0.2
+            'MEDIUM': 0.8,  # Increased from 0.7
+            'LOW': 0.6,     # Increased from 0.4
+            'SPECULATIVE': 0.3  # Increased from 0.2
         }.get(confidence, 0.5)
         
         stake = max(0, kelly * self.kelly_fraction * confidence_multiplier * self.bankroll)
         
-        max_stake = 0.03 * self.bankroll
+        max_stake = 0.04 * self.bankroll  # Increased from 0.03
         min_stake = 0.005 * self.bankroll
         
         return min(max(stake, min_stake), max_stake)
     
     def _get_professional_value_rating(self, edge: float) -> str:
-        """Professional value rating"""
+        """Enhanced value rating"""
         for rating, threshold in self.value_thresholds.items():
             if edge >= threshold:
                 return rating
@@ -1243,32 +1264,32 @@ class ProfessionalBettingEngine:
     
     def _assign_professional_confidence(self, probability: float, edge: float, data_quality: float, 
                                      league: str, form_stability: float = 0.5) -> str:
-        """FIXED: Professional confidence assignment with proper tier system"""
+        """ENHANCED: Professional confidence assignment with improved tier system"""
         
         # Get league-specific confidence multiplier
         league_calibrator = ProfessionalLeagueCalibrator()
         league_multiplier = league_calibrator.get_league_confidence_multiplier(league)
         
-        # Apply league adjustment to thresholds
-        adjusted_prob_threshold_high = 0.70 * league_multiplier
-        adjusted_prob_threshold_medium = 0.60 * league_multiplier
-        adjusted_prob_threshold_low = 0.55 * league_multiplier
+        # ENHANCED: More aggressive confidence thresholds
+        adjusted_prob_threshold_high = 0.65 * league_multiplier  # Reduced from 0.70
+        adjusted_prob_threshold_medium = 0.55 * league_multiplier  # Reduced from 0.60
+        adjusted_prob_threshold_low = 0.50 * league_multiplier  # Reduced from 0.55
         
-        adjusted_edge_threshold_high = 12.0 * league_multiplier
-        adjusted_edge_threshold_medium = 8.0 * league_multiplier  
-        adjusted_edge_threshold_low = 5.0 * league_multiplier
+        adjusted_edge_threshold_high = 10.0 * league_multiplier  # Reduced from 12.0
+        adjusted_edge_threshold_medium = 6.0 * league_multiplier  # Reduced from 8.0
+        adjusted_edge_threshold_low = 3.0 * league_multiplier  # Reduced from 5.0
         
         # Apply form stability bonus (stable form increases effective probability)
-        form_bonus = form_stability * 0.05  # Up to 5% probability boost
+        form_bonus = form_stability * 0.08  # Increased from 0.05
         effective_probability = probability + form_bonus
         
-        # FIXED: Proper multi-tier confidence assessment
+        # ENHANCED: More aggressive confidence assessment
         confidence_factors = []
         
         # HIGH CONFIDENCE: Strong probability + significant edge + excellent data
         if (effective_probability > adjusted_prob_threshold_high and 
             edge > adjusted_edge_threshold_high and 
-            data_quality > 80):
+            data_quality > 75):  # Reduced from 80
             confidence = 'HIGH'
             confidence_factors.append(f"Strong probability ({effective_probability:.1%})")
             confidence_factors.append(f"Significant edge ({edge:.1f}%)")
@@ -1277,7 +1298,7 @@ class ProfessionalBettingEngine:
         # MEDIUM CONFIDENCE: Good probability + solid edge + good data  
         elif (effective_probability > adjusted_prob_threshold_medium and 
               edge > adjusted_edge_threshold_medium and 
-              data_quality > 70):
+              data_quality > 65):  # Reduced from 70
             confidence = 'MEDIUM'
             confidence_factors.append(f"Good probability ({effective_probability:.1%})")
             confidence_factors.append(f"Solid edge ({edge:.1f}%)")
@@ -1286,7 +1307,7 @@ class ProfessionalBettingEngine:
         # LOW CONFIDENCE: Reasonable probability + moderate edge + adequate data
         elif (effective_probability > adjusted_prob_threshold_low and 
               edge > adjusted_edge_threshold_low and 
-              data_quality > 60):
+              data_quality > 55):  # Reduced from 60
             confidence = 'LOW'
             confidence_factors.append(f"Reasonable probability ({effective_probability:.1%})")
             confidence_factors.append(f"Moderate edge ({edge:.1f}%)")
@@ -1299,17 +1320,19 @@ class ProfessionalBettingEngine:
                 confidence_factors.append(f"Low probability ({effective_probability:.1%})")
             if edge <= adjusted_edge_threshold_low:
                 confidence_factors.append(f"Small edge ({edge:.1f}%)")
-            if data_quality <= 60:
+            if data_quality <= 55:
                 confidence_factors.append("Limited data quality")
         
         # Apply form stability consideration
-        if form_stability > 0.8:
+        if form_stability > 0.7:  # Reduced threshold
             confidence_factors.append("Excellent form stability")
             # Boost confidence for excellent form stability
             if confidence == 'MEDIUM':
                 confidence = 'HIGH'
             elif confidence == 'LOW':
                 confidence = 'MEDIUM'
+            elif confidence == 'SPECULATIVE':
+                confidence = 'LOW'
         elif form_stability < 0.3:
             confidence_factors.append("Unstable recent form")
             # Downgrade confidence for unstable form
@@ -1323,12 +1346,12 @@ class ProfessionalBettingEngine:
     def _detect_signal_contradictions(self, market_name: str, primary_outcome: str, 
                                     primary_btts: str, primary_over_under: str,
                                     probability: float) -> Tuple[bool, List[str]]:
-        """Detect contradictions between signals"""
+        """Enhanced contradiction detection"""
         contradictions = []
         is_contradiction = False
         
-        # Major contradiction: High probability against primary prediction
-        if probability > 0.65:
+        # ENHANCED: More nuanced contradiction detection
+        if probability > 0.60:  # Reduced from 0.65
             if '1x2 Home' in market_name and primary_outcome != 'home_win':
                 contradictions.append("Contradicts primary home win prediction")
                 is_contradiction = True
@@ -1355,7 +1378,7 @@ class ProfessionalBettingEngine:
 
     def detect_professional_value_bets(self, pure_probabilities: Dict, market_odds: Dict, 
                                     explanations: Dict, data_quality: float) -> List[BettingSignal]:
-        """FIXED: Professional value bet detection with proper confidence system"""
+        """ENHANCED: Professional value bet detection with improved confidence system"""
         signals = []
         
         outcomes = pure_probabilities.get('probabilities', {}).get('match_outcomes', {})
@@ -1403,21 +1426,27 @@ class ProfessionalBettingEngine:
             ev_data = self.calculate_expected_value(pure_prob, market_odd)
             edge_percentage = ev_data['edge_percentage']
             
-            if edge_percentage >= 4.0:
+            # ENHANCED: Lower edge threshold from 4.0 to 2.5
+            if edge_percentage >= 2.5:
                 # Check for signal contradictions
                 has_contradiction, contradiction_reasons = self._detect_signal_contradictions(
                     market_name, primary_outcome, primary_btts, primary_over_under, pure_prob
                 )
                 
-                # FIXED: Apply proper confidence assignment with all tiers
+                # ENHANCED: Apply improved confidence assignment
                 base_confidence = self._assign_professional_confidence(
                     pure_prob, edge_percentage, data_quality, league, form_stability
                 )
                 
-                # Downgrade confidence for contradictions
-                if has_contradiction and base_confidence in ['HIGH', 'MEDIUM']:
-                    confidence = 'LOW' if base_confidence == 'HIGH' else 'SPECULATIVE'
-                    contradiction_reasons.append("Confidence downgraded due to signal contradiction")
+                # ENHANCED: Less severe contradiction penalties
+                if has_contradiction:
+                    if base_confidence == 'HIGH':
+                        confidence = 'MEDIUM'
+                    elif base_confidence == 'MEDIUM':
+                        confidence = 'LOW'
+                    else:
+                        confidence = base_confidence
+                    contradiction_reasons.append("Confidence adjusted due to signal contradiction")
                 else:
                     confidence = base_confidence
                 
@@ -1456,7 +1485,7 @@ class ProfessionalBettingEngine:
     
     def _assess_professional_alignment(self, market: str, primary_outcome: str, 
                                      primary_btts: str, primary_over_under: str) -> str:
-        """Professional alignment assessment"""
+        """Enhanced alignment assessment"""
         if '1x2 Home' in market and primary_outcome == 'home_win':
             return 'aligns_with_primary'
         elif '1x2 Away' in market and primary_outcome == 'away_win':
@@ -1475,12 +1504,12 @@ class ProfessionalBettingEngine:
             return 'contradicts'
     
     def _confidence_weight(self, confidence: str) -> int:
-        """Professional confidence weighting"""
+        """Enhanced confidence weighting"""
         weights = {'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'SPECULATIVE': 0}
         return weights.get(confidence, 0)
 
 class AdvancedFootballPredictor:
-    """MAIN PROFESSIONAL PREDICTOR - Money-Grade Analysis"""
+    """MAIN ENHANCED PREDICTOR - Money-Grade Analysis"""
     
     def __init__(self, match_data: Dict[str, Any]):
         self.market_odds = match_data.get('market_odds', {})
@@ -1496,7 +1525,7 @@ class AdvancedFootballPredictor:
         self.predictions = None
 
     def generate_comprehensive_analysis(self, mc_iterations: int = 25000) -> Dict[str, Any]:
-        """Generate professional-grade analysis"""
+        """Generate enhanced professional-grade analysis"""
         football_predictions = self.apex_engine.generate_professional_predictions(mc_iterations)
         
         explanations = football_predictions.get('explanations', {})
@@ -1510,10 +1539,10 @@ class AdvancedFootballPredictor:
         professional_result = football_predictions.copy()
         professional_result['betting_signals'] = [signal.__dict__ for signal in value_signals]
         professional_result['system_validation'] = {
-            'status': 'PROFESSIONAL', 
+            'status': 'ENHANCED', 
             'alignment': alignment_status,
             'engine_sync': 'ELITE',
-            'model_version': '2.1.0_fixed',  # UPDATED: Fixed version
+            'model_version': '2.2.0_enhanced',  # UPDATED: Enhanced version
             'calibration_level': 'MONEY_GRADE'
         }
         
@@ -1521,7 +1550,7 @@ class AdvancedFootballPredictor:
         return professional_result
     
     def _validate_professional_alignment(self, football_predictions: Dict, value_signals: List[BettingSignal]) -> bool:
-        """Professional alignment validation"""
+        """Enhanced alignment validation"""
         if not value_signals:
             return True
             
@@ -1535,29 +1564,29 @@ class AdvancedFootballPredictor:
             signal_dict = signal.__dict__ if hasattr(signal, '__dict__') else signal
             
             if (market in ['1x2 Away', '1x2 Draw'] and primary_outcome == 'home_win' and 
-                football_predictions['probabilities']['match_outcomes']['home_win'] > 65):
+                football_predictions['probabilities']['match_outcomes']['home_win'] > 60):  # Reduced from 65
                 return False
             elif (market in ['1x2 Home', '1x2 Draw'] and primary_outcome == 'away_win' and 
-                  football_predictions['probabilities']['match_outcomes']['away_win'] > 65):
+                  football_predictions['probabilities']['match_outcomes']['away_win'] > 60):  # Reduced from 65
                 return False
                 
         return True
 
-# PROFESSIONAL TEST FUNCTION
+# ENHANCED TEST FUNCTION
 def test_enhanced_predictor():
-    """Test the fixed professional predictor"""
+    """Test the enhanced professional predictor"""
     match_data = {
-        'home_team': 'Leicester City', 'away_team': 'Millwall', 'league': 'championship',
-        'home_goals': 8, 'away_goals': 5, 'home_conceded': 3, 'away_conceded': 9,
-        'home_goals_home': 5, 'away_goals_away': 4,
-        'home_form': [3, 3, 1, 3, 3, 3], 'away_form': [0, 1, 0, 1, 0, 0],
-        'h2h_data': {'matches': 4, 'home_wins': 3, 'away_wins': 0, 'draws': 1, 'home_goals': 8, 'away_goals': 2},
+        'home_team': 'Nottingham Forest', 'away_team': 'Manchester United', 'league': 'premier_league',
+        'home_goals': 8, 'away_goals': 12, 'home_conceded': 10, 'away_conceded': 8,
+        'home_goals_home': 5, 'away_goals_away': 6,
+        'home_form': [1, 1, 3, 0, 1, 1], 'away_form': [3, 3, 1, 3, 0, 3],
+        'h2h_data': {'matches': 4, 'home_wins': 1, 'away_wins': 2, 'draws': 1, 'home_goals': 4, 'away_goals': 6},
         'motivation': {'home': 'High', 'away': 'Normal'},
-        'injuries': {'home': 2, 'away': 3},
+        'injuries': {'home': 2, 'away': 1},
         'market_odds': {
-            '1x2 Home': 1.45, '1x2 Draw': 4.20, '1x2 Away': 8.50,
+            '1x2 Home': 3.50, '1x2 Draw': 3.40, '1x2 Away': 2.10,
             'Over 2.5 Goals': 1.95, 'Under 2.5 Goals': 1.85,
-            'BTTS Yes': 2.20, 'BTTS No': 1.65
+            'BTTS Yes': 1.80, 'BTTS No': 1.95
         },
         'bankroll': 1000,
         'kelly_fraction': 0.2
@@ -1566,34 +1595,34 @@ def test_enhanced_predictor():
     predictor = AdvancedFootballPredictor(match_data)
     results = predictor.generate_comprehensive_analysis()
     
-    print("🎯 FIXED PROFESSIONAL FOOTBALL PREDICTION RESULTS")
+    print("🎯 ENHANCED PROFESSIONAL FOOTBALL PREDICTION RESULTS")
     print("=" * 70)
     print(f"Match: {results['match']}")
     print(f"League: {results['league'].upper()}")
-    print(f"Football IQ: {results['apex_intelligence']['football_iq_score']}/100")
+    print(f"Enhanced IQ: {results['apex_intelligence']['football_iq_score']}/100")
     print(f"Form Stability Bonus: +{results['apex_intelligence'].get('form_stability_bonus', 0)}")
     print(f"Calibration: {results['apex_intelligence']['calibration_status']}")
     print(f"Risk Level: {results['risk_assessment']['risk_level']}")
     print()
     
-    print("📊 FIXED PROFESSIONAL PROBABILITIES:")
+    print("📊 ENHANCED PROFESSIONAL PROBABILITIES:")
     outcomes = results['probabilities']['match_outcomes']
     print(f"Home Win: {outcomes['home_win']}% | Draw: {outcomes['draw']}% | Away Win: {outcomes['away_win']}%")
     print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']}%")
     print(f"Over 2.5: {results['probabilities']['over_under']['over_25']}%")
     print()
     
-    print("🎯 FIXED PROFESSIONAL NARRATIVE:")
+    print("🎯 ENHANCED PROFESSIONAL NARRATIVE:")
     narrative = results['match_narrative']
     print(f"Quality Gap: {narrative['quality_gap']} | Pattern: {narrative['primary_pattern']}")
     print(f"Style: {narrative['style_conflict']} | Defense: {narrative['defensive_stability']}")
     print()
     
-    print("📝 FIXED PROFESSIONAL SUMMARY:")
+    print("📝 ENHANCED PROFESSIONAL SUMMARY:")
     print(results['summary'])
     print()
     
-    print("💰 FIXED PROFESSIONAL VALUE BETS:")
+    print("💰 ENHANCED PROFESSIONAL VALUE BETS:")
     for signal in results.get('betting_signals', []):
         alignment_emoji = "✅" if signal['alignment'] == 'aligns_with_primary' else "⚠️"
         contradiction_note = " ⚠️CONTRADICTION" if "contradicts" in signal['alignment'] else ""

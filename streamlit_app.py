@@ -16,6 +16,21 @@ except ImportError as e:
     st.info("💡 Make sure prediction_engine.py is in the same directory")
     st.stop()
 
+# PRODUCTION LEAGUE PARAMS - Defined here to avoid import issues
+LEAGUE_PARAMS = {
+    'premier_league': {'xg_conversion_multiplier': 1.00, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.25, 'total_xg_offensive_threshold': 3.25, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.00},
+    'serie_a': {'xg_conversion_multiplier': 0.94, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.90, 'xg_diff_threshold': 0.32, 'confidence_league_modifier': 0.10},
+    'bundesliga': {'xg_conversion_multiplier': 1.08, 'away_penalty': 1.02, 'total_xg_defensive_threshold': 2.40, 'total_xg_offensive_threshold': 3.40, 'xg_diff_threshold': 0.38, 'confidence_league_modifier': -0.08},
+    'la_liga': {'xg_conversion_multiplier': 0.96, 'away_penalty': 0.97, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 3.00, 'xg_diff_threshold': 0.33, 'confidence_league_modifier': 0.05},
+    'ligue_1': {'xg_conversion_multiplier': 1.02, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.30, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.03},
+    'eredivisie': {'xg_conversion_multiplier': 1.10, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.50, 'total_xg_offensive_threshold': 3.60, 'xg_diff_threshold': 0.36, 'confidence_league_modifier': -0.05},
+    'championship': {'xg_conversion_multiplier': 0.90, 'away_penalty': 0.95, 'total_xg_defensive_threshold': 2.65, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': -0.05},
+    'liga_portugal': {'xg_conversion_multiplier': 0.95, 'away_penalty': 0.96, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 2.85, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': 0.07},
+    'brasileirao': {'xg_conversion_multiplier': 0.92, 'away_penalty': 0.94, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.95, 'xg_diff_threshold': 0.33, 'confidence_league_modifier': 0.08},
+    'liga_mx': {'xg_conversion_multiplier': 1.00, 'away_penalty': 0.97, 'total_xg_defensive_threshold': 2.35, 'total_xg_offensive_threshold': 3.15, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.04},
+    'default': {'xg_conversion_multiplier': 1.00, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.20, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.00}
+}
+
 # Professional page configuration
 st.set_page_config(
     page_title="🎯 Production Professional Football Predictor",
@@ -506,7 +521,6 @@ def create_production_input_form():
         total_xg_est = (home_goals + away_goals) / 6.0
         
         # PRODUCTION: League-aware context detection
-        from prediction_engine import LEAGUE_PARAMS
         league_params = LEAGUE_PARAMS.get(selected_league, LEAGUE_PARAMS['default'])
         def_thr = league_params['total_xg_defensive_threshold']
         off_thr = league_params['total_xg_offensive_threshold']
@@ -1180,7 +1194,7 @@ def display_production_value_detection(predictions):
     if contradictory_context_signals:
         st.markdown(f'''
         <div class="context-contradictory">
-            ⚠️ <strong>CONTEXT CONTRADICTIONS:</strong> {len(contradictory_signals)} signal(s) contradict {get_context_display_name(primary_context)} context
+            ⚠️ <strong>CONTEXT CONTRADICTIONS:</strong> {len(contradictory_context_signals)} signal(s) contradict {get_context_display_name(primary_context)} context
             <br><small>Production confidence system has automatically reduced stakes and confidence levels</small>
         </div>
         ''', unsafe_allow_html=True)

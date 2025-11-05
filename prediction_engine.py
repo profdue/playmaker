@@ -78,7 +78,7 @@ LEAGUE_PARAMS = {
     'championship': {
         'xg_conversion_multiplier': 0.90,
         'away_penalty': 0.95,
-        'total_xg_defensive_threshold': 2.65,
+        'total_xg_defensive_threshold': 2.20,
         'total_xg_offensive_threshold': 3.20,
         'xg_diff_threshold': 0.35,
         'confidence_league_modifier': -0.05

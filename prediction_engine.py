@@ -1600,6 +1600,9 @@ class ProfessionalBettingEngine:
         primary_outcome = max(outcomes, key=outcomes.get) if outcomes else 'unknown'
         primary_btts = 'yes' if btts.get('yes', 0) > btts.get('no', 0) else 'no'
         primary_over_under = 'over_25' if over_under.get('over_25', 0) > over_under.get('under_25', 0) else 'under_25'
+        primary_context = betting_context.get('primary_context', 'balanced')
+        recommended_markets = betting_context.get('recommended_markets', [])
+        context_confidence = betting_context.get('context_confidence', 50)
         
         for market_name, pure_prob, market_key in probability_mapping:
             market_odd = market_odds.get(market_key, 0)

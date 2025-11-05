@@ -1930,7 +1930,7 @@ def test_enhanced_predictor():
         'home_goals': 8, 'away_goals': 4, 'home_conceded': 6, 'away_conceded': 7,
         'home_goals_home': 6, 'away_goals_away': 1,
         'home_form': [3, 1, 0, 3, 1, 1], 'away_form': [1, 3, 1, 0, 3, 1],
-        'h2h_data': {'matches': 4, 'home_wins': 0, 'away_wins': 1, 'draws': 3, 'home_goals': 2, 'away_goals': 4},
+        'h2h_data': {'matches': 4, 'home_wins': 0, 'away_wins': 1, 'draws': 3, 'home_goals': 7, 'away_goals': 9},
         'motivation': {'home': 'Normal', 'away': 'Normal'},
         'injuries': {'home': 2, 'away': 2},
         'market_odds': {

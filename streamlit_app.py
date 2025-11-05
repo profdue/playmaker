@@ -24,7 +24,7 @@ LEAGUE_PARAMS = {
     'la_liga': {'xg_conversion_multiplier': 0.96, 'away_penalty': 0.97, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 3.00, 'xg_diff_threshold': 0.33, 'confidence_league_modifier': 0.05},
     'ligue_1': {'xg_conversion_multiplier': 1.02, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.30, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.03},
     'eredivisie': {'xg_conversion_multiplier': 1.10, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.50, 'total_xg_offensive_threshold': 3.60, 'xg_diff_threshold': 0.36, 'confidence_league_modifier': -0.05},
-    'championship': {'xg_conversion_multiplier': 0.90, 'away_penalty': 0.95, 'total_xg_defensive_threshold': 2.65, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': -0.05},
+    'championship': {'xg_conversion_multiplier': 0.90, 'away_penalty': 0.95, 'total_xg_defensive_threshold': 2.20, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.08},
     'liga_portugal': {'xg_conversion_multiplier': 0.95, 'away_penalty': 0.96, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 2.85, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': 0.07},
     'brasileirao': {'xg_conversion_multiplier': 0.92, 'away_penalty': 0.94, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.95, 'xg_diff_threshold': 0.33, 'confidence_league_modifier': 0.08},
     'liga_mx': {'xg_conversion_multiplier': 1.00, 'away_penalty': 0.97, 'total_xg_defensive_threshold': 2.35, 'total_xg_offensive_threshold': 3.15, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.04},
@@ -398,7 +398,7 @@ def display_production_architecture():
         - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline model (xg_multiplier: 1.00)
         - **Serie A** 🇮🇹: Defensive league (xg_multiplier: 0.94, +10% confidence)
         - **Bundesliga** 🇩🇪: High-scoring (xg_multiplier: 1.08, -8% confidence)  
-        - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Unpredictable (xg_multiplier: 0.90, -5% confidence)
+        - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Unpredictable (xg_multiplier: 0.90, +8% confidence)
         - **La Liga** 🇪🇸: Tactical (xg_multiplier: 0.96, +5% confidence)
         
         **Production Context Detection Logic:**
@@ -482,26 +482,26 @@ def create_production_input_form():
             home_team = st.selectbox(
                 "Team Name", 
                 options=league_teams,
-                index=min(5, len(league_teams) - 1),
+                index=league_teams.index('Charlton Athletic') if 'Charlton Athletic' in league_teams else min(5, len(league_teams) - 1),
                 key="production_home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="production_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="production_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="production_home_goals_home")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="production_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="production_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=6, key="production_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
             away_team = st.selectbox(
                 "Team Name",
                 options=league_teams,
-                index=0,
+                index=league_teams.index('West Brom') if 'West Brom' in league_teams else 0,
                 key="production_away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="production_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="production_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="production_away_goals_away")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=4, key="production_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="production_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=1, key="production_away_goals_away")
         
         # Show professional team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
@@ -544,12 +544,12 @@ def create_production_input_form():
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
                 h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="production_h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="production_h2h_home_wins")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=0, key="production_h2h_home_wins")
             with h2h_col2:
                 h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="production_h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="production_h2h_draws")
+                h2h_draws = st.number_input("Draws", min_value=0, value=3, key="production_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=6, key="production_h2h_home_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=2, key="production_h2h_home_goals")
                 h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="production_h2h_away_goals")
 
         # Professional Recent Form
@@ -580,20 +580,20 @@ def create_production_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.30, step=0.01, key="production_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.20, step=0.01, key="production_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.10, step=0.01, key="production_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.50, step=0.01, key="production_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=2.95, step=0.01, key="production_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.85, step=0.01, key="production_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
             over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="production_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="production_over_25_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.63, step=0.01, key="production_over_25_odds")
             over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="production_over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.85, step=0.01, key="production_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.95, step=0.01, key="production_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.10, step=0.01, key="production_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.67, step=0.01, key="production_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Production Configuration")

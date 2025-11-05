@@ -1,4 +1,4 @@
-# streamlit_app.py - ENHANCED OUTCOME-BASED PROFESSIONAL BETTING GRADE
+# streamlit_app.py - PRODUCTION ENHANCED OUTCOME-BASED PROFESSIONAL BETTING GRADE
 import streamlit as st
 st.cache_resource.clear()  # 🚨 CLEAR THE CACHE
 import pandas as pd
@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
-# Import the ENHANCED PROFESSIONAL PREDICTION ENGINE
+# Import the PRODUCTION PROFESSIONAL PREDICTION ENGINE
 try:
     from prediction_engine import AdvancedFootballPredictor, ProfessionalTeamTierCalibrator
 except ImportError as e:
@@ -18,13 +18,13 @@ except ImportError as e:
 
 # Professional page configuration
 st.set_page_config(
-    page_title="🎯 Enhanced Professional Football Predictor",
+    page_title="🎯 Production Professional Football Predictor",
     page_icon="⚽", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Enhanced Professional CSS styling
+# PRODUCTION Professional CSS styling
 st.markdown("""
 <style>
     .professional-header { 
@@ -202,7 +202,7 @@ st.markdown("""
         display: inline-block;
     }
     
-    /* ENHANCED CONTEXT FEATURES */
+    /* PRODUCTION CONTEXT FEATURES */
     .context-perfect {
         background: #e8f5e8;
         border-left: 4px solid #4CAF50;
@@ -251,7 +251,7 @@ st.markdown("""
         color: #1565C0;
     }
     
-    .enhanced-feature {
+    .production-feature {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 0.5rem 1rem;
@@ -365,68 +365,63 @@ def get_context_display_name(context: str) -> str:
     }
     return context_names.get(context, context.replace('_', ' ').title())
 
-def display_enhanced_banner():
-    """Display enhanced professional banner"""
+def display_production_banner():
+    """Display production professional banner"""
     st.markdown("""
     <div class="money-grade-banner">
-        🎯 ENHANCED PROFESSIONAL BETTING GRADE • OUTCOME-BASED CONTEXT DETECTION • CONTEXT-AWARE CONFIDENCE • MONEY-GRADE ACCURACY
+        🎯 PRODUCTION PROFESSIONAL BETTING GRADE • LEAGUE-AWARE CALIBRATION • CONTEXT-AWARE CONFIDENCE • MONEY-GRADE ACCURACY
     </div>
     """, unsafe_allow_html=True)
 
-def display_enhanced_architecture():
-    """Display enhanced system architecture"""
-    with st.expander("🏗️ ENHANCED PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
+def display_production_architecture():
+    """Display production system architecture"""
+    with st.expander("🏗️ PRODUCTION PROFESSIONAL SYSTEM ARCHITECTURE", expanded=True):
         st.markdown("""
-        ### 🎯 ENHANCED OUTCOME-BASED PREDICTION ENGINE
+        ### 🎯 PRODUCTION OUTCOME-BASED PREDICTION ENGINE
         
-        **Enhanced Context Detection:**
-        - **🏠 Home Dominance** → Expect comfortable home win
-        - **✈️ Away Counter** → Expect away win/upset  
-        - **🔥 Offensive Showdown** → Expect high-scoring game
-        - **🛡️ Defensive Battle** → Expect low-scoring game
-        - **⚔️ Tactical Stalemate** → Expect draw
-        - **⚖️ Balanced** → No strong outcome bias
+        **League-Aware Calibration:**
+        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline model (xg_multiplier: 1.00)
+        - **Serie A** 🇮🇹: Defensive league (xg_multiplier: 0.94, +10% confidence)
+        - **Bundesliga** 🇩🇪: High-scoring (xg_multiplier: 1.08, -8% confidence)  
+        - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Unpredictable (xg_multiplier: 0.90, -5% confidence)
+        - **La Liga** 🇪🇸: Tactical (xg_multiplier: 0.96, +5% confidence)
         
-        **Context Detection Logic:**
+        **Production Context Detection Logic:**
         - **Home Dominance**: xG diff ≥ +0.35 AND quality gap = significant/extreme
-        - **Away Counter**: xG diff ≤ -0.35 AND quality gap = significant/extreme
-        - **Offensive Showdown**: Total xG > 3.2 AND avg defense > 1.3
-        - **Defensive Battle**: Total xG < 2.2 AND avg defense < 0.9
+        - **Away Counter**: xG diff ≤ -0.35 AND quality gap = significant/extreme  
+        - **Offensive Showdown**: Total xG > league_offensive_threshold
+        - **Defensive Battle**: Total xG ≤ league_defensive_threshold
         - **Tactical Stalemate**: xG diff < 0.2 AND total xG < 2.8
         
-        **Enhanced Confidence System:**
+        **Production Confidence System:**
+        - **Nonlinear Weighting**: Data quality (30% floor) + Rule hits + League consistency
         - **Context Alignment**: Perfect/Strong/Moderate/Weak/Contradictory
-        - **Context Confidence**: 0-100% based on quality gap, xG difference, total xG
         - **Stake Multipliers**: Context-aware Kelly Criterion
         
-        **Betting Priorities by Context:**
+        **Production Betting Priorities:**
         - 🏠 **Home Dominance**: Home Win, Home -1 Handicap, Under 3.5
         - ✈️ **Away Counter**: Away Win, Double Chance Away/Draw, BTTS Yes  
         - 🔥 **Offensive Showdown**: Over 2.5, BTTS Yes, Both Teams to Score & Over 2.5
         - 🛡️ **Defensive Battle**: Under 2.5, BTTS No, Under 1.5
         - ⚔️ **Tactical Stalemate**: Draw, Under 2.5, Correct Score 0-0/1-1
         
-        **Professional League Calibration** 🌍
-        - **Premier League** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: Baseline enhanced model
-        - **Serie A** 🇮🇹: +15% confidence requirements (defensive league)
-        - **Bundesliga** 🇩🇪: -10% confidence requirements (high-scoring)
-        - **Championship** 🏴󠁧󠁢󠁥󠁮󠁧󠁿: +8% requirements (unpredictable)
+        **Production Edge Threshold**: 3.0% (Conservative professional standard)
         """)
 
-def create_enhanced_input_form():
-    """Create enhanced professional input form"""
+def create_production_input_form():
+    """Create production professional input form"""
     
-    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="professional-subheader">Enhanced Outcome-Based Multi-League Analysis with Context-Aware Betting</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Production Professional Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-subheader">Production League-Aware Multi-League Analysis with Context-Aware Betting</p>', unsafe_allow_html=True)
     
-    # Display enhanced banner
-    display_enhanced_banner()
+    # Display production banner
+    display_production_banner()
     
-    # Display enhanced architecture
-    display_enhanced_architecture()
+    # Display production architecture
+    display_production_architecture()
     
     # Professional League Selection
-    st.markdown("### 🌍 Professional League Selection")
+    st.markdown("### 🌍 Production League Selection")
     league_options = {
         'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
         'la_liga': 'La Liga 🇪🇸',
@@ -444,7 +439,7 @@ def create_enhanced_input_form():
         "Select League",
         options=list(league_options.keys()),
         format_func=lambda x: league_options[x],
-        key="enhanced_league_selection"
+        key="production_league_selection"
     )
     
     # Display professional league badge
@@ -452,10 +447,10 @@ def create_enhanced_input_form():
     league_display_name = get_league_display_name(selected_league)
     st.markdown(f'<span class="professional-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
     
-    tab1, tab2, tab3 = st.tabs(["🏠 Professional Data", "💰 Market Data", "⚙️ Professional Settings"])
+    tab1, tab2, tab3 = st.tabs(["🏠 Production Data", "💰 Market Data", "⚙️ Production Settings"])
 
     with tab1:
-        st.markdown("### 🎯 Professional Football Data")
+        st.markdown("### 🎯 Production Football Data")
         
         # Initialize professional team calibrator
         calibrator = ProfessionalTeamTierCalibrator()
@@ -473,12 +468,12 @@ def create_enhanced_input_form():
                 "Team Name", 
                 options=league_teams,
                 index=min(5, len(league_teams) - 1),
-                key="enhanced_home_team"
+                key="production_home_team"
             )
             
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="enhanced_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="enhanced_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="enhanced_home_goals_home")
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="production_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="production_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=5, key="production_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -486,61 +481,66 @@ def create_enhanced_input_form():
                 "Team Name",
                 options=league_teams,
                 index=0,
-                key="enhanced_away_team"
+                key="production_away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="enhanced_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="enhanced_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="enhanced_away_goals_away")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="production_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=9, key="production_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=4, key="production_away_goals_away")
         
         # Show professional team tiers
         home_tier = calibrator.get_team_tier(home_team, selected_league)
         away_tier = calibrator.get_team_tier(away_team, selected_league)
         
         st.markdown(f"""
-        **Professional Team Assessment:** 
+        **Production Team Assessment:** 
         <span class="professional-tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
         <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
         
-        # ENHANCED: Show context potential with improved detection
+        # PRODUCTION: Show context potential with improved detection
         xg_diff_estimate = (home_goals/6.0) - (away_goals/6.0)
         home_form_est = np.mean([3, 1, 0, 3, 1, 1])
         away_form_est = np.mean([1, 3, 1, 0, 3, 1])  
         form_gap_est = home_form_est - away_form_est
         total_xg_est = (home_goals + away_goals) / 6.0
-        avg_defense_est = (home_conceded + away_conceded) / 12.0
         
-        # Enhanced context detection
-        if xg_diff_estimate >= 0.35 and home_tier in ['STRONG', 'ELITE'] and away_tier in ['WEAK', 'MEDIUM']:
-            st.markdown('<div class="enhanced-feature">🏠 POTENTIAL HOME DOMINANCE CONTEXT DETECTED</div>', unsafe_allow_html=True)
-        elif xg_diff_estimate <= -0.35 and away_tier in ['STRONG', 'ELITE'] and home_tier in ['WEAK', 'MEDIUM']:
-            st.markdown('<div class="enhanced-feature">✈️ POTENTIAL AWAY COUNTER CONTEXT DETECTED</div>', unsafe_allow_html=True)
-        elif total_xg_est > 3.2 and avg_defense_est > 1.3:
-            st.markdown('<div class="enhanced-feature">🔥 POTENTIAL OFFENSIVE SHOWDOWN CONTEXT DETECTED</div>', unsafe_allow_html=True)
-        elif total_xg_est < 2.2 and avg_defense_est < 0.9:
-            st.markdown('<div class="enhanced-feature">🛡️ POTENTIAL DEFENSIVE BATTLE CONTEXT DETECTED</div>', unsafe_allow_html=True)
-        elif abs(xg_diff_estimate) < 0.2 and total_xg_est < 2.8:
-            st.markdown('<div class="enhanced-feature">⚔️ POTENTIAL TACTICAL STALEMATE CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        # PRODUCTION: League-aware context detection
+        from prediction_engine import LEAGUE_PARAMS
+        league_params = LEAGUE_PARAMS.get(selected_league, LEAGUE_PARAMS['default'])
+        def_thr = league_params['total_xg_defensive_threshold']
+        off_thr = league_params['total_xg_offensive_threshold']
+        xg_diff_thr = league_params['xg_diff_threshold']
+        
+        if xg_diff_estimate >= xg_diff_thr and home_tier in ['STRONG', 'ELITE'] and away_tier in ['WEAK', 'MEDIUM']:
+            st.markdown('<div class="production-feature">🏠 PRODUCTION HOME DOMINANCE CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif xg_diff_estimate <= -xg_diff_thr and away_tier in ['STRONG', 'ELITE'] and home_tier in ['WEAK', 'MEDIUM']:
+            st.markdown('<div class="production-feature">✈️ PRODUCTION AWAY COUNTER CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif total_xg_est > off_thr:
+            st.markdown('<div class="production-feature">🔥 PRODUCTION OFFENSIVE SHOWDOWN CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif total_xg_est <= def_thr:
+            st.markdown('<div class="production-feature">🛡️ PRODUCTION DEFENSIVE BATTLE CONTEXT DETECTED</div>', unsafe_allow_html=True)
+        elif abs(xg_diff_estimate) < 0.2:
+            st.markdown('<div class="production-feature">⚔️ PRODUCTION TACTICAL STALEMATE CONTEXT DETECTED</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="enhanced-feature">⚖️ POTENTIAL BALANCED MATCH CONTEXT</div>', unsafe_allow_html=True)
+            st.markdown('<div class="production-feature">⚖️ PRODUCTION BALANCED MATCH CONTEXT</div>', unsafe_allow_html=True)
         
         # Professional Head-to-head section
-        with st.expander("📊 Professional Head-to-Head Analysis"):
+        with st.expander("📊 Production Head-to-Head Analysis"):
             h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
             with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="enhanced_h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="enhanced_h2h_home_wins")
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="production_h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=2, key="production_h2h_home_wins")
             with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="enhanced_h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="enhanced_h2h_draws")
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="production_h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=1, key="production_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=6, key="enhanced_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="enhanced_h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=6, key="production_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="production_h2h_away_goals")
 
         # Professional Recent Form
-        with st.expander("📈 Professional Form Analysis"):
-            st.info("Professional form points: Win=3, Draw=1, Loss=0")
+        with st.expander("📈 Production Form Analysis"):
+            st.info("Production form points: Win=3, Draw=1, Loss=0")
             form_col1, form_col2 = st.columns(2)
             with form_col1:
                 st.write(f"**{home_team} Last 6 Matches**")
@@ -548,7 +548,7 @@ def create_enhanced_input_form():
                     f"{home_team} Recent Results",
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
                     default=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Draw (1 pt)"],
-                    key="enhanced_home_form"
+                    key="production_home_form"
                 )
             with form_col2:
                 st.write(f"**{away_team} Last 6 Matches**")
@@ -556,84 +556,84 @@ def create_enhanced_input_form():
                     f"{away_team} Recent Results", 
                     options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
                     default=["Draw (1 pt)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)"],
-                    key="enhanced_away_form"
+                    key="production_away_form"
                 )
 
     with tab2:
-        st.markdown("### 💰 Professional Market Data") 
+        st.markdown("### 💰 Production Market Data") 
         
         odds_col1, odds_col2, odds_col3 = st.columns(3)
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.30, step=0.01, key="enhanced_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.20, step=0.01, key="enhanced_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.10, step=0.01, key="enhanced_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.30, step=0.01, key="production_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.20, step=0.01, key="production_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=3.10, step=0.01, key="production_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="enhanced_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="enhanced_over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="enhanced_over_35_odds")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="production_over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.10, step=0.01, key="production_over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="production_over_35_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.85, step=0.01, key="enhanced_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.95, step=0.01, key="enhanced_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.85, step=0.01, key="production_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.95, step=0.01, key="production_btts_no_odds")
 
     with tab3:
-        st.markdown("### ⚙️ Professional Configuration")
+        st.markdown("### ⚙️ Production Configuration")
         
         model_col1, model_col2 = st.columns(2)
         
         with model_col1:
-            st.write("**Professional Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="enhanced_home_injuries")
-            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="enhanced_away_injuries")
+            st.write("**Production Team Context**")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="production_home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="production_away_injuries")
             
             home_absence_impact = st.select_slider(
                 "Home Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
                 value="Regular Starter",
-                key="enhanced_home_absence_impact"
+                key="production_home_absence_impact"
             )
             away_absence_impact = st.select_slider(
                 "Away Team Absence Impact",
                 options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
                 value="Regular Starter",
-                key="enhanced_away_absence_impact"
+                key="production_away_absence_impact"
             )
             
         with model_col2:
-            st.write("**Professional Motivation Factors**")
+            st.write("**Production Motivation Factors**")
             home_motivation = st.select_slider(
                 "Home Team Motivation",
                 options=["Low", "Normal", "High", "Very High"],
                 value="Normal",
-                key="enhanced_home_motivation"
+                key="production_home_motivation"
             )
             away_motivation = st.select_slider(
                 "Away Team Motivation", 
                 options=["Low", "Normal", "High", "Very High"],
                 value="Normal", 
-                key="enhanced_away_motivation"
+                key="production_away_motivation"
             )
             
-            # Professional simulation settings
-            st.write("**Professional Simulation**")
+            # Production simulation settings
+            st.write("**Production Simulation**")
             mc_iterations = st.select_slider(
                 "Monte Carlo Iterations",
                 options=[10000, 25000, 50000],
                 value=25000,
-                key="enhanced_mc_iterations"
+                key="production_mc_iterations"
             )
             
-            # Professional bankroll management
-            bankroll = st.number_input("Professional Bankroll ($)", min_value=500, value=1000, step=100, key="enhanced_bankroll")
-            kelly_fraction = st.slider("Professional Kelly Fraction", 0.1, 0.3, 0.2, key="enhanced_kelly_fraction")
+            # Production bankroll management
+            bankroll = st.number_input("Production Bankroll ($)", min_value=500, value=1000, step=100, key="production_bankroll")
+            kelly_fraction = st.slider("Production Kelly Fraction", 0.1, 0.3, 0.2, key="production_kelly_fraction")
 
-    # Professional Submit button
-    submitted = st.button("🎯 GENERATE ENHANCED PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
+    # Production Submit button
+    submitted = st.button("🎯 GENERATE PRODUCTION PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -661,7 +661,7 @@ def create_enhanced_input_form():
             "Multiple Key Players": 5
         }
         
-        # Professional Market odds
+        # Production Market odds
         market_odds = {
             '1x2 Home': home_odds,
             '1x2 Draw': draw_odds,
@@ -673,7 +673,7 @@ def create_enhanced_input_form():
             'BTTS No': btts_no_odds,
         }
         
-        # Complete professional match data
+        # Complete production match data
         match_data = {
             'home_team': home_team,
             'away_team': away_team,
@@ -711,15 +711,15 @@ def create_enhanced_input_form():
     
     return None, None
 
-def display_enhanced_predictions(predictions):
-    """Display enhanced professional predictions"""
+def display_production_predictions(predictions):
+    """Display production professional predictions"""
     
     if not predictions:
-        st.error("❌ No enhanced professional predictions available")
+        st.error("❌ No production professional predictions available")
         return
         
-    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictions</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-system-card"><h3>🟢 ENHANCED PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Enhanced Outcome-Based Multi-League Analysis with Context-Aware Betting</div>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Production Professional Football Predictions</p>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-system-card"><h3>🟢 PRODUCTION PROFESSIONAL SIGNAL ENGINE OUTPUT</h3>Production League-Aware Multi-League Analysis with Context-Aware Betting</div>', unsafe_allow_html=True)
     
     # Professional team tiers display
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -731,12 +731,12 @@ def display_enhanced_predictions(predictions):
     league_display_name = get_league_display_name(league)
     league_badge_class = get_league_badge(league)
     
-    # ENHANCED: Show context information
+    # PRODUCTION: Show context information
     intelligence = safe_get(predictions, 'apex_intelligence') or {}
     stability_bonus = intelligence.get('form_stability_bonus', 0)
     context_confidence = intelligence.get('context_confidence', 0)
     
-    # ENHANCED: Show betting context
+    # PRODUCTION: Show betting context
     betting_context = safe_get(predictions, 'betting_context') or {}
     primary_context = betting_context.get('primary_context', 'balanced')
     recommended_markets = betting_context.get('recommended_markets', [])
@@ -755,11 +755,11 @@ def display_enhanced_predictions(predictions):
     </div>
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="professional-badge {league_badge_class}">{league_display_name}</span>
-        <span class="enhanced-feature">{context_emoji} {context_display}</span>
+        <span class="production-feature">{context_emoji} {context_display}</span>
     </div>
     ''', unsafe_allow_html=True)
     
-    # ENHANCED: Display betting priorities
+    # PRODUCTION: Display betting priorities
     if recommended_markets:
         st.markdown('<div class="betting-priority">', unsafe_allow_html=True)
         st.markdown(f"**🎯 Recommended Betting Markets for {context_display}:**")
@@ -772,7 +772,7 @@ def display_enhanced_predictions(predictions):
     confidence_score = safe_get(predictions, 'confidence_score') or 0
     data_quality = safe_get(predictions, 'data_quality_score') or 0
     football_iq = safe_get(predictions, 'apex_intelligence', 'football_iq_score') or 0
-    calibration_status = safe_get(predictions, 'apex_intelligence', 'calibration_status') or 'ENHANCED'
+    calibration_status = safe_get(predictions, 'apex_intelligence', 'calibration_status') or 'PRODUCTION'
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -781,32 +781,32 @@ def display_enhanced_predictions(predictions):
     with col2:
         st.metric("✈️ Expected Goals", f"{xg.get('away', 0):.2f}")
     with col3:
-        st.metric("Enhanced Context", f"{context_emoji} {context_display}")
+        st.metric("Production Context", f"{context_emoji} {context_display}")
     with col4:
-        st.metric("Enhanced IQ", f"{football_iq:.1f}/100")
+        st.metric("Production IQ", f"{football_iq:.1f}/100")
     
-    # Enhanced system validation
+    # Production system validation
     system_validation = safe_get(predictions, 'system_validation') or {}
     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
+    calibration_level = system_validation.get('calibration_level', 'PRODUCTION')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
         st.markdown(f'''
         <div class="professional-alignment-perfect">
-            ✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions with context validation
-            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.4.0_enhanced')} | Context Confidence: {context_confidence}%</small>
+            ✅ <strong>PRODUCTION PROFESSIONAL PERFECT ALIGNMENT:</strong> Value Engine confirms Signal Engine predictions with context validation
+            <br><small>Calibration: {calibration_level} | Model Version: {system_validation.get('model_version', '2.4.0_production')} | Context Confidence: {context_confidence}%</small>
         </div>
         ''', unsafe_allow_html=True)
     else:
         st.markdown(f'''
         <div class="professional-alignment-warning">
-            ⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Context-aware contradiction detection active
-            <br><small>Calibration: {calibration_level} | Enhanced professional discretion advised</small>
+            ⚠️ <strong>PRODUCTION PROFESSIONAL REVIEW REQUIRED:</strong> Context-aware contradiction detection active
+            <br><small>Calibration: {calibration_level} | Production professional discretion advised</small>
         </div>
         ''', unsafe_allow_html=True)
     
     # Professional Match Outcomes
-    st.markdown('<div class="professional-section-title">📈 Enhanced Outcome Probabilities</div>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-section-title">📈 Production Outcome Probabilities</div>', unsafe_allow_html=True)
     
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {'home_win': 0, 'draw': 0, 'away_win': 0}
     col1, col2, col3 = st.columns(3)
@@ -851,8 +851,8 @@ def display_enhanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
     
-    # Enhanced Goals Analysis
-    st.markdown('<div class="professional-section-title">⚽ Enhanced Goals Analysis</div>', unsafe_allow_html=True)
+    # Production Goals Analysis
+    st.markdown('<div class="professional-section-title">⚽ Production Goals Analysis</div>', unsafe_allow_html=True)
     
     # Get probabilities with safe defaults
     btts_yes = safe_get(predictions, 'probabilities', 'both_teams_score', 'yes') or 0
@@ -864,7 +864,7 @@ def display_enhanced_predictions(predictions):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # Enhanced BTTS with context explanations
+        # Production BTTS with context explanations
         if primary_context == 'offensive_showdown':
             recommendation = "YES"
             primary_prob = btts_yes
@@ -895,7 +895,7 @@ def display_enhanced_predictions(predictions):
                 emoji = "✅"
                 context_note = "Standard Analysis"
         
-        # ENHANCED: Context-aware confidence calculation
+        # PRODUCTION: Context-aware confidence calculation
         confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
         if primary_context in ['offensive_showdown', 'defensive_battle'] and context_confidence > 70:
             confidence = "HIGH"
@@ -915,14 +915,14 @@ def display_enhanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
         
-        # Show enhanced explanations
+        # Show production explanations
         explanations = safe_get(predictions, 'explanations', 'btts') or []
         for explanation in explanations[:2]:
             if explanation:
                 st.markdown(f'<div class="professional-explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col2:
-        # Enhanced Over/Under with context explanations
+        # Production Over/Under with context explanations
         if primary_context == 'offensive_showdown':
             recommendation = "OVER"
             primary_prob = over_25
@@ -953,7 +953,7 @@ def display_enhanced_predictions(predictions):
                 emoji = "✅"
                 context_note = "Standard Analysis"
         
-        # ENHANCED: Context-aware confidence calculation
+        # PRODUCTION: Context-aware confidence calculation
         confidence = "HIGH" if abs(primary_prob - 50) > 20 else "MEDIUM" if abs(primary_prob - 50) > 10 else "LOW"
         if primary_context in ['offensive_showdown', 'defensive_battle'] and context_confidence > 70:
             confidence = "HIGH"
@@ -973,14 +973,14 @@ def display_enhanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
         
-        # Show enhanced explanations
+        # Show production explanations
         explanations = safe_get(predictions, 'explanations', 'over_under') or []
         for explanation in explanations[:2]:
             if explanation:
                 st.markdown(f'<div class="professional-explanation-card">💡 {explanation}</div>', unsafe_allow_html=True)
     
     with col3:
-        # Enhanced Expected Goals display
+        # Production Expected Goals display
         xg = safe_get(predictions, 'expected_goals') or {'home': 0, 'away': 0}
         total_xg = xg.get('home', 0) + xg.get('away', 0)
         
@@ -1014,7 +1014,7 @@ def display_enhanced_predictions(predictions):
         ''', unsafe_allow_html=True)
     
     with col4:
-        # Enhanced Match Context
+        # Production Match Context
         context = safe_get(predictions, 'match_context') or 'balanced'
         narrative = safe_get(predictions, 'match_narrative') or {}
         quality_gap = narrative.get('quality_gap', 'even')
@@ -1030,7 +1030,7 @@ def display_enhanced_predictions(predictions):
         
         st.markdown(f'''
         <div class="professional-card">
-            <h4>{context_emoji} Enhanced Context</h4>
+            <h4>{context_emoji} Production Context</h4>
             <div style="font-size: 1.2rem; font-weight: bold; color: #333; margin: 0.8rem 0;">
                 {get_context_display_name(context)}
             </div>
@@ -1046,7 +1046,7 @@ def display_enhanced_predictions(predictions):
         </div>
         ''', unsafe_allow_html=True)
     
-    # Enhanced Exact Scores
+    # Production Exact Scores
     st.markdown('<div class="professional-section-title">🎯 Most Likely Scores</div>', unsafe_allow_html=True)
     
     exact_scores = safe_get(predictions, 'probabilities', 'exact_scores') or {}
@@ -1060,7 +1060,7 @@ def display_enhanced_predictions(predictions):
     else:
         st.info("No exact score data available")
     
-    # Enhanced Risk Assessment
+    # Production Risk Assessment
     risk = safe_get(predictions, 'risk_assessment') or {'risk_level': 'UNKNOWN', 'explanation': 'No data'}
     risk_class = f"risk-{risk.get('risk_level', 'unknown').lower()}"
     
@@ -1068,10 +1068,10 @@ def display_enhanced_predictions(predictions):
     
     st.markdown(f'''
     <div class="professional-card {risk_class}">
-        <h3>📊 Enhanced Professional Risk Assessment</h3>
+        <h3>📊 Production Professional Risk Assessment</h3>
         <strong>Risk Level:</strong> {risk.get("risk_level", "UNKNOWN")}<br>
-        <strong>Enhanced Explanation:</strong> {risk.get("explanation", "No data available")}<br>
-        <strong>Enhanced Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
+        <strong>Production Explanation:</strong> {risk.get("explanation", "No data available")}<br>
+        <strong>Production Recommendation:</strong> {risk.get("recommendation", "N/A")}<br>
         <strong>Certainty:</strong> {risk.get("certainty", "N/A")}<br>
         <strong>Context Confidence:</strong> {context_confidence}%<br>
         <strong>Narrative Coherence:</strong> {intelligence.get('narrative_coherence', 'N/A')}%<br>
@@ -1081,24 +1081,24 @@ def display_enhanced_predictions(predictions):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Enhanced Summary
-    st.markdown('<div class="professional-section-title">📝 Enhanced Match Summary</div>', unsafe_allow_html=True)
-    summary = safe_get(predictions, 'summary') or "No enhanced professional summary available."
+    # Production Summary
+    st.markdown('<div class="professional-section-title">📝 Production Match Summary</div>', unsafe_allow_html=True)
+    summary = safe_get(predictions, 'summary') or "No production professional summary available."
     st.info(summary)
 
-def display_enhanced_value_detection(predictions):
-    """Display enhanced professional value detection"""
+def display_production_value_detection(predictions):
+    """Display production professional value detection"""
     
     if not predictions:
-        st.error("❌ No enhanced professional predictions available for value detection")
+        st.error("❌ No production professional predictions available for value detection")
         return
         
-    st.markdown('<p class="professional-header">💰 Enhanced Professional Value Betting Detection</p>', unsafe_allow_html=True)
-    st.markdown('<div class="professional-value-card"><h3>🟠 ENHANCED PROFESSIONAL VALUE ENGINE OUTPUT</h3>Context-aware confidence system with outcome-based betting priorities</div>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">💰 Production Professional Value Betting Detection</p>', unsafe_allow_html=True)
+    st.markdown('<div class="professional-value-card"><h3>🟠 PRODUCTION PROFESSIONAL VALUE ENGINE OUTPUT</h3>Context-aware confidence system with outcome-based betting priorities</div>', unsafe_allow_html=True)
     
     betting_signals = safe_get(predictions, 'betting_signals') or []
     
-    # Get enhanced context information
+    # Get production context information
     outcomes = safe_get(predictions, 'probabilities', 'match_outcomes') or {}
     btts = safe_get(predictions, 'probabilities', 'both_teams_score') or {}
     over_under = safe_get(predictions, 'probabilities', 'over_under') or {}
@@ -1113,7 +1113,7 @@ def display_enhanced_value_detection(predictions):
     recommended_markets = betting_context.get('recommended_markets', [])
     context_confidence = betting_context.get('context_confidence', 50)
     
-    # Display enhanced primary predictions context
+    # Display production primary predictions context
     st.markdown('<div class="professional-section-title">🎯 Signal Engine Primary Predictions</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -1126,7 +1126,7 @@ def display_enhanced_value_detection(predictions):
         st.metric("Primary Over/Under", "OVER 2.5" if primary_over_under == 'over_25' else "UNDER 2.5")
     with col4:
         context_emoji = get_context_emoji(primary_context)
-        st.metric("Enhanced Context", f"{context_emoji} {get_context_display_name(primary_context)}")
+        st.metric("Production Context", f"{context_emoji} {get_context_display_name(primary_context)}")
     with col5:
         st.metric("Context Confidence", f"{context_confidence}%")
     
@@ -1141,30 +1141,30 @@ def display_enhanced_value_detection(predictions):
     if not betting_signals:
         st.markdown('<div class="professional-alignment-perfect">', unsafe_allow_html=True)
         st.info("""
-        ## ✅ ENHANCED PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
+        ## ✅ PRODUCTION PROFESSIONAL: NO VALUE BETS DETECTED - SYSTEM WORKING PERFECTLY!
         
-        **Enhanced Professional Assessment:**
+        **Production Professional Assessment:**
         - Pure probabilities align with market expectations  
-        - No significant edges above enhanced professional thresholds
+        - No significant edges above production professional thresholds
         - Context-aware contradiction detection confirms signal coherence
-        - **ENHANCED PERFECT ALIGNMENT ACHIEVED**
+        - **PRODUCTION PERFECT ALIGNMENT ACHIEVED**
         
-        **Enhanced Professional Value Engine with context-aware confidence system is properly confirming predictions!**
+        **Production Professional Value Engine with context-aware confidence system is properly confirming predictions!**
         """)
         st.markdown('</div>', unsafe_allow_html=True)
         return
     
-    # Enhanced alignment status
+    # Production alignment status
     system_validation = safe_get(predictions, 'system_validation') or {}
     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
+    calibration_level = system_validation.get('calibration_level', 'PRODUCTION')
     
     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
-        st.markdown('<div class="professional-alignment-perfect">✅ <strong>ENHANCED PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with context validation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-perfect">✅ <strong>PRODUCTION PROFESSIONAL PERFECT ALIGNMENT:</strong> All value bets confirm Signal Engine predictions with context validation</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>ENHANCED PROFESSIONAL REVIEW REQUIRED:</strong> Context-aware contradiction detection active</div>', unsafe_allow_html=True)
+        st.markdown('<div class="professional-alignment-warning">⚠️ <strong>PRODUCTION PROFESSIONAL REVIEW REQUIRED:</strong> Context-aware contradiction detection active</div>', unsafe_allow_html=True)
     
-    # ENHANCED: Show context alignment analysis
+    # PRODUCTION: Show context alignment analysis
     perfect_context_signals = [s for s in betting_signals if s.get('context_alignment') == 'perfect']
     strong_context_signals = [s for s in betting_signals if s.get('context_alignment') == 'strong']
     contradictory_context_signals = [s for s in betting_signals if s.get('context_alignment') == 'contradictory']
@@ -1181,16 +1181,16 @@ def display_enhanced_value_detection(predictions):
         st.markdown(f'''
         <div class="context-contradictory">
             ⚠️ <strong>CONTEXT CONTRADICTIONS:</strong> {len(contradictory_signals)} signal(s) contradict {get_context_display_name(primary_context)} context
-            <br><small>Enhanced confidence system has automatically reduced stakes and confidence levels</small>
+            <br><small>Production confidence system has automatically reduced stakes and confidence levels</small>
         </div>
         ''', unsafe_allow_html=True)
     
-    # Enhanced Value Bet Summary
+    # Production Value Bet Summary
     col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
         total_signals = len(betting_signals)
-        st.metric("Enhanced Signals", total_signals)
+        st.metric("Production Signals", total_signals)
     
     with col2:
         high_value = len([s for s in betting_signals if s.get('value_rating') in ['EXCEPTIONAL', 'HIGH']])
@@ -1208,10 +1208,10 @@ def display_enhanced_value_detection(predictions):
         avg_edge = np.mean([s.get('edge', 0) for s in betting_signals]) if betting_signals else 0
         st.metric("Average Edge", f"{avg_edge:.1f}%")
     
-    # Display enhanced confidence system explanation
+    # Display production confidence system explanation
     st.markdown('<div class="confidence-explanation">', unsafe_allow_html=True)
     st.markdown("""
-    **🎯 Enhanced 4-Tier Confidence System with Context Awareness:**
+    **🎯 Production 4-Tier Confidence System with Context Awareness:**
     - **🟢 HIGH**: >68% probability + >8% edge + >80% data quality + Context alignment
     - **🟡 MEDIUM**: >58% probability + >5% edge + >70% data quality + Context consideration  
     - **🔴 LOW**: >52% probability + >2.5% edge + >60% data quality
@@ -1224,24 +1224,24 @@ def display_enhanced_value_detection(predictions):
     - **Weak**: 0.8x stake (weak context alignment)
     - **Contradictory**: 0.5x stake (contradicts context)
     
-    **Enhanced Features:**
+    **Production Features:**
     - 🎯 Context-aware stake sizing
-    - 🔍 Enhanced contradiction detection
+    - 🔍 Production contradiction detection
     - 📈 Outcome-based betting priorities
     - ⚖️ Conservative edge threshold at 3.0%
     """)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Display enhanced value bets
-    st.markdown('<div class="professional-section-title">🎯 Enhanced Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
+    # Display production value bets
+    st.markdown('<div class="professional-section-title">🎯 Production Professional Value Bet Recommendations</div>', unsafe_allow_html=True)
     
-    # Group by enhanced value rating and context alignment
+    # Group by production value rating and context alignment
     exceptional_bets = [s for s in betting_signals if s.get('value_rating') == 'EXCEPTIONAL']
     high_bets = [s for s in betting_signals if s.get('value_rating') == 'HIGH']
     good_bets = [s for s in betting_signals if s.get('value_rating') == 'GOOD']
     moderate_bets = [s for s in betting_signals if s.get('value_rating') == 'MODERATE']
     
-    def display_enhanced_bet_group(bets, title, emoji):
+    def display_production_bet_group(bets, title, emoji):
         if bets:
             st.subheader(f"{emoji} {title} Value Bets")
             for bet in bets:
@@ -1253,12 +1253,12 @@ def display_enhanced_value_detection(predictions):
                     'SPECULATIVE': '⚪'
                 }.get(bet.get('confidence', 'SPECULATIVE'), '⚪')
                 
-                # Enhanced alignment assessment
+                # Production alignment assessment
                 alignment = bet.get('alignment', 'neutral')
                 alignment_emoji = "✅" if alignment == 'aligns_with_primary' else "⚠️"
                 alignment_text = "ALIGNS" if alignment == 'aligns_with_primary' else "CONTRADICTS"
                 
-                # Enhanced context alignment
+                # Production context alignment
                 context_alignment = bet.get('context_alignment', 'moderate')
                 context_emoji = {
                     'perfect': '🎯',
@@ -1268,13 +1268,13 @@ def display_enhanced_value_detection(predictions):
                     'contradictory': '⚠️'
                 }.get(context_alignment, '⚖️')
                 
-                # Enhanced: Check for explanations
+                # Production: Check for explanations
                 explanations = bet.get('explanation', [])
                 safe_explanations = [exp for exp in explanations if exp and "contradict" not in exp.lower()]
                 contradiction_explanations = [exp for exp in explanations if exp and "contradict" in exp.lower()]
                 context_explanations = [exp for exp in explanations if exp and "context" in exp.lower()]
                 
-                # Create the enhanced bet card
+                # Create the production bet card
                 with st.container():
                     col1, col2 = st.columns([3, 1])
                     with col1:
@@ -1289,7 +1289,7 @@ def display_enhanced_value_detection(predictions):
                         # Probability info
                         st.caption(f"Model: {bet.get('model_prob', 0)}% | Market: {bet.get('book_prob', 0)}%")
                         
-                        # Enhanced alignment info
+                        # Production alignment info
                         st.caption(f"{alignment_emoji} {alignment_text} | {context_emoji} Context: {context_alignment}")
                         
                         # Safe explanations
@@ -1319,98 +1319,99 @@ def display_enhanced_value_detection(predictions):
                     
                     st.markdown("---")
     
-    display_enhanced_bet_group(exceptional_bets, "Exceptional", "🔥")
-    display_enhanced_bet_group(high_bets, "High", "⭐")
-    display_enhanced_bet_group(good_bets, "Good", "✅")
-    display_enhanced_bet_group(moderate_bets, "Moderate", "📊")
+    display_production_bet_group(exceptional_bets, "Exceptional", "🔥")
+    display_production_bet_group(high_bets, "High", "⭐")
+    display_production_bet_group(good_bets, "Good", "✅")
+    display_production_bet_group(moderate_bets, "Moderate", "📊")
 
 def main():
-    """Enhanced main application function"""
+    """Production main application function"""
     
-    # Initialize enhanced session state
-    if 'enhanced_predictions' not in st.session_state:
-        st.session_state.enhanced_predictions = None
+    # Initialize production session state
+    if 'production_predictions' not in st.session_state:
+        st.session_state.production_predictions = None
     
-    if 'enhanced_prediction_history' not in st.session_state:
-        st.session_state.enhanced_prediction_history = []
+    if 'production_prediction_history' not in st.session_state:
+        st.session_state.production_prediction_history = []
     
-    if st.session_state.enhanced_predictions:
-        # Create enhanced tabs
-        tab1, tab2 = st.tabs(["🎯 Enhanced Predictions", "💰 Enhanced Value Detection"])
+    if st.session_state.production_predictions:
+        # Create production tabs
+        tab1, tab2 = st.tabs(["🎯 Production Predictions", "💰 Production Value Detection"])
         
         with tab1:
-            display_enhanced_predictions(st.session_state.enhanced_predictions)
+            display_production_predictions(st.session_state.production_predictions)
         
         with tab2:
-            display_enhanced_value_detection(st.session_state.enhanced_predictions)
+            display_production_value_detection(st.session_state.production_predictions)
         
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🔄 New Enhanced Analysis", use_container_width=True):
-                st.session_state.enhanced_predictions = None
+            if st.button("🔄 New Production Analysis", use_container_width=True):
+                st.session_state.production_predictions = None
                 st.rerun()
         
         with col2:
-            if st.button("📊 Enhanced History", use_container_width=True):
-                if st.session_state.enhanced_prediction_history:
-                    st.write("**Enhanced Professional Prediction History:**")
-                    for i, pred in enumerate(st.session_state.enhanced_prediction_history[-5:]):
-                        with st.expander(f"Enhanced Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
+            if st.button("📊 Production History", use_container_width=True):
+                if st.session_state.production_prediction_history:
+                    st.write("**Production Professional Prediction History:**")
+                    for i, pred in enumerate(st.session_state.production_prediction_history[-5:]):
+                        with st.expander(f"Production Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
                             st.write(f"Context: {get_context_display_name(pred.get('primary_context', 'balanced'))}")
                             st.write(f"Expected Goals: Home {pred['expected_goals'].get('home', 0):.2f} - Away {pred['expected_goals'].get('away', 0):.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
-                            st.write(f"Enhanced IQ: {pred.get('football_iq', 0):.1f}/100")
+                            st.write(f"Production IQ: {pred.get('football_iq', 0):.1f}/100")
                             st.write(f"Context Confidence: {pred.get('context_confidence', 0)}%")
                             st.write(f"Value Bets Found: {pred.get('value_bets', 0)}")
                 else:
-                    st.info("No enhanced professional prediction history yet.")
+                    st.info("No production professional prediction history yet.")
         
         with col3:
-            if st.button("🎯 Enhanced System Status", use_container_width=True):
+            if st.button("🎯 Production System Status", use_container_width=True):
                 st.success("""
-                **Enhanced Professional System Status: OPERATIONAL** 🟢
+                **Production Professional System Status: OPERATIONAL** 🟢
                 
-                **Enhanced Context Features Active:**
-                - ✅ Outcome-Based Context Detection ✅
+                **Production Context Features Active:**
+                - ✅ League-Aware Calibration ✅
+                - ✅ Outcome-Based Context Detection ✅  
                 - ✅ Context-Aware Confidence System ✅
-                - ✅ Enhanced Risk Management ✅  
+                - ✅ Production Risk Management ✅
                 - ✅ Context Alignment Stake Multipliers ✅
-                - ✅ Enhanced Edge Threshold (3.0%) ✅
+                - ✅ Production Edge Threshold (3.0%) ✅
                 - ✅ Context Confidence Scoring ✅
                 
-                **Model Version:** 2.4.0_enhanced
+                **Model Version:** 2.4.0_production
                 **Calibration Level:** MONEY_GRADE
-                **Last Update:** Enhanced Context Logic Active
+                **Last Update:** Production Context Logic Active
                 """)
         
         return
     
-    match_data, mc_iterations = create_enhanced_input_form()
+    match_data, mc_iterations = create_production_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running enhanced professional multi-league calibrated analysis..."):
+        with st.spinner("🔍 Running production professional multi-league calibrated analysis..."):
             try:
-                # Initialize enhanced predictor
+                # Initialize production predictor
                 predictor = AdvancedFootballPredictor(match_data)
                 
-                # Generate enhanced analysis
+                # Generate production analysis
                 predictions = predictor.generate_comprehensive_analysis(mc_iterations)
                 
                 if predictions:
-                    # Add enhanced information
+                    # Add production information
                     predictions['league'] = match_data['league']
                     predictions['bankroll'] = match_data.get('bankroll', 1000)
                     predictions['kelly_fraction'] = match_data.get('kelly_fraction', 0.2)
                     
-                    st.session_state.enhanced_predictions = predictions
+                    st.session_state.production_predictions = predictions
                     
-                    # Store in enhanced history
-                    if 'enhanced_prediction_history' not in st.session_state:
-                        st.session_state.enhanced_prediction_history = []
+                    # Store in production history
+                    if 'production_prediction_history' not in st.session_state:
+                        st.session_state.production_prediction_history = []
                     
                     prediction_record = {
                         'timestamp': datetime.now().isoformat(),
@@ -1426,12 +1427,12 @@ def main():
                         'value_bets': len(predictions.get('betting_signals', []))
                     }
                     
-                    st.session_state.enhanced_prediction_history.append(prediction_record)
+                    st.session_state.production_prediction_history.append(prediction_record)
                     
-                    # Enhanced alignment status check
+                    # Production alignment status check
                     system_validation = safe_get(predictions, 'system_validation') or {}
                     alignment_status = system_validation.get('alignment', 'UNKNOWN')
-                    calibration_level = system_validation.get('calibration_level', 'ENHANCED')
+                    calibration_level = system_validation.get('calibration_level', 'PRODUCTION')
                     
                     if alignment_status == 'PERFECT' and calibration_level == 'MONEY_GRADE':
                         stability_bonus = safe_get(predictions, 'apex_intelligence', 'form_stability_bonus') or 0
@@ -1440,28 +1441,29 @@ def main():
                         context_confidence = safe_get(predictions, 'apex_intelligence', 'context_confidence') or 0
                         
                         st.success(f"""
-                        ✅ **ENHANCED PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** {context_emoji}
+                        ✅ **PRODUCTION PROFESSIONAL PERFECT ALIGNMENT ACHIEVED!** {context_emoji}
                         
-                        Enhanced Professional Value Engine confirms Signal Engine predictions with:
+                        Production Professional Value Engine confirms Signal Engine predictions with:
+                        - ✅ League-aware calibration
                         - ✅ Outcome-based context detection
                         - ✅ Context-aware confidence system
                         - ✅ Context confidence: {context_confidence}%
                         - ✅ Form stability bonus: +{stability_bonus:.1f}  
-                        - ✅ Enhanced risk management
+                        - ✅ Production risk management
                         - ✅ Professional bankroll management
                         """)
                     else:
-                        st.warning("⚠️ ENHANCED PROFESSIONAL REVIEW REQUIRED: Context-aware contradiction detection active")
+                        st.warning("⚠️ PRODUCTION PROFESSIONAL REVIEW REQUIRED: Context-aware contradiction detection active")
                     
                     st.rerun()
                 else:
-                    st.error("❌ Failed to generate enhanced professional predictions")
+                    st.error("❌ Failed to generate production professional predictions")
                 
             except Exception as e:
-                st.error(f"❌ Enhanced professional analysis error: {str(e)}")
+                st.error(f"❌ Production professional analysis error: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
-                st.info("💡 Check enhanced professional input parameters and try again")
+                st.info("💡 Check production professional input parameters and try again")
 
 if __name__ == "__main__":
     main()

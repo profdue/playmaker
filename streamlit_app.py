@@ -549,8 +549,8 @@ def create_production_input_form():
                 h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="production_h2h_away_wins")
                 h2h_draws = st.number_input("Draws", min_value=0, value=3, key="production_h2h_draws")
             with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=2, key="production_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=4, key="production_h2h_away_goals")
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=7, key="production_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=9, key="production_h2h_away_goals")
 
         # Professional Recent Form
         with st.expander("📈 Production Form Analysis"):

@@ -54,6 +54,16 @@ LEAGUE_PARAMS = {
         'min_edge': 0.11,
         'volatility_multiplier': 1.1
     },
+    'brasileirao': {
+        'away_penalty': 0.95,
+        'min_edge': 0.13,
+        'volatility_multiplier': 1.3
+    },
+    'liga_mx': {
+        'away_penalty': 0.94,
+        'min_edge': 0.14,
+        'volatility_multiplier': 1.4
+    },
     'default': {
         'away_penalty': 1.00,
         'min_edge': 0.10,
@@ -464,6 +474,98 @@ class ProductionPredictionExplainer:
             'certainty': f"{certainty * 100:.1f}%"
         }
 
+# Supporting class for team tier calibration
+class EnhancedTeamTierCalibrator:
+    """Team tier calibration for descriptive purposes"""
+    
+    def __init__(self):
+        self.team_databases = {
+            'premier_league': {
+                'Arsenal': 'ELITE', 'Manchester City': 'ELITE', 'Liverpool': 'ELITE',
+                'Tottenham Hotspur': 'STRONG', 'Chelsea': 'STRONG', 'Manchester United': 'STRONG',
+                'Newcastle United': 'STRONG', 'Aston Villa': 'STRONG', 'Brighton & Hove Albion': 'MEDIUM',
+                'West Ham United': 'MEDIUM', 'Crystal Palace': 'MEDIUM', 'Wolverhampton': 'MEDIUM',
+                'Fulham': 'MEDIUM', 'Brentford': 'MEDIUM', 'Everton': 'MEDIUM',
+                'Nottingham Forest': 'MEDIUM', 'Luton Town': 'WEAK', 'Burnley': 'WEAK', 'Sheffield United': 'WEAK'
+            },
+            'championship': {
+                'Leicester City': 'STRONG', 'Southampton': 'STRONG', 'Leeds United': 'STRONG',
+                'West Brom': 'STRONG', 'Norwich City': 'STRONG', 'Middlesbrough': 'MEDIUM',
+                'Stoke City': 'MEDIUM', 'Watford': 'MEDIUM', 'Swansea City': 'MEDIUM',
+                'Coventry City': 'MEDIUM', 'Hull City': 'MEDIUM', 'Queens Park Rangers': 'MEDIUM',
+                'Blackburn Rovers': 'MEDIUM', 'Millwall': 'WEAK', 'Bristol City': 'WEAK',
+                'Preston North End': 'WEAK', 'Birmingham City': 'WEAK', 'Sheffield Wednesday': 'WEAK',
+                'Wrexham': 'WEAK', 'Oxford United': 'WEAK', 'Derby County': 'WEAK',
+                'Portsmouth': 'WEAK', 'Charlton Athletic': 'WEAK', 'Ipswich Town': 'WEAK',
+                'Cardiff City': 'MEDIUM', 'Sunderland': 'MEDIUM'
+            },
+            'la_liga': {
+                'Real Madrid': 'ELITE', 'Barcelona': 'ELITE', 'Atletico Madrid': 'STRONG',
+                'Real Sociedad': 'STRONG', 'Athletic Bilbao': 'STRONG', 'Villarreal': 'MEDIUM',
+                'Real Betis': 'MEDIUM', 'Sevilla': 'MEDIUM', 'Valencia': 'MEDIUM',
+                'Osasuna': 'MEDIUM', 'Getafe': 'MEDIUM', 'Celta Vigo': 'MEDIUM',
+                'Mallorca': 'WEAK', 'Cadiz': 'WEAK', 'Granada': 'WEAK', 'Alaves': 'WEAK'
+            },
+            'serie_a': {
+                'Inter Milan': 'ELITE', 'AC Milan': 'ELITE', 'Juventus': 'STRONG',
+                'Napoli': 'STRONG', 'Atalanta': 'STRONG', 'Roma': 'STRONG',
+                'Lazio': 'STRONG', 'Fiorentina': 'MEDIUM', 'Bologna': 'MEDIUM',
+                'Torino': 'MEDIUM', 'Monza': 'MEDIUM', 'Genoa': 'MEDIUM',
+                'Lecce': 'WEAK', 'Frosinone': 'WEAK', 'Cagliari': 'WEAK', 'Verona': 'WEAK'
+            },
+            'bundesliga': {
+                'Bayern Munich': 'ELITE', 'Bayer Leverkusen': 'ELITE', 'Borussia Dortmund': 'STRONG',
+                'RB Leipzig': 'STRONG', 'Eintracht Frankfurt': 'STRONG', 'Wolfsburg': 'MEDIUM',
+                'Borussia Monchengladbach': 'MEDIUM', 'Freiburg': 'MEDIUM', 'Hoffenheim': 'MEDIUM',
+                'Augsburg': 'MEDIUM', 'Mainz': 'WEAK', 'Bochum': 'WEAK', 
+                'Koln': 'WEAK', 'Darmstadt': 'WEAK', 'Heidenheim': 'WEAK'
+            },
+            'ligue_1': {
+                'PSG': 'ELITE', 'Monaco': 'STRONG', 'Lille': 'STRONG',
+                'Marseille': 'STRONG', 'Lyon': 'STRONG', 'Rennes': 'MEDIUM',
+                'Nice': 'MEDIUM', 'Lens': 'MEDIUM', 'Reims': 'MEDIUM',
+                'Toulouse': 'MEDIUM', 'Montpellier': 'WEAK', 'Nantes': 'WEAK',
+                'Brest': 'WEAK', 'Lorient': 'WEAK', 'Strasbourg': 'WEAK'
+            },
+            'liga_portugal': {
+                'Benfica': 'ELITE', 'Porto': 'ELITE', 'Sporting Lisbon': 'STRONG',
+                'Braga': 'STRONG', 'Vitoria Guimaraes': 'MEDIUM', 'Famalicao': 'MEDIUM',
+                'Boavista': 'MEDIUM', 'Moreirense': 'MEDIUM', 'Arouca': 'MEDIUM',
+                'Casa Pia': 'WEAK', 'Estoril': 'WEAK', 'Rio Ave': 'WEAK',
+                'Portimonense': 'WEAK', 'Gil Vicente': 'WEAK'
+            },
+            'brasileirao': {
+                'Flamengo': 'ELITE', 'Palmeiras': 'ELITE', 'Sao Paulo': 'STRONG',
+                'Corinthians': 'STRONG', 'Gremio': 'STRONG', 'Internacional': 'STRONG',
+                'Atletico Mineiro': 'STRONG', 'Botafogo': 'MEDIUM', 'Santos': 'MEDIUM',
+                'Fluminense': 'MEDIUM', 'Cruzeiro': 'MEDIUM', 'Bahia': 'MEDIUM',
+                'Fortaleza': 'WEAK', 'Vasco da Gama': 'WEAK', 'Coritiba': 'WEAK'
+            },
+            'liga_mx': {
+                'Club America': 'ELITE', 'Monterrey': 'ELITE', 'Tigres': 'STRONG',
+                'Cruz Azul': 'STRONG', 'Guadalajara': 'STRONG', 'Pumas UNAM': 'MEDIUM',
+                'Toluca': 'MEDIUM', 'Santos Laguna': 'MEDIUM', 'Pachuca': 'MEDIUM',
+                'Leon': 'MEDIUM', 'Atlas': 'WEAK', 'Mazatlan': 'WEAK',
+                'Queretaro': 'WEAK', 'Necaxa': 'WEAK', 'Juarez': 'WEAK'
+            },
+            'eredivisie': {
+                'Ajax': 'ELITE', 'PSV Eindhoven': 'ELITE', 'Feyenoord': 'STRONG',
+                'AZ Alkmaar': 'STRONG', 'Twente': 'MEDIUM', 'Utrecht': 'MEDIUM',
+                'Heerenveen': 'MEDIUM', 'Sparta Rotterdam': 'MEDIUM', 'NEC Nijmegen': 'MEDIUM',
+                'Go Ahead Eagles': 'WEAK', 'Excelsior': 'WEAK', 'Fortuna Sittard': 'WEAK',
+                'Heracles': 'WEAK', 'Almere City': 'WEAK'
+            }
+        }
+    
+    def get_team_tier(self, team: str, league: str) -> str:
+        """Get team tier for descriptive purposes"""
+        league_teams = self.team_databases.get(league, {})
+        return league_teams.get(team, 'MEDIUM')
+    
+    def get_all_teams_for_league(self, league: str) -> List[str]:
+        """Get all teams for a given league"""
+        return list(self.team_databases.get(league, {}).keys())
+
 class ApexProductionEngine:
     """PRODUCTION-READY PREDICTION ENGINE"""
     
@@ -476,6 +578,7 @@ class ApexProductionEngine:
         self.staking_engine = ProductionStakingEngine()
         self.explainer = ProductionPredictionExplainer()
         self.narrative = MatchNarrative()
+        self.tier_calibrator = EnhancedTeamTierCalibrator()
         
     def _production_data_validation(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
         """PRODUCTION: Robust data validation"""
@@ -535,9 +638,8 @@ class ApexProductionEngine:
         away_team_data = {'name': self.data['away_team']}
         
         # Get team tiers (descriptive only)
-        tier_calibrator = EnhancedTeamTierCalibrator()
-        home_tier = tier_calibrator.get_team_tier(self.data['home_team'], league)
-        away_tier = tier_calibrator.get_team_tier(self.data['away_team'], league)
+        home_tier = self.tier_calibrator.get_team_tier(self.data['home_team'], league)
+        away_tier = self.tier_calibrator.get_team_tier(self.data['away_team'], league)
         
         features = self.feature_engine.create_match_features(
             home_team_data, away_team_data, feature_context, home_tier, away_tier, league
@@ -619,9 +721,8 @@ class ApexProductionEngine:
         
         # Get team tiers for display
         league = self.data.get('league', 'premier_league')
-        tier_calibrator = EnhancedTeamTierCalibrator()
-        home_tier = tier_calibrator.get_team_tier(self.data['home_team'], league)
-        away_tier = tier_calibrator.get_team_tier(self.data['away_team'], league)
+        home_tier = self.tier_calibrator.get_team_tier(self.data['home_team'], league)
+        away_tier = self.tier_calibrator.get_team_tier(self.data['away_team'], league)
         
         # Determine descriptive context
         context = self._determine_descriptive_context(home_xg, away_xg, home_tier, away_tier)
@@ -722,38 +823,6 @@ class ApexProductionEngine:
             'risk_assessment': risk_assessment,
             'production_summary': f"Production-grade analysis complete for {self.data['home_team']} vs {self.data['away_team']}. Model incorporates xG uncertainty, goal correlation, and proper vig removal."
         }
-
-# Supporting class for team tier calibration
-class EnhancedTeamTierCalibrator:
-    """Team tier calibration for descriptive purposes"""
-    
-    def __init__(self):
-        self.team_databases = {
-            'premier_league': {
-                'Arsenal': 'ELITE', 'Manchester City': 'ELITE', 'Liverpool': 'ELITE',
-                'Tottenham Hotspur': 'STRONG', 'Chelsea': 'STRONG', 'Manchester United': 'STRONG',
-                'Newcastle United': 'STRONG', 'Aston Villa': 'STRONG', 'Brighton & Hove Albion': 'MEDIUM',
-                'West Ham United': 'MEDIUM', 'Crystal Palace': 'MEDIUM', 'Wolverhampton': 'MEDIUM',
-                'Fulham': 'MEDIUM', 'Brentford': 'MEDIUM', 'Everton': 'MEDIUM',
-                'Nottingham Forest': 'MEDIUM', 'Luton Town': 'WEAK', 'Burnley': 'WEAK', 'Sheffield United': 'WEAK'
-            },
-            'championship': {
-                'Leicester City': 'STRONG', 'Southampton': 'STRONG', 'Leeds United': 'STRONG',
-                'West Brom': 'STRONG', 'Norwich City': 'STRONG', 'Middlesbrough': 'MEDIUM',
-                'Stoke City': 'MEDIUM', 'Watford': 'MEDIUM', 'Swansea City': 'MEDIUM',
-                'Coventry City': 'MEDIUM', 'Hull City': 'MEDIUM', 'Queens Park Rangers': 'MEDIUM',
-                'Blackburn Rovers': 'MEDIUM', 'Millwall': 'WEAK', 'Bristol City': 'WEAK',
-                'Preston North End': 'WEAK', 'Birmingham City': 'WEAK', 'Sheffield Wednesday': 'WEAK',
-                'Wrexham': 'WEAK', 'Oxford United': 'WEAK', 'Derby County': 'WEAK',
-                'Portsmouth': 'WEAK', 'Charlton Athletic': 'WEAK', 'Ipswich Town': 'WEAK',
-                'Sheffield United': 'STRONG', 'Cardiff City': 'MEDIUM', 'Sunderland': 'MEDIUM'
-            }
-        }
-    
-    def get_team_tier(self, team: str, league: str) -> str:
-        """Get team tier for descriptive purposes"""
-        league_teams = self.team_databases.get(league, {})
-        return league_teams.get(team, 'MEDIUM')
 
 def test_production_engine():
     """Test the production engine"""

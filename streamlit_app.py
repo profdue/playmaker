@@ -1,4 +1,4 @@
-# streamlit_app.py - PROFESSIONAL GRADE FIXED VERSION
+# streamlit_app.py - PROFESSIONAL MULTI-LEAGUE PREDICTOR
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(__file__))
 
 try:
     from prediction_engine import (
-        ProfessionalPredictionEngine, 
+        MultiLeaguePredictionEngine, 
         LEAGUE_PARAMS,
         VOLATILITY_MULTIPLIERS
     )
@@ -33,7 +33,7 @@ st.cache_resource.clear()
 # =============================================================================
 
 st.set_page_config(
-    page_title="🎯 Professional Football Predictor",
+    page_title="🎯 Professional Multi-League Football Predictor",
     page_icon="⚽",
     layout="wide", 
     initial_sidebar_state="expanded"
@@ -85,6 +85,9 @@ st.markdown("""
     .bundesliga { background: #DC052D; }
     .ligue-1 { background: #DA291C; }
     .eredivisie { background: #FF6B00; }
+    .liga-portugal { background: #006600; }
+    .brasileirao { background: #FFCC00; color: black; }
+    .liga-mx { background: #006847; }
     .championship { background: #8B0000; }
     
     .value-indicator {
@@ -158,6 +161,14 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    
+    .league-selector {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border: 2px solid #e9ecef;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -167,16 +178,7 @@ st.markdown("""
 
 def get_league_display_name(league_id: str) -> str:
     """Get formatted league display name"""
-    league_names = {
-        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-        'la_liga': 'La Liga 🇪🇸',
-        'serie_a': 'Serie A 🇮🇹',
-        'bundesliga': 'Bundesliga 🇩🇪',
-        'ligue_1': 'Ligue 1 🇫🇷',
-        'eredivisie': 'Eredivisie 🇳🇱',
-        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿'
-    }
-    return league_names.get(league_id, league_id.replace('_', ' ').title())
+    return LEAGUE_PARAMS.get(league_id, {}).get('display_name', league_id.replace('_', ' ').title())
 
 def get_league_badge_class(league_id: str) -> str:
     """Get CSS class for league badge"""
@@ -187,6 +189,9 @@ def get_league_badge_class(league_id: str) -> str:
         'bundesliga': 'bundesliga',
         'ligue_1': 'ligue-1',
         'eredivisie': 'eredivisie',
+        'liga_portugal': 'liga-portugal',
+        'brasileirao': 'brasileirao',
+        'liga_mx': 'liga-mx',
         'championship': 'championship'
     }
     return league_classes.get(league_id, 'premier-league')
@@ -290,13 +295,14 @@ def create_edge_comparison_chart(recommendations: List[Dict]) -> go.Figure:
 
 def create_xg_comparison_plot(results: Dict) -> go.Figure:
     """Create xG comparison plot"""
-    expected_goals = safe_get(results, 'expected_goals', 'adjusted', default={'home': 0, 'away': 0})
+    home_xg = safe_get(results, 'expected_goals', 'home', default=0)
+    away_xg = safe_get(results, 'expected_goals', 'away', default=0)
     
     fig = go.Figure(data=[
         go.Bar(
             name='Expected Goals (xG)',
             x=['Home', 'Away'],
-            y=[expected_goals.get('home', 0), expected_goals.get('away', 0)],
+            y=[home_xg, away_xg],
             marker_color=['#FF6B6B', '#4ECDC4']
         )
     ])
@@ -343,22 +349,71 @@ def create_score_probability_plot(exact_scores: Dict[str, float]) -> go.Figure:
 
 def display_professional_header():
     """Display professional header"""
-    st.markdown('<p class="professional-header">🎯 Professional Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="professional-subheader">Evidence-Based Predictions • Professional Risk Management • Market Intelligence</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Professional Multi-League Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-subheader">10 League Support • Evidence-Based Predictions • Professional Risk Management</p>', unsafe_allow_html=True)
+
+def display_league_selector():
+    """Display professional league selector"""
+    st.markdown('<div class="league-selector">', unsafe_allow_html=True)
+    st.markdown('### 🌍 Select League')
+    
+    # Create two columns for league buttons
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    leagues = list(LEAGUE_PARAMS.keys())
+    
+    with col1:
+        if st.button(LEAGUE_PARAMS['premier_league']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'premier_league'
+        if st.button(LEAGUE_PARAMS['la_liga']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'la_liga'
+    
+    with col2:
+        if st.button(LEAGUE_PARAMS['serie_a']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'serie_a'
+        if st.button(LEAGUE_PARAMS['bundesliga']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'bundesliga'
+    
+    with col3:
+        if st.button(LEAGUE_PARAMS['ligue_1']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'ligue_1'
+        if st.button(LEAGUE_PARAMS['eredivisie']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'eredivisie'
+    
+    with col4:
+        if st.button(LEAGUE_PARAMS['liga_portugal']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'liga_portugal'
+        if st.button(LEAGUE_PARAMS['brasileirao']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'brasileirao'
+    
+    with col5:
+        if st.button(LEAGUE_PARAMS['liga_mx']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'liga_mx'
+        if st.button(LEAGUE_PARAMS['championship']['display_name'], use_container_width=True):
+            st.session_state.selected_league = 'championship'
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Default league
+    if 'selected_league' not in st.session_state:
+        st.session_state.selected_league = 'premier_league'
+    
+    return st.session_state.selected_league
 
 def display_league_intelligence(league: str):
     """Display league intelligence panel"""
-    league_params = LEAGUE_PARAMS.get(league, LEAGUE_PARAMS['default'])
+    league_params = LEAGUE_PARAMS.get(league, LEAGUE_PARAMS['premier_league'])
     volatility_multiplier = VOLATILITY_MULTIPLIERS.get(league_params['volatility'], 1.0)
     
     st.markdown(f'''
     <div class="league-intelligence">
-        <h3>🌍 {get_league_display_name(league)} Intelligence</h3>
+        <h3>🌍 {league_params["display_name"]} Intelligence</h3>
+        <strong>Goal Baseline:</strong> {league_params['goal_baseline']:.2f} xG per game<br>
         <strong>Volatility:</strong> {league_params['volatility'].replace('_', ' ').title()}<br>
         <strong>Minimum Edge:</strong> {league_params['min_edge']:.1%}<br>
         <strong>Stake Multiplier:</strong> {volatility_multiplier:.1f}x<br>
         <strong>Goal Intensity:</strong> {league_params['goal_intensity'].replace('_', ' ').title()}<br>
-        <strong>Away Penalty:</strong> {league_params['away_penalty']:.2f}
+        <strong>Home Advantage:</strong> {league_params['home_advantage']:.2f}x
     </div>
     ''', unsafe_allow_html=True)
 
@@ -369,11 +424,12 @@ def display_match_overview(results: Dict):
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        xg_data = safe_get(results, 'expected_goals', 'adjusted', default={'home': 0, 'away': 0})
-        st.metric("🏠 Expected Goals", f"{xg_data.get('home', 0):.2f}")
+        home_xg = safe_get(results, 'expected_goals', 'home', default=0)
+        st.metric("🏠 Expected Goals", f"{home_xg:.2f}")
     
     with col2:
-        st.metric("✈️ Expected Goals", f"{xg_data.get('away', 0):.2f}")
+        away_xg = safe_get(results, 'expected_goals', 'away', default=0)
+        st.metric("✈️ Expected Goals", f"{away_xg:.2f}")
     
     with col3:
         total_xg = safe_get(results, 'expected_goals', 'total', default=0)
@@ -405,7 +461,7 @@ def display_probability_analysis(results: Dict):
     
     # Goals markets
     st.markdown("#### ⚽ Goals Markets")
-    goals_col1, goals_col2, goals_col3 = st.columns(3)
+    goals_col1, goals_col2, goals_col3, goals_col4 = st.columns(4)
     
     with goals_col1:
         btts_yes = safe_get(results, 'probabilities', 'both_teams_score', 'yes', default=0)
@@ -418,6 +474,10 @@ def display_probability_analysis(results: Dict):
     with goals_col3:
         under_25 = safe_get(results, 'probabilities', 'over_under', 'under_25', default=0)
         st.metric("Under 2.5 Goals", f"{under_25:.1%}")
+    
+    with goals_col4:
+        over_15 = safe_get(results, 'probabilities', 'over_under', 'over_15', default=0)
+        st.metric("Over 1.5 Goals", f"{over_15:.1%}")
     
     # Visualizations
     viz_col1, viz_col2 = st.columns(2)
@@ -498,7 +558,8 @@ def display_match_context(results: Dict):
             </div>
             <div style="margin: 0.5rem 0;">
                 <strong>Quality Gap:</strong> {context.get('quality_gap', 'even').title()}<br>
-                <strong>Confidence Score:</strong> {context.get('confidence_score', 0):.1f}%
+                <strong>Confidence Score:</strong> {context.get('confidence_score', 0):.1f}%<br>
+                <strong>Expected Tempo:</strong> {context.get('expected_tempo', 'medium').title()}
             </div>
         </div>
         ''', unsafe_allow_html=True)
@@ -569,6 +630,18 @@ def display_diagnostics(results: Dict):
     </div>
     ''', unsafe_allow_html=True)
 
+def display_xg_debug(results: Dict):
+    """Display xG calculation debug information"""
+    with st.expander("🔧 xG Calculation Details"):
+        xg_debug = safe_get(results, 'expected_goals', 'debug', default={})
+        
+        if xg_debug:
+            st.write("**xG Calculation Steps:**")
+            for key, value in xg_debug.items():
+                st.write(f"- **{key}**: {value:.3f}")
+        else:
+            st.info("No debug information available")
+
 def display_professional_metadata(results: Dict):
     """Display professional metadata"""
     with st.expander("🔧 Technical Details"):
@@ -581,54 +654,48 @@ def display_professional_metadata(results: Dict):
             st.write(f"Version: {metadata.get('model_version', 'N/A')}")
             st.write(f"Calibration: {metadata.get('calibration_level', 'N/A')}")
             st.write(f"Risk Profile: {metadata.get('risk_profile', 'N/A')}")
+            st.write(f"League Support: {metadata.get('league_supported', 'No')}")
         
         with col2:
             st.write("**Execution Details**")
             st.write(f"Generated: {metadata.get('timestamp', 'N/A')}")
             st.write(f"Match: {safe_get(results, 'match_info', 'match', 'N/A')}")
-            st.write(f"League: {safe_get(results, 'match_info', 'league', 'N/A')}")
+            st.write(f"League: {safe_get(results, 'match_info', 'league_display', 'N/A')}")
 
 # =============================================================================
 # PROFESSIONAL INPUT FORM
 # =============================================================================
 
-def create_professional_input_form() -> tuple:
-    """Create professional input form"""
+def create_professional_input_form(selected_league: str) -> tuple:
+    """Create professional input form for selected league"""
     st.markdown('<div class="section-title">⚙️ Match Configuration</div>', unsafe_allow_html=True)
     
     tab1, tab2, tab3 = st.tabs(["🏟️ Match Data", "💰 Market Odds", "🎯 Professional Settings"])
     
-    match_data = {}
+    match_data = {'league': selected_league}
     
     with tab1:
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader("🏠 Home Team")
-            match_data['home_team'] = st.text_input("Team Name", value="Tottenham Hotspur")
-            match_data['home_goals'] = st.number_input("Total Goals (Last 6)", min_value=0, value=8)
-            match_data['home_conceded'] = st.number_input("Total Conceded (Last 6)", min_value=0, value=6)
-            match_data['home_goals_home'] = st.number_input("Home Goals (Last 3 Home)", min_value=0, value=6)
-            match_data['home_injuries'] = st.slider("Key Absences", 1, 5, 2)
-            match_data['home_motivation'] = st.selectbox("Motivation", ["Low", "Normal", "High", "Very High"], index=1)
-            match_data['home_tier'] = st.selectbox("Team Tier", ["WEAK", "MEDIUM", "STRONG", "ELITE"], index=2)
+            match_data['home_team'] = st.text_input("Team Name", value="Tottenham Hotspur", key="home_team")
+            match_data['home_goals'] = st.number_input("Total Goals (Last 6)", min_value=0, value=12, key="home_goals")
+            match_data['home_conceded'] = st.number_input("Total Conceded (Last 6)", min_value=0, value=6, key="home_conceded")
+            match_data['home_goals_home'] = st.number_input("Home Goals (Last 3 Home)", min_value=0, value=2, key="home_goals_home")
+            match_data['home_injuries'] = st.slider("Key Absences", 1, 5, 2, key="home_injuries")
+            match_data['home_motivation'] = st.selectbox("Motivation", ["Low", "Normal", "High", "Very High"], index=1, key="home_motivation")
+            match_data['home_tier'] = st.selectbox("Team Tier", ["WEAK", "MEDIUM", "STRONG", "ELITE"], index=2, key="home_tier")
         
         with col2:
             st.subheader("✈️ Away Team")
-            match_data['away_team'] = st.text_input("Away Team Name", value="Chelsea")
-            match_data['away_goals'] = st.number_input("Away Goals (Last 6)", min_value=0, value=4)
-            match_data['away_conceded'] = st.number_input("Away Conceded (Last 6)", min_value=0, value=7)
-            match_data['away_goals_away'] = st.number_input("Away Goals (Last 3 Away)", min_value=0, value=1)
-            match_data['away_injuries'] = st.slider("Away Key Absences", 1, 5, 2)
-            match_data['away_motivation'] = st.selectbox("Away Motivation", ["Low", "Normal", "High", "Very High"], index=1)
-            match_data['away_tier'] = st.selectbox("Away Team Tier", ["WEAK", "MEDIUM", "STRONG", "ELITE"], index=2)
-        
-        match_data['league'] = st.selectbox(
-            "League",
-            options=list(LEAGUE_PARAMS.keys()),
-            format_func=get_league_display_name,
-            index=0
-        )
+            match_data['away_team'] = st.text_input("Away Team Name", value="Chelsea", key="away_team")
+            match_data['away_goals'] = st.number_input("Away Goals (Last 6)", min_value=0, value=10, key="away_goals")
+            match_data['away_conceded'] = st.number_input("Away Conceded (Last 6)", min_value=0, value=7, key="away_conceded")
+            match_data['away_goals_away'] = st.number_input("Away Goals (Last 3 Away)", min_value=0, value=6, key="away_goals_away")
+            match_data['away_injuries'] = st.slider("Away Key Absences", 1, 5, 2, key="away_injuries")
+            match_data['away_motivation'] = st.selectbox("Away Motivation", ["Low", "Normal", "High", "Very High"], index=1, key="away_motivation")
+            match_data['away_tier'] = st.selectbox("Away Team Tier", ["WEAK", "MEDIUM", "STRONG", "ELITE"], index=2, key="away_tier")
     
     with tab2:
         st.subheader("💰 Market Odds")
@@ -638,17 +705,17 @@ def create_professional_input_form() -> tuple:
         with odds_col1:
             st.write("**1X2 Market**")
             match_data['market_odds'] = {
-                '1x2_home': st.number_input("Home Win Odds", min_value=1.01, value=3.10, step=0.01),
-                '1x2_draw': st.number_input("Draw Odds", min_value=1.01, value=3.40, step=0.01),
-                '1x2_away': st.number_input("Away Win Odds", min_value=1.01, value=2.30, step=0.01)
+                '1x2_home': st.number_input("Home Win Odds", min_value=1.01, value=3.10, step=0.01, key="home_odds"),
+                '1x2_draw': st.number_input("Draw Odds", min_value=1.01, value=3.40, step=0.01, key="draw_odds"),
+                '1x2_away': st.number_input("Away Win Odds", min_value=1.01, value=2.30, step=0.01, key="away_odds")
             }
         
         with odds_col2:
             st.write("**Goals Markets**")
-            match_data['market_odds']['over_25'] = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01)
-            match_data['market_odds']['under_25'] = st.number_input("Under 2.5 Goals", min_value=1.01, value=2.00, step=0.01)
-            match_data['market_odds']['btts_yes'] = st.number_input("BTTS Yes", min_value=1.01, value=1.90, step=0.01)
-            match_data['market_odds']['btts_no'] = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01)
+            match_data['market_odds']['over_25'] = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01, key="over_25")
+            match_data['market_odds']['under_25'] = st.number_input("Under 2.5 Goals", min_value=1.01, value=2.00, step=0.01, key="under_25")
+            match_data['market_odds']['btts_yes'] = st.number_input("BTTS Yes", min_value=1.01, value=1.90, step=0.01, key="btts_yes")
+            match_data['market_odds']['btts_no'] = st.number_input("BTTS No", min_value=1.01, value=1.90, step=0.01, key="btts_no")
     
     with tab3:
         st.subheader("🎯 Professional Settings")
@@ -656,12 +723,12 @@ def create_professional_input_form() -> tuple:
         settings_col1, settings_col2 = st.columns(2)
         
         with settings_col1:
-            match_data['bankroll'] = st.number_input("Bankroll ($)", min_value=100, value=1000, step=100)
+            match_data['bankroll'] = st.number_input("Bankroll ($)", min_value=100, value=1000, step=100, key="bankroll")
             st.info("💡 Professional staking uses fractional Kelly with volatility adjustments")
         
         with settings_col2:
             st.write("**Model Configuration**")
-            enable_sensitivity = st.checkbox("Enable Sensitivity Analysis", value=True)
+            enable_sensitivity = st.checkbox("Enable Sensitivity Analysis", value=True, key="sensitivity")
             st.info("🔍 Sensitivity testing checks edge robustness to xG changes")
     
     # H2H Data
@@ -669,12 +736,12 @@ def create_professional_input_form() -> tuple:
         h2h_col1, h2h_col2 = st.columns(2)
         
         with h2h_col1:
-            h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4)
-            h2h_home_wins = st.number_input("Home Wins", min_value=0, value=0)
+            h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=6, key="h2h_matches")
+            h2h_home_wins = st.number_input("Home Wins", min_value=0, value=1, key="h2h_home_wins")
         
         with h2h_col2:
-            h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1)
-            h2h_draws = st.number_input("Draws", min_value=0, value=3)
+            h2h_away_wins = st.number_input("Away Wins", min_value=0, value=4, key="h2h_away_wins")
+            h2h_draws = st.number_input("Draws", min_value=0, value=1, key="h2h_draws")
         
         match_data['h2h_data'] = {
             'matches': h2h_matches,
@@ -694,16 +761,24 @@ def create_professional_input_form() -> tuple:
 # =============================================================================
 
 def main():
-    """Main professional application"""
+    """Main professional multi-league application"""
     
     # Initialize session state
     if 'professional_results' not in st.session_state:
         st.session_state.professional_results = None
     if 'prediction_history' not in st.session_state:
         st.session_state.prediction_history = []
+    if 'selected_league' not in st.session_state:
+        st.session_state.selected_league = 'premier_league'
     
     # Display professional header
     display_professional_header()
+    
+    # League selection
+    selected_league = display_league_selector()
+    
+    # Display league intelligence
+    display_league_intelligence(selected_league)
     
     # Sidebar for navigation and info
     with st.sidebar:
@@ -719,7 +794,7 @@ def main():
                     st.write("### Recent Analyses")
                     for i, pred in enumerate(st.session_state.prediction_history[-5:]):
                         with st.expander(f"Analysis {i+1}: {pred.get('match', 'Unknown')}"):
-                            st.write(f"League: {get_league_display_name(pred.get('league', 'Unknown'))}")
+                            st.write(f"League: {pred.get('league_display', 'Unknown')}")
                             st.write(f"xG: {pred.get('home_xg', 0):.2f}-{pred.get('away_xg', 0):.2f}")
                             st.write(f"Recommendations: {len(pred.get('recommendations', []))}")
                 else:
@@ -727,26 +802,33 @@ def main():
         
         st.markdown("---")
         st.markdown("## 🔧 System Status")
-        st.success("**Professional Mode:** ACTIVE 🟢")
-        st.info("**Model Version:** 3.0.0 Professional")
+        st.success("**Multi-League Mode:** ACTIVE 🟢")
+        st.info(f"**Current League:** {LEAGUE_PARAMS[selected_league]['display_name']}")
+        st.info("**Model Version:** 4.0.0 Multi-League")
         st.info("**Risk Profile:** Conservative")
         
         st.markdown("---")
+        st.markdown("### 🌍 Supported Leagues")
+        for league_id, league_info in LEAGUE_PARAMS.items():
+            st.write(f"• {league_info['display_name']}")
+        
+        st.markdown("---")
         st.markdown("### 💡 Professional Features")
-        st.write("• Evidence-based xG calculation")
-        st.write("• Bivariate Poisson simulation") 
-        st.write("• Proper vig removal")
-        st.write("• Sensitivity testing")
-        st.write("• Volatility-adjusted staking")
-        st.write("• Market reality checks")
+        st.write("• 10 League Support")
+        st.write("• Unified Adaptive xG Logic")
+        st.write("• League-Aware Calibration")
+        st.write("• Professional Risk Management")
+        st.write("• Market Reality Checks")
     
     # Main content area
     if st.session_state.professional_results:
         # Display existing results
         results = st.session_state.professional_results
         
-        # League intelligence
-        display_league_intelligence(results['match_info']['league'])
+        # Current league badge
+        league_badge_class = get_league_badge_class(results['match_info']['league'])
+        league_display = results['match_info']['league_display']
+        st.markdown(f'<div style="text-align: center;"><span class="professional-badge {league_badge_class}">{league_display}</span></div>', unsafe_allow_html=True)
         
         # Display all professional components
         display_match_overview(results)
@@ -754,17 +836,18 @@ def main():
         display_betting_recommendations(results)
         display_match_context(results)
         display_diagnostics(results)
+        display_xg_debug(results)
         display_professional_metadata(results)
         
     else:
         # Show input form for new analysis
-        match_data = create_professional_input_form()
+        match_data = create_professional_input_form(selected_league)
         
         if match_data:
-            with st.spinner("🔍 Running professional analysis..."):
+            with st.spinner("🔍 Running professional multi-league analysis..."):
                 try:
                     # Generate professional predictions
-                    engine = ProfessionalPredictionEngine(match_data)
+                    engine = MultiLeaguePredictionEngine(match_data)
                     results = engine.generate_predictions()
                     
                     # Store in session state
@@ -775,14 +858,15 @@ def main():
                         'timestamp': datetime.now().isoformat(),
                         'match': results['match_info']['match'],
                         'league': results['match_info']['league'],
-                        'home_xg': results['expected_goals']['adjusted']['home'],
-                        'away_xg': results['expected_goals']['adjusted']['away'],
+                        'league_display': results['match_info']['league_display'],
+                        'home_xg': results['expected_goals']['home'],
+                        'away_xg': results['expected_goals']['away'],
                         'recommendations': results['market_analysis']['recommendations']
                     }
                     st.session_state.prediction_history.append(history_entry)
                     
                     # Success message
-                    st.success("✅ Professional analysis completed successfully!")
+                    st.success("✅ Professional multi-league analysis completed successfully!")
                     st.rerun()
                     
                 except Exception as e:

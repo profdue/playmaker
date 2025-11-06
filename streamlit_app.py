@@ -1,6 +1,5 @@
 # streamlit_app.py - COMPLETE ENHANCED PROFESSIONAL PREDICTOR
 import streamlit as st
-st.cache_resource.clear()
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -8,6 +7,7 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 
+# Import from the enhanced prediction engine
 try:
     from prediction_engine import ApexEnhancedEngine, EnhancedTeamTierCalibrator, ProfessionalLeagueCalibrator
 except ImportError as e:
@@ -15,19 +15,8 @@ except ImportError as e:
     st.info("💡 Make sure prediction_engine.py is in the same directory")
     st.stop()
 
-LEAGUE_PARAMS = {
-    'premier_league': {'xg_conversion_multiplier': 1.00, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.25, 'total_xg_offensive_threshold': 3.25, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.00},
-    'serie_a': {'xg_conversion_multiplier': 0.94, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.90, 'xg_diff_threshold': 0.32, 'confidence_league_modifier': 0.10},
-    'bundesliga': {'xg_conversion_multiplier': 1.08, 'away_penalty': 1.02, 'total_xg_defensive_threshold': 2.40, 'total_xg_offensive_threshold': 3.40, 'xg_diff_threshold': 0.38, 'confidence_league_modifier': -0.08},
-    'la_liga': {'xg_conversion_multiplier': 0.96, 'away_penalty': 0.97, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 3.00, 'xg_diff_threshold': 0.33, 'confidence_league_modifier': 0.05},
-    'ligue_1': {'xg_conversion_multiplier': 1.02, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.30, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.03},
-    'eredivisie': {'xg_conversion_multiplier': 1.10, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.50, 'total_xg_offensive_threshold': 3.60, 'xg_diff_threshold': 0.36, 'confidence_league_modifier': -0.05},
-    'championship': {'xg_conversion_multiplier': 0.92, 'away_penalty': 0.92, 'total_xg_defensive_threshold': 2.15, 'total_xg_offensive_threshold': 3.05, 'xg_diff_threshold': 0.38, 'confidence_league_modifier': 0.12},
-    'liga_portugal': {'xg_conversion_multiplier': 0.95, 'away_penalty': 0.96, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 2.85, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': 0.07},
-    'brasileirao': {'xg_conversion_multiplier': 0.92, 'away_penalty': 0.94, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.95, 'xg_diff_threshold': 0.33, 'confidence_league_modifier': 0.08},
-    'liga_mx': {'xg_conversion_multiplier': 1.00, 'away_penalty': 0.97, 'total_xg_defensive_threshold': 2.35, 'total_xg_offensive_threshold': 3.15, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.04},
-    'default': {'xg_conversion_multiplier': 1.00, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.20, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.00}
-}
+# Clear cache to ensure fresh imports
+st.cache_resource.clear()
 
 st.set_page_config(
     page_title="🎯 Enhanced Professional Football Predictor",
@@ -354,6 +343,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def safe_get(dictionary, *keys, default=None):
+    """Safely get nested dictionary values"""
     if dictionary is None:
         return default
         
@@ -369,6 +359,7 @@ def safe_get(dictionary, *keys, default=None):
     return current
 
 def get_league_display_name(league_id: str) -> str:
+    """Get formatted league display name"""
     league_names = {
         'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
         'la_liga': 'La Liga 🇪🇸', 
@@ -384,6 +375,7 @@ def get_league_display_name(league_id: str) -> str:
     return league_names.get(league_id, league_id)
 
 def get_league_badge(league_id: str) -> str:
+    """Get CSS class for league badge"""
     league_classes = {
         'premier_league': 'premier-league',
         'la_liga': 'la-liga',
@@ -399,6 +391,7 @@ def get_league_badge(league_id: str) -> str:
     return league_classes.get(league_id, 'premier-league')
 
 def get_context_emoji(context: str) -> str:
+    """Get emoji for match context"""
     context_emojis = {
         'home_dominance': '🏠',
         'away_counter': '✈️',
@@ -410,6 +403,7 @@ def get_context_emoji(context: str) -> str:
     return context_emojis.get(context, '⚖️')
 
 def get_context_display_name(context: str) -> str:
+    """Get formatted context display name"""
     context_names = {
         'home_dominance': 'Home Dominance',
         'away_counter': 'Away Counter', 
@@ -421,7 +415,7 @@ def get_context_display_name(context: str) -> str:
     return context_names.get(context, context.replace('_', ' ').title())
 
 def display_professional_league_calibration(predictions: dict, match_data: dict):
-    """NEW: Professional calibration display"""
+    """Display professional calibration dashboard"""
     
     st.markdown("---")
     st.markdown("### 🎯 PROFESSIONAL LEAGUE CALIBRATION")
@@ -546,6 +540,7 @@ def display_professional_league_calibration(predictions: dict, match_data: dict)
     st.plotly_chart(fig, use_container_width=True)
 
 def display_enhanced_predictions(predictions):
+    """Display enhanced predictions with professional features"""
     if not predictions:
         st.error("❌ No enhanced predictions available")
         return
@@ -609,7 +604,6 @@ def display_enhanced_predictions(predictions):
     confidence_score = safe_get(predictions, 'confidence_score') or 0
     data_quality = safe_get(predictions, 'data_quality_score') or 0
     football_iq = safe_get(predictions, 'enhanced_intelligence', 'football_iq_score') or 0
-    calibration_status = safe_get(predictions, 'enhanced_intelligence', 'calibration_status') or 'ENHANCED_PRODUCTION'
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -934,10 +928,11 @@ def display_enhanced_predictions(predictions):
     st.info(summary)
 
 def create_enhanced_input_form():
+    """Create enhanced input form with professional features"""
     st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictor</p>', unsafe_allow_html=True)
     st.markdown('<p class="professional-subheader">Professional League-Aware Calibration with Dynamic Context Bonuses</p>', unsafe_allow_html=True)
     
-    # Professional mode toggle
+    # Professional mode toggle in sidebar
     professional_mode = st.sidebar.checkbox(
         "🎯 PROFESSIONAL LEAGUE MODE", 
         value=True,
@@ -1229,6 +1224,8 @@ def create_enhanced_input_form():
     return None, None
 
 def main():
+    """Main application function"""
+    # Initialize session state
     if 'enhanced_predictions' not in st.session_state:
         st.session_state.enhanced_predictions = None
     
@@ -1238,6 +1235,7 @@ def main():
     if 'match_data' not in st.session_state:
         st.session_state.match_data = None
     
+    # Display existing predictions if available
     if st.session_state.enhanced_predictions:
         display_enhanced_predictions(st.session_state.enhanced_predictions)
         
@@ -1287,6 +1285,7 @@ def main():
                 - Professional Stake: **${professional_stake:.2f}** ({(professional_stake/base_bankroll)*100:.1f}% of bankroll)
                 """)
         
+        # Navigation buttons
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
         
@@ -1339,6 +1338,7 @@ def main():
         
         return
     
+    # Get new match data and generate predictions
     match_data, mc_iterations = create_enhanced_input_form()
     
     if match_data:

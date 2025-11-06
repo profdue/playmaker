@@ -1,4 +1,4 @@
-# streamlit_app.py - COMPLETE ENHANCED CHAMPIONSHIP PREDICTOR
+# streamlit_app.py - COMPLETE ENHANCED PROFESSIONAL PREDICTOR
 import streamlit as st
 st.cache_resource.clear()
 import pandas as pd
@@ -9,7 +9,7 @@ from typing import Dict, Any
 from datetime import datetime
 
 try:
-    from prediction_engine import ApexEnhancedEngine, EnhancedTeamTierCalibrator
+    from prediction_engine import ApexEnhancedEngine, EnhancedTeamTierCalibrator, ProfessionalLeagueCalibrator
 except ImportError as e:
     st.error(f"❌ Could not import prediction_engine: {str(e)}")
     st.info("💡 Make sure prediction_engine.py is in the same directory")
@@ -30,7 +30,7 @@ LEAGUE_PARAMS = {
 }
 
 st.set_page_config(
-    page_title="🎯 Enhanced Championship Football Predictor",
+    page_title="🎯 Enhanced Professional Football Predictor",
     page_icon="⚽", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -323,6 +323,33 @@ st.markdown("""
         font-size: 1.1rem;
         border: 3px solid #FFD700;
     }
+    
+    .pro-mode-active {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        text-align: center;
+        font-weight: bold;
+        border: 3px solid #FFD700;
+    }
+    
+    .league-intelligence-panel {
+        background: #f8f9fa;
+        border-left: 5px solid #667eea;
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+    
+    .calibration-dashboard {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -393,312 +420,141 @@ def get_context_display_name(context: str) -> str:
     }
     return context_names.get(context, context.replace('_', ' ').title())
 
-def display_enhanced_championship_banner():
-    st.markdown("""
-    <div class="enhanced-banner">
-        🎯 ENHANCED CHAMPIONSHIP CALIBRATION ACTIVE • HOME ADVANTAGE BOOST • AWAY SCORING DETECTION • CONTEXT-AWARE CONFIDENCE
-    </div>
-    """, unsafe_allow_html=True)
-
-def display_enhanced_championship_architecture():
-    with st.expander("🏗️ ENHANCED CHAMPIONSHIP SYSTEM ARCHITECTURE", expanded=True):
-        st.markdown("""
-        ### 🎯 ENHANCED CHAMPIONSHIP PREDICTION ENGINE
-        
-        **Championship-Specific Enhancements:**
-        - **🏠 Home Advantage Boost**: 25% home advantage multiplier (was 15%)
-        - **✈️ Away Scoring Detection**: Automatic BTTS No trigger for poor away scorers
-        - **📊 Recent Form Weighting**: 35% weight on recent home/away form (was 25%)
-        - **🎯 Enhanced Context Confidence**: Form-based confidence scoring
-        - **⚽ Reduced BTTS Baseline**: 48% BTTS rate (was 51%)
-        - **📉 Lower Goal Expectations**: 2.5 avg goals (was 2.6)
-        
-        **Key Championship Fixes:**
-        - Home advantage now properly overrides team reputation
-        - Away scoring droughts correctly trigger defensive contexts  
-        - Recent form weighted more heavily than season-long tiers
-        - Better detection of low-scoring Championship patterns
-        - Enhanced home dominance detection with form support
-        """)
-
-def create_enhanced_input_form():
-    st.markdown('<p class="professional-header">🎯 Enhanced Championship Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="professional-subheader">Championship-Specific Calibration with Enhanced Home Advantage Detection</p>', unsafe_allow_html=True)
+def display_professional_league_calibration(predictions: dict, match_data: dict):
+    """NEW: Professional calibration display"""
     
-    display_enhanced_championship_banner()
-    display_enhanced_championship_architecture()
+    st.markdown("---")
+    st.markdown("### 🎯 PROFESSIONAL LEAGUE CALIBRATION")
     
-    st.markdown("### 🌍 Enhanced League Selection")
-    league_options = {
-        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿 *ENHANCED*',
-        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-        'la_liga': 'La Liga 🇪🇸',
-        'serie_a': 'Serie A 🇮🇹', 
-        'bundesliga': 'Bundesliga 🇩🇪',
-        'ligue_1': 'Ligue 1 🇫🇷',
-        'liga_portugal': 'Liga Portugal 🇵🇹',
-        'brasileirao': 'Brasileirão 🇧🇷',
-        'liga_mx': 'Liga MX 🇲🇽',
-        'eredivisie': 'Eredivisie 🇳🇱'
-    }
+    # Initialize calibrator
+    calibrator = ProfessionalLeagueCalibrator()
     
-    selected_league = st.selectbox(
-        "Select League",
-        options=list(league_options.keys()),
-        format_func=lambda x: league_options[x],
-        index=0,
-        key="enhanced_league_selection"
+    # Get calibration data
+    raw_confidence = predictions.get('confidence_score', 0) / 100
+    context = predictions.get('match_context', 'balanced')
+    league = match_data.get('league', 'premier_league')
+    
+    calibration_result = calibrator.get_professional_confidence(
+        raw_confidence, context, league
     )
     
-    league_badge_class = get_league_badge(selected_league)
-    league_display_name = get_league_display_name(selected_league)
-    st.markdown(f'<span class="professional-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
+    # Display calibration dashboard
+    col1, col2, col3, col4 = st.columns(4)
     
-    if selected_league == 'championship':
-        st.markdown('<span class="championship-feature">🎯 ENHANCED CHAMPIONSHIP MODE ACTIVE</span>', unsafe_allow_html=True)
+    with col1:
+        st.metric("📊 Raw Confidence", f"{calibration_result['raw_confidence']*100:.1f}%")
     
-    tab1, tab2, tab3 = st.tabs(["🏠 Enhanced Data", "💰 Market Data", "⚙️ Enhanced Settings"])
-
-    with tab1:
-        st.markdown("### 🎯 Enhanced Football Data")
-        
-        calibrator = EnhancedTeamTierCalibrator()
-        league_teams = calibrator.get_league_teams(selected_league)
-        
-        if not league_teams:
-            st.error(f"❌ No teams found for {league_display_name}")
-            return None, None
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("🏠 Home Team")
-            home_team = st.selectbox(
-                "Team Name", 
-                options=league_teams,
-                index=league_teams.index('Charlton Athletic') if 'Charlton Athletic' in league_teams else min(5, len(league_teams) - 1),
-                key="enhanced_home_team"
-            )
-            
-            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="enhanced_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="enhanced_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=6, key="enhanced_home_goals_home")
-            
-        with col2:
-            st.subheader("✈️ Away Team")
-            away_team = st.selectbox(
-                "Team Name",
-                options=league_teams,
-                index=league_teams.index('West Brom') if 'West Brom' in league_teams else 0,
-                key="enhanced_away_team"
-            )
-            
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=4, key="enhanced_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="enhanced_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=1, key="enhanced_away_goals_away")
-        
-        home_tier = calibrator.get_team_tier(home_team, selected_league)
-        away_tier = calibrator.get_team_tier(away_team, selected_league)
-        
-        st.markdown(f"""
-        **Enhanced Team Assessment:** 
-        <span class="professional-tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
-        <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
-        """, unsafe_allow_html=True)
-        
-        # Show Championship-specific insights
-        if selected_league == 'championship':
-            if home_goals_home >= 5:
-                st.success(f"🏠 **Strong Home Form**: {home_team} scoring {home_goals_home} goals in last 3 home games")
-            if away_goals_away <= 1:
-                st.warning(f"✈️ **Away Scoring Issues**: {away_team} only {away_goals_away} goal(s) in last 3 away games")
-        
-        with st.expander("📊 Enhanced Head-to-Head Analysis"):
-            h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
-            with h2h_col1:
-                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="enhanced_h2h_matches")
-                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=0, key="enhanced_h2h_home_wins")
-            with h2h_col2:
-                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="enhanced_h2h_away_wins")
-                h2h_draws = st.number_input("Draws", min_value=0, value=3, key="enhanced_h2h_draws")
-            with h2h_col3:
-                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=7, key="enhanced_h2h_home_goals")
-                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=9, key="enhanced_h2h_away_goals")
-
-        with st.expander("📈 Enhanced Form Analysis"):
-            st.info("Enhanced form points: Win=3, Draw=1, Loss=0 (Recent form weighted 35% in Championship)")
-            form_col1, form_col2 = st.columns(2)
-            with form_col1:
-                st.write(f"**{home_team} Last 6 Matches**")
-                home_form = st.multiselect(
-                    f"{home_team} Recent Results",
-                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Draw (1 pt)"],
-                    key="enhanced_home_form"
-                )
-            with form_col2:
-                st.write(f"**{away_team} Last 6 Matches**")
-                away_form = st.multiselect(
-                    f"{away_team} Recent Results", 
-                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
-                    default=["Draw (1 pt)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)"],
-                    key="enhanced_away_form"
-                )
-
-    with tab2:
-        st.markdown("### 💰 Enhanced Market Data") 
-        
-        odds_col1, odds_col2, odds_col3 = st.columns(3)
-        
-        with odds_col1:
-            st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.50, step=0.01, key="enhanced_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=2.95, step=0.01, key="enhanced_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.85, step=0.01, key="enhanced_away_odds")
-        
-        with odds_col2:
-            st.write("**Over/Under Markets**")
-            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="enhanced_over_15_odds")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.63, step=0.01, key="enhanced_over_25_odds")
-            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="enhanced_over_35_odds")
-        
-        with odds_col3:
-            st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.10, step=0.01, key="enhanced_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.67, step=0.01, key="enhanced_btts_no_odds")
-
-    with tab3:
-        st.markdown("### ⚙️ Enhanced Configuration")
-        
-        model_col1, model_col2 = st.columns(2)
-        
-        with model_col1:
-            st.write("**Enhanced Team Context**")
-            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="enhanced_home_injuries")
-            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="enhanced_away_injuries")
-            
-            home_absence_impact = st.select_slider(
-                "Home Team Absence Impact",
-                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Regular Starter",
-                key="enhanced_home_absence_impact"
-            )
-            away_absence_impact = st.select_slider(
-                "Away Team Absence Impact",
-                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
-                value="Regular Starter",
-                key="enhanced_away_absence_impact"
-            )
-            
-        with model_col2:
-            st.write("**Enhanced Motivation Factors**")
-            home_motivation = st.select_slider(
-                "Home Team Motivation",
-                options=["Low", "Normal", "High", "Very High"],
-                value="Normal",
-                key="enhanced_home_motivation"
-            )
-            away_motivation = st.select_slider(
-                "Away Team Motivation", 
-                options=["Low", "Normal", "High", "Very High"],
-                value="Normal", 
-                key="enhanced_away_motivation"
-            )
-            
-            st.write("**Enhanced Simulation**")
-            mc_iterations = st.select_slider(
-                "Monte Carlo Iterations",
-                options=[10000, 25000, 50000],
-                value=25000,
-                key="enhanced_mc_iterations"
-            )
-            
-            bankroll = st.number_input("Enhanced Bankroll ($)", min_value=500, value=1000, step=100, key="enhanced_bankroll")
-            kelly_fraction = st.slider("Enhanced Kelly Fraction", 0.1, 0.3, 0.2, key="enhanced_kelly_fraction")
-
-    submitted = st.button("🎯 GENERATE ENHANCED CHAMPIONSHIP ANALYSIS", type="primary", use_container_width=True)
+    with col2:
+        adjustment_pct = calibration_result['league_adjusted'] - calibration_result['raw_confidence']
+        st.metric("🎯 League Adjusted", 
+                 f"{calibration_result['league_adjusted']*100:.1f}%",
+                 f"{adjustment_pct*100:+.1f}%")
     
-    if submitted:
-        if not home_team or not away_team:
-            st.error("❌ Please enter both team names")
-            return None, None
-        
-        if home_team == away_team:
-            st.error("❌ Home and away teams cannot be the same")
-            return None, None
-        
-        form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
-        home_form_points = [form_map[result] for result in home_form]
-        away_form_points = [form_map[result] for result in away_form]
-        
-        motivation_map = {"Low": "Low", "Normal": "Normal", "High": "High", "Very High": "Very High"}
-        
-        absence_impact_map = {
-            "Rotation Player": 1,
-            "Regular Starter": 2,
-            "Key Player": 3, 
-            "Star Player": 4,
-            "Multiple Key Players": 5
-        }
-        
-        market_odds = {
-            '1x2 Home': home_odds,
-            '1x2 Draw': draw_odds,
-            '1x2 Away': away_odds,
-            'Over 1.5 Goals': over_15_odds,
-            'Over 2.5 Goals': over_25_odds,
-            'Over 3.5 Goals': over_35_odds,
-            'BTTS Yes': btts_yes_odds,
-            'BTTS No': btts_no_odds,
-        }
-        
-        match_data = {
-            'home_team': home_team,
-            'away_team': away_team,
-            'league': selected_league,
-            'home_goals': home_goals,
-            'away_goals': away_goals,
-            'home_conceded': home_conceded,
-            'away_conceded': away_conceded,
-            'home_goals_home': home_goals_home,
-            'away_goals_away': away_goals_away,
-            'home_form': home_form_points,
-            'away_form': away_form_points,
-            'h2h_data': {
-                'matches': h2h_matches,
-                'home_wins': h2h_home_wins,
-                'away_wins': h2h_away_wins,
-                'draws': h2h_draws,
-                'home_goals': h2h_home_goals,
-                'away_goals': h2h_away_goals
-            },
-            'injuries': {
-                'home': absence_impact_map[home_absence_impact],
-                'away': absence_impact_map[away_absence_impact]
-            },
-            'motivation': {
-                'home': motivation_map[home_motivation],
-                'away': motivation_map[away_motivation]
-            },
-            'market_odds': market_odds,
-            'bankroll': bankroll,
-            'kelly_fraction': kelly_fraction
-        }
-        
-        return match_data, mc_iterations
+    with col3:
+        st.metric("⚡ Professional Final", f"{calibration_result['final_professional']*100:.1f}%")
     
-    return None, None
+    with col4:
+        st.metric("📉 Volatility Multiplier", f"{calibration_result['volatility_multiplier']:.1f}x")
+    
+    # League context insights
+    st.markdown("#### 🧠 League Intelligence")
+    preferred_contexts = calibration_result['preferred_contexts']
+    context_display = [get_context_display_name(ctx) for ctx in preferred_contexts]
+    
+    if context in preferred_contexts or 'all' in preferred_contexts:
+        st.success(f"✅ **Context Alignment**: {get_context_display_name(context)} matches {league.replace('_', ' ').title()} style")
+    else:
+        st.warning(f"⚠️ **Context Caution**: {get_context_display_name(context)} less reliable in {league.replace('_', ' ').title()}")
+    
+    st.info(f"**Preferred Contexts for {league.replace('_', ' ').title()}**: {', '.join(context_display)}")
+    
+    # Professional betting recommendations
+    st.markdown("#### 💰 Professional Betting Advice")
+    
+    # Calculate professional stakes
+    base_bankroll = match_data.get('bankroll', 1000)
+    base_stake = base_bankroll * 0.02  # 2% base
+    
+    professional_stake = calibrator.calculate_professional_stake(
+        calibration_result['final_professional'], base_stake, league, 'protected_single'
+    )
+    
+    stake_percentage = (professional_stake / base_bankroll) * 100
+    
+    st.metric("🎯 Recommended Stake", f"${professional_stake:.2f}", f"{stake_percentage:.1f}% of bankroll")
+    
+    # Edge verification for key markets
+    st.markdown("##### 📈 Edge Verification")
+    
+    market_odds = match_data.get('market_odds', {})
+    probabilities = predictions.get('probabilities', {})
+    
+    edge_cols = st.columns(3)
+    
+    with edge_cols[0]:
+        home_win_prob = probabilities.get('match_outcomes', {}).get('home_win', 0) / 100
+        home_odds = market_odds.get('1x2 Home', 2.5)
+        home_edge = home_win_prob - (1 / home_odds)
+        should_bet_home = calibrator.should_place_bet(home_win_prob, home_odds, league)
+        
+        st.metric("Home Win Edge", f"{home_edge*100:+.1f}%", 
+                 "✅ BET" if should_bet_home else "❌ PASS")
+    
+    with edge_cols[1]:
+        btts_no_prob = probabilities.get('both_teams_score', {}).get('no', 0) / 100
+        btts_no_odds = market_odds.get('BTTS No', 1.67)
+        btts_edge = btts_no_prob - (1 / btts_no_odds)
+        should_bet_btts = calibrator.should_place_bet(btts_no_prob, btts_no_odds, league)
+        
+        st.metric("BTTS No Edge", f"{btts_edge*100:+.1f}%",
+                 "✅ BET" if should_bet_btts else "❌ PASS")
+    
+    with edge_cols[2]:
+        under_prob = probabilities.get('over_under', {}).get('under_25', 0) / 100
+        under_odds = market_odds.get('Under 2.5 Goals', 1.5)
+        under_edge = under_prob - (1 / under_odds)
+        should_bet_under = calibrator.should_place_bet(under_prob, under_odds, league)
+        
+        st.metric("Under 2.5 Edge", f"{under_edge*100:+.1f}%",
+                 "✅ BET" if should_bet_under else "❌ PASS")
+    
+    # Visual calibration diagnostic
+    st.markdown("##### 📊 Calibration Diagnostic")
+    
+    # Create confidence comparison chart
+    confidence_data = {
+        'Metric': ['Raw Model', 'League Adjusted', 'Professional Final'],
+        'Confidence': [
+            calibration_result['raw_confidence'] * 100,
+            calibration_result['league_adjusted'] * 100, 
+            calibration_result['final_professional'] * 100
+        ]
+    }
+    
+    fig = go.Figure(data=[
+        go.Bar(name='Confidence Levels', x=confidence_data['Metric'], 
+               y=confidence_data['Confidence'],
+               marker_color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
+    ])
+    
+    fig.update_layout(
+        title="Professional Confidence Calibration",
+        yaxis_title="Confidence %",
+        yaxis_range=[0, 100]
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
 
 def display_enhanced_predictions(predictions):
     if not predictions:
         st.error("❌ No enhanced predictions available")
         return
         
-    st.markdown('<p class="professional-header">🎯 Enhanced Championship Football Predictions</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictions</p>', unsafe_allow_html=True)
     
-    # Enhanced Championship header
-    if predictions.get('league') == 'championship':
-        st.markdown('<div class="professional-system-card"><h3>🟢 ENHANCED CHAMPIONSHIP CALIBRATION ACTIVE</h3>Home Advantage Boost + Away Scoring Detection + Recent Form Weighting</div>', unsafe_allow_html=True)
+    # Professional mode header
+    if predictions.get('professional_calibration'):
+        st.markdown('<div class="pro-mode-active"><h3>🟢 PROFESSIONAL LEAGUE MODE ACTIVE</h3>League-Aware Calibration • Dynamic Context Bonuses • Volatility-Adjusted Staking</div>', unsafe_allow_html=True)
     
     team_tiers = safe_get(predictions, 'team_tiers') or {}
     home_tier = team_tiers.get('home', 'MEDIUM')
@@ -722,6 +578,10 @@ def display_enhanced_predictions(predictions):
     context_emoji = get_context_emoji(primary_context)
     context_display = get_context_display_name(primary_context)
     
+    # Professional calibration data
+    pro_calibration = safe_get(predictions, 'professional_calibration') or {}
+    final_pro_confidence = pro_calibration.get('final_professional', 0) * 100
+    
     st.markdown(f'''
     <div style="text-align: center; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">
         {predictions.get("match", "Unknown Match")} 
@@ -732,6 +592,7 @@ def display_enhanced_predictions(predictions):
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="professional-badge {league_badge_class}">{league_display_name}</span>
         <span class="production-feature">{context_emoji} {context_display}</span>
+        <span class="production-feature">🎯 Pro: {final_pro_confidence:.1f}%</span>
         {f'<span class="championship-feature">🏠 Home Advantage</span>' if narrative.get('home_advantage_amplified') else ''}
         {f'<span class="championship-feature">✈️ Away Scoring Issues</span>' if narrative.get('away_scoring_issues') else ''}
     </div>
@@ -759,9 +620,9 @@ def display_enhanced_predictions(predictions):
     with col3:
         st.metric("Enhanced Context", f"{context_emoji} {context_display}")
     with col4:
-        st.metric("Enhanced IQ", f"{football_iq:.1f}/100")
+        st.metric("Pro Confidence", f"{final_pro_confidence:.1f}%")
     
-    # Enhanced Championship features display
+    # League-specific features display
     if league == 'championship':
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -1038,7 +899,10 @@ def display_enhanced_predictions(predictions):
     </div>
     ''', unsafe_allow_html=True)
     
-    # Enhanced Championship insights
+    # Professional calibration display
+    display_professional_league_calibration(predictions, match_data)
+    
+    # League-specific insights
     if league == 'championship':
         with st.expander("🔍 Enhanced Championship Insights"):
             st.markdown("""
@@ -1069,6 +933,301 @@ def display_enhanced_predictions(predictions):
     summary = safe_get(predictions, 'summary') or "No enhanced summary available."
     st.info(summary)
 
+def create_enhanced_input_form():
+    st.markdown('<p class="professional-header">🎯 Enhanced Professional Football Predictor</p>', unsafe_allow_html=True)
+    st.markdown('<p class="professional-subheader">Professional League-Aware Calibration with Dynamic Context Bonuses</p>', unsafe_allow_html=True)
+    
+    # Professional mode toggle
+    professional_mode = st.sidebar.checkbox(
+        "🎯 PROFESSIONAL LEAGUE MODE", 
+        value=True,
+        help="Apply league-specific calibration, volatility adjustments, and dynamic context bonuses"
+    )
+    
+    # League intelligence in sidebar
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🌍 League Intelligence")
+    
+    calibrator = ProfessionalLeagueCalibrator()
+    
+    league_options = {
+        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿 *ENHANCED*',
+        'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        'la_liga': 'La Liga 🇪🇸',
+        'serie_a': 'Serie A 🇮🇹', 
+        'bundesliga': 'Bundesliga 🇩🇪',
+        'ligue_1': 'Ligue 1 🇫🇷',
+        'liga_portugal': 'Liga Portugal 🇵🇹',
+        'brasileirao': 'Brasileirão 🇧🇷',
+        'liga_mx': 'Liga MX 🇲🇽',
+        'eredivisie': 'Eredivisie 🇳🇱'
+    }
+    
+    selected_league = st.selectbox(
+        "Select League",
+        options=list(league_options.keys()),
+        format_func=lambda x: league_options[x],
+        index=0,
+        key="enhanced_league_selection"
+    )
+    
+    # Display league intelligence
+    league_analysis = calibrator.get_league_analysis(selected_league)
+    
+    st.sidebar.markdown(f'''
+    <div class="league-intelligence-panel">
+        <h4>🎯 {league_analysis['league_name']}</h4>
+        <strong>Volatility:</strong> {league_analysis['volatility'].upper()}<br>
+        <strong>Adjustment:</strong> {league_analysis['adjustment']*100:+.1f}%<br>
+        <strong>Min Edge:</strong> {league_analysis['min_edge']*100:.1f}%<br>
+        <strong>Stake Multiplier:</strong> {league_analysis['volatility_multiplier']:.1f}x<br>
+        <strong>Preferred Contexts:</strong><br>
+        {', '.join([get_context_display_name(ctx) for ctx in league_analysis['preferred_contexts']])}
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    league_badge_class = get_league_badge(selected_league)
+    league_display_name = get_league_display_name(selected_league)
+    st.markdown(f'<span class="professional-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
+    
+    if professional_mode:
+        st.markdown('<div class="pro-mode-active">PROFESSIONAL LEAGUE MODE ACTIVE • VOLATILITY-ADJUSTED STAKING • DYNAMIC CONTEXT BONUSES</div>', unsafe_allow_html=True)
+    
+    if selected_league == 'championship':
+        st.markdown('<span class="championship-feature">🎯 ENHANCED CHAMPIONSHIP MODE ACTIVE</span>', unsafe_allow_html=True)
+    
+    tab1, tab2, tab3 = st.tabs(["🏠 Enhanced Data", "💰 Market Data", "⚙️ Professional Settings"])
+
+    with tab1:
+        st.markdown("### 🎯 Enhanced Football Data")
+        
+        calibrator = EnhancedTeamTierCalibrator()
+        league_teams = calibrator.get_league_teams(selected_league)
+        
+        if not league_teams:
+            st.error(f"❌ No teams found for {league_display_name}")
+            return None, None
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🏠 Home Team")
+            home_team = st.selectbox(
+                "Team Name", 
+                options=league_teams,
+                index=league_teams.index('Charlton Athletic') if 'Charlton Athletic' in league_teams else min(5, len(league_teams) - 1),
+                key="enhanced_home_team"
+            )
+            
+            home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="enhanced_home_goals")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="enhanced_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=6, key="enhanced_home_goals_home")
+            
+        with col2:
+            st.subheader("✈️ Away Team")
+            away_team = st.selectbox(
+                "Team Name",
+                options=league_teams,
+                index=league_teams.index('West Brom') if 'West Brom' in league_teams else 0,
+                key="enhanced_away_team"
+            )
+            
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=4, key="enhanced_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="enhanced_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=1, key="enhanced_away_goals_away")
+        
+        home_tier = calibrator.get_team_tier(home_team, selected_league)
+        away_tier = calibrator.get_team_tier(away_team, selected_league)
+        
+        st.markdown(f"""
+        **Enhanced Team Assessment:** 
+        <span class="professional-tier-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
+        <span class="professional-tier-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
+        """, unsafe_allow_html=True)
+        
+        # Show league-specific insights
+        if selected_league == 'championship':
+            if home_goals_home >= 5:
+                st.success(f"🏠 **Strong Home Form**: {home_team} scoring {home_goals_home} goals in last 3 home games")
+            if away_goals_away <= 1:
+                st.warning(f"✈️ **Away Scoring Issues**: {away_team} only {away_goals_away} goal(s) in last 3 away games")
+        
+        with st.expander("📊 Enhanced Head-to-Head Analysis"):
+            h2h_col1, h2h_col2, h2h_col3 = st.columns(3)
+            with h2h_col1:
+                h2h_matches = st.number_input("Total H2H Matches", min_value=0, value=4, key="enhanced_h2h_matches")
+                h2h_home_wins = st.number_input("Home Wins", min_value=0, value=0, key="enhanced_h2h_home_wins")
+            with h2h_col2:
+                h2h_away_wins = st.number_input("Away Wins", min_value=0, value=1, key="enhanced_h2h_away_wins")
+                h2h_draws = st.number_input("Draws", min_value=0, value=3, key="enhanced_h2h_draws")
+            with h2h_col3:
+                h2h_home_goals = st.number_input("Home Goals in H2H", min_value=0, value=7, key="enhanced_h2h_home_goals")
+                h2h_away_goals = st.number_input("Away Goals in H2H", min_value=0, value=9, key="enhanced_h2h_away_goals")
+
+        with st.expander("📈 Enhanced Form Analysis"):
+            st.info("Enhanced form points: Win=3, Draw=1, Loss=0 (Recent form weighted 35% in Championship)")
+            form_col1, form_col2 = st.columns(2)
+            with form_col1:
+                st.write(f"**{home_team} Last 6 Matches**")
+                home_form = st.multiselect(
+                    f"{home_team} Recent Results",
+                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
+                    default=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)", "Draw (1 pt)"],
+                    key="enhanced_home_form"
+                )
+            with form_col2:
+                st.write(f"**{away_team} Last 6 Matches**")
+                away_form = st.multiselect(
+                    f"{away_team} Recent Results", 
+                    options=["Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)"],
+                    default=["Draw (1 pt)", "Win (3 pts)", "Draw (1 pt)", "Loss (0 pts)", "Win (3 pts)", "Draw (1 pt)"],
+                    key="enhanced_away_form"
+                )
+
+    with tab2:
+        st.markdown("### 💰 Enhanced Market Data") 
+        
+        odds_col1, odds_col2, odds_col3 = st.columns(3)
+        
+        with odds_col1:
+            st.write("**1X2 Market**")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.50, step=0.01, key="enhanced_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=2.95, step=0.01, key="enhanced_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.85, step=0.01, key="enhanced_away_odds")
+        
+        with odds_col2:
+            st.write("**Over/Under Markets**")
+            over_15_odds = st.number_input("Over 1.5 Goals", min_value=1.01, value=1.45, step=0.01, key="enhanced_over_15_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.63, step=0.01, key="enhanced_over_25_odds")
+            over_35_odds = st.number_input("Over 3.5 Goals", min_value=1.01, value=3.50, step=0.01, key="enhanced_over_35_odds")
+        
+        with odds_col3:
+            st.write("**Both Teams to Score**")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.10, step=0.01, key="enhanced_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.67, step=0.01, key="enhanced_btts_no_odds")
+
+    with tab3:
+        st.markdown("### ⚙️ Professional Configuration")
+        
+        model_col1, model_col2 = st.columns(2)
+        
+        with model_col1:
+            st.write("**Enhanced Team Context**")
+            home_injuries = st.slider("Home Key Absences", 0, 5, 2, key="enhanced_home_injuries")
+            away_injuries = st.slider("Away Key Absences", 0, 5, 2, key="enhanced_away_injuries")
+            
+            home_absence_impact = st.select_slider(
+                "Home Team Absence Impact",
+                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
+                value="Regular Starter",
+                key="enhanced_home_absence_impact"
+            )
+            away_absence_impact = st.select_slider(
+                "Away Team Absence Impact",
+                options=["Rotation Player", "Regular Starter", "Key Player", "Star Player", "Multiple Key Players"],
+                value="Regular Starter",
+                key="enhanced_away_absence_impact"
+            )
+            
+        with model_col2:
+            st.write("**Enhanced Motivation Factors**")
+            home_motivation = st.select_slider(
+                "Home Team Motivation",
+                options=["Low", "Normal", "High", "Very High"],
+                value="Normal",
+                key="enhanced_home_motivation"
+            )
+            away_motivation = st.select_slider(
+                "Away Team Motivation", 
+                options=["Low", "Normal", "High", "Very High"],
+                value="Normal", 
+                key="enhanced_away_motivation"
+            )
+            
+            st.write("**Enhanced Simulation**")
+            mc_iterations = st.select_slider(
+                "Monte Carlo Iterations",
+                options=[10000, 25000, 50000],
+                value=25000,
+                key="enhanced_mc_iterations"
+            )
+            
+            bankroll = st.number_input("Enhanced Bankroll ($)", min_value=500, value=1000, step=100, key="enhanced_bankroll")
+            kelly_fraction = st.slider("Enhanced Kelly Fraction", 0.1, 0.3, 0.2, key="enhanced_kelly_fraction")
+
+    submitted = st.button("🎯 GENERATE PROFESSIONAL ANALYSIS", type="primary", use_container_width=True)
+    
+    if submitted:
+        if not home_team or not away_team:
+            st.error("❌ Please enter both team names")
+            return None, None
+        
+        if home_team == away_team:
+            st.error("❌ Home and away teams cannot be the same")
+            return None, None
+        
+        form_map = {"Win (3 pts)": 3, "Draw (1 pt)": 1, "Loss (0 pts)": 0}
+        home_form_points = [form_map[result] for result in home_form]
+        away_form_points = [form_map[result] for result in away_form]
+        
+        motivation_map = {"Low": "Low", "Normal": "Normal", "High": "High", "Very High": "Very High"}
+        
+        absence_impact_map = {
+            "Rotation Player": 1,
+            "Regular Starter": 2,
+            "Key Player": 3, 
+            "Star Player": 4,
+            "Multiple Key Players": 5
+        }
+        
+        market_odds = {
+            '1x2 Home': home_odds,
+            '1x2 Draw': draw_odds,
+            '1x2 Away': away_odds,
+            'Over 1.5 Goals': over_15_odds,
+            'Over 2.5 Goals': over_25_odds,
+            'Over 3.5 Goals': over_35_odds,
+            'BTTS Yes': btts_yes_odds,
+            'BTTS No': btts_no_odds,
+        }
+        
+        match_data = {
+            'home_team': home_team,
+            'away_team': away_team,
+            'league': selected_league,
+            'home_goals': home_goals,
+            'away_goals': away_goals,
+            'home_conceded': home_conceded,
+            'away_conceded': away_conceded,
+            'home_goals_home': home_goals_home,
+            'away_goals_away': away_goals_away,
+            'home_form': home_form_points,
+            'away_form': away_form_points,
+            'h2h_data': {
+                'matches': h2h_matches,
+                'home_wins': h2h_home_wins,
+                'away_wins': h2h_away_wins,
+                'draws': h2h_draws,
+                'home_goals': h2h_home_goals,
+                'away_goals': h2h_away_goals
+            },
+            'injuries': {
+                'home': absence_impact_map[home_absence_impact],
+                'away': absence_impact_map[away_absence_impact]
+            },
+            'motivation': {
+                'home': motivation_map[home_motivation],
+                'away': motivation_map[away_motivation]
+            },
+            'market_odds': market_odds,
+            'bankroll': bankroll,
+            'kelly_fraction': kelly_fraction
+        }
+        
+        return match_data, mc_iterations
+    
+    return None, None
+
 def main():
     if 'enhanced_predictions' not in st.session_state:
         st.session_state.enhanced_predictions = None
@@ -1076,14 +1235,18 @@ def main():
     if 'enhanced_prediction_history' not in st.session_state:
         st.session_state.enhanced_prediction_history = []
     
+    if 'match_data' not in st.session_state:
+        st.session_state.match_data = None
+    
     if st.session_state.enhanced_predictions:
         display_enhanced_predictions(st.session_state.enhanced_predictions)
         
-        # Enhanced Championship analysis
+        # Professional betting analysis
         predictions = st.session_state.enhanced_predictions
-        if predictions.get('league') == 'championship':
-            with st.expander("🎯 Enhanced Championship Betting Analysis"):
+        if predictions.get('professional_calibration'):
+            with st.expander("🎯 Professional Betting Analysis"):
                 narrative = predictions.get('match_narrative', {})
+                pro_cal = predictions.get('professional_calibration', {})
                 
                 if narrative.get('home_advantage_amplified'):
                     st.success("""
@@ -1104,59 +1267,82 @@ def main():
                     - Under 2.5 goals
                     - Home team clean sheet
                     """)
+                
+                # Professional stake calculation
+                base_bankroll = st.session_state.match_data.get('bankroll', 1000) if st.session_state.match_data else 1000
+                base_stake = base_bankroll * 0.02
+                
+                calibrator = ProfessionalLeagueCalibrator()
+                professional_stake = calibrator.calculate_professional_stake(
+                    pro_cal.get('final_professional', 0.7), 
+                    base_stake,
+                    predictions.get('league', 'premier_league'),
+                    'protected_single'
+                )
+                
+                st.info(f"""
+                **💰 Professional Stake Sizing**
+                - Base Stake: ${base_stake:.2f} (2% of bankroll)
+                - Volatility Multiplier: {pro_cal.get('volatility_multiplier', 1.0):.1f}x
+                - Professional Stake: **${professional_stake:.2f}** ({(professional_stake/base_bankroll)*100:.1f}% of bankroll)
+                """)
         
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("🔄 New Enhanced Analysis", use_container_width=True):
+            if st.button("🔄 New Professional Analysis", use_container_width=True):
                 st.session_state.enhanced_predictions = None
+                st.session_state.match_data = None
                 st.rerun()
         
         with col2:
-            if st.button("📊 Enhanced History", use_container_width=True):
+            if st.button("📊 Professional History", use_container_width=True):
                 if st.session_state.enhanced_prediction_history:
-                    st.write("**Enhanced Prediction History:**")
+                    st.write("**Professional Prediction History:**")
                     for i, pred in enumerate(st.session_state.enhanced_prediction_history[-5:]):
-                        with st.expander(f"Enhanced Analysis {i+1}: {pred.get('match', 'Unknown Match')} (IQ: {pred.get('football_iq', 0):.1f})"):
+                        with st.expander(f"Professional Analysis {i+1}: {pred.get('match', 'Unknown Match')} (Pro IQ: {pred.get('football_iq', 0):.1f})"):
                             st.write(f"Date: {pred.get('timestamp', 'N/A')}")
                             st.write(f"League: {get_league_display_name(pred.get('league', 'premier_league'))}")
                             st.write(f"Context: {get_context_display_name(pred.get('primary_context', 'balanced'))}")
                             st.write(f"Expected Goals: Home {pred['expected_goals'].get('home', 0):.2f} - Away {pred['expected_goals'].get('away', 0):.2f}")
                             st.write(f"Team Tiers: {pred.get('team_tiers', {}).get('home', 'N/A')} vs {pred.get('team_tiers', {}).get('away', 'N/A')}")
-                            st.write(f"Enhanced IQ: {pred.get('football_iq', 0):.1f}/100")
-                            st.write(f"Context Confidence: {pred.get('context_confidence', 0)}%")
+                            st.write(f"Professional IQ: {pred.get('football_iq', 0):.1f}/100")
+                            st.write(f"Pro Confidence: {pred.get('pro_confidence', 0):.1f}%")
                 else:
-                    st.info("No enhanced prediction history yet.")
+                    st.info("No professional prediction history yet.")
         
         with col3:
             if st.button("🎯 System Status", use_container_width=True):
-                if st.session_state.enhanced_predictions and st.session_state.enhanced_predictions.get('league') == 'championship':
-                    st.success("""
-                    **Enhanced Championship System Status: OPERATIONAL** 🟢
+                if st.session_state.enhanced_predictions:
+                    league = st.session_state.enhanced_predictions.get('league', 'premier_league')
+                    pro_cal = st.session_state.enhanced_predictions.get('professional_calibration', {})
                     
-                    **Championship Features Active:**
-                    - ✅ 25% Home Advantage Boost ✅
-                    - ✅ Away Scoring Detection ✅  
-                    - ✅ 35% Recent Form Weighting ✅
-                    - ✅ Enhanced Context Confidence ✅
-                    - ✅ Championship-Specific Calibration ✅
-                    - ✅ Home Advantage Override ✅
-                    - ✅ Away Scoring Drought Triggers ✅
+                    st.success(f"""
+                    **Professional System Status: OPERATIONAL** 🟢
                     
-                    **Model Version:** 2.4.0_championship
-                    **Calibration Level:** ENHANCED_CHAMPIONSHIP
-                    **Last Update:** Championship Logic Active
+                    **Active Features:**
+                    - ✅ League-Aware Calibration ✅
+                    - ✅ Dynamic Context Bonuses ✅  
+                    - ✅ Volatility-Adjusted Staking ✅
+                    - ✅ Professional Confidence Pipeline ✅
+                    - ✅ Edge Verification ✅
+                    - ✅ League Intelligence ✅
+                    
+                    **Current League:** {league.replace('_', ' ').title()}
+                    **Volatility Multiplier:** {pro_cal.get('volatility_multiplier', 1.0):.1f}x
+                    **Model Version:** 3.0.0_professional
+                    **Calibration Level:** PROFESSIONAL_LEAGUE_MODE
                     """)
                 else:
-                    st.info("Enhanced system ready for analysis")
+                    st.info("Professional system ready for analysis")
         
         return
     
     match_data, mc_iterations = create_enhanced_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running enhanced multi-league calibrated analysis..."):
+        with st.spinner("🔍 Running professional multi-league calibrated analysis..."):
             try:
                 predictor = ApexEnhancedEngine(match_data)
                 predictions = predictor.generate_enhanced_predictions(mc_iterations)
@@ -1167,9 +1353,13 @@ def main():
                     predictions['kelly_fraction'] = match_data.get('kelly_fraction', 0.2)
                     
                     st.session_state.enhanced_predictions = predictions
+                    st.session_state.match_data = match_data
                     
                     if 'enhanced_prediction_history' not in st.session_state:
                         st.session_state.enhanced_prediction_history = []
+                    
+                    # Get professional calibration for history
+                    pro_cal = predictions.get('professional_calibration', {})
                     
                     prediction_record = {
                         'timestamp': datetime.now().isoformat(),
@@ -1180,38 +1370,40 @@ def main():
                         'team_tiers': predictions.get('team_tiers', {}),
                         'probabilities': safe_get(predictions, 'probabilities', 'match_outcomes') or {},
                         'football_iq': safe_get(predictions, 'enhanced_intelligence', 'football_iq_score') or 0,
+                        'pro_confidence': pro_cal.get('final_professional', 0) * 100,
                         'context_confidence': safe_get(predictions, 'enhanced_intelligence', 'context_confidence') or 0,
                         'stability_bonus': safe_get(predictions, 'enhanced_intelligence', 'form_stability_bonus') or 0,
-                        'narrative_features': predictions.get('match_narrative', {})
+                        'narrative_features': predictions.get('match_narrative', {}),
+                        'volatility_multiplier': pro_cal.get('volatility_multiplier', 1.0)
                     }
                     
                     st.session_state.enhanced_prediction_history.append(prediction_record)
                     
-                    # Enhanced success message
-                    if predictions.get('league') == 'championship':
+                    # Professional success message
+                    if predictions.get('professional_calibration'):
                         narrative = predictions.get('match_narrative', {})
+                        pro_cal = predictions['professional_calibration']
                         st.success(f"""
-                        ✅ **ENHANCED CHAMPIONSHIP ANALYSIS COMPLETE!**
+                        ✅ **PROFESSIONAL ANALYSIS COMPLETE!**
                         
-                        **Championship Features Activated:**
-                        - 🏠 Home Advantage: {narrative.get('home_advantage_amplified', False)}
-                        - ✈️ Away Scoring: {narrative.get('away_scoring_issues', False)}  
-                        - 🎯 Context Confidence: {predictions['enhanced_intelligence']['context_confidence']:.1f}%
-                        - 📊 Recent Form Weight: 35%
-                        - ⚽ Enhanced Championship Calibration
+                        **Professional Features Activated:**
+                        - 🎯 League Calibration: {pro_cal.get('league_adjusted', 0)*100:.1f}% → {pro_cal.get('final_professional', 0)*100:.1f}%
+                        - 📊 Volatility Multiplier: {pro_cal.get('volatility_multiplier', 1.0):.1f}x
+                        - 🧠 Context Bonus: {pro_cal.get('context_bonus_used', 0)*100:+.1f}%
+                        - 💰 Professional Staking: Active
                         """)
                     else:
-                        st.success("✅ Enhanced analysis complete!")
+                        st.success("✅ Professional analysis complete!")
                     
                     st.rerun()
                 else:
-                    st.error("❌ Failed to generate enhanced predictions")
+                    st.error("❌ Failed to generate professional predictions")
                 
             except Exception as e:
-                st.error(f"❌ Enhanced analysis error: {str(e)}")
+                st.error(f"❌ Professional analysis error: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
-                st.info("💡 Check enhanced input parameters and try again")
+                st.info("💡 Check professional input parameters and try again")
 
 if __name__ == "__main__":
     main()

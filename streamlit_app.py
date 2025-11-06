@@ -235,6 +235,9 @@ def get_league_badge(league_id: str) -> str:
 
 def get_context_display_name(context: str) -> str:
     """Get formatted context display name"""
+    if context is None:
+        return "Balanced Match"
+    
     context_names = {
         'home_dominance': 'Home Dominance',
         'away_counter': 'Away Counter', 
@@ -247,6 +250,9 @@ def get_context_display_name(context: str) -> str:
 
 def get_context_emoji(context: str) -> str:
     """Get emoji for match context"""
+    if context is None:
+        return "⚖️"
+    
     context_emojis = {
         'home_dominance': '🏠',
         'away_counter': '✈️',
@@ -317,7 +323,8 @@ def display_production_predictions(predictions: dict, match_data: dict):
     with col4:
         context = safe_get(predictions, 'match_context', 'balanced')
         context_emoji = get_context_emoji(context)
-        st.metric("🎯 Match Context", f"{context_emoji} {get_context_display_name(context)}")
+        context_display = get_context_display_name(context)
+        st.metric("🎯 Match Context", f"{context_emoji} {context_display}")
     
     # Market probabilities
     st.markdown('<div class="production-section-title">📊 Market Probabilities</div>', unsafe_allow_html=True)
@@ -481,6 +488,9 @@ def create_production_input_form():
     st.markdown('<p class="production-header">🎯 Production Football Predictor</p>', unsafe_allow_html=True)
     st.markdown('<p class="production-subheader">Professional-Grade Analysis with Uncertainty Propagation & Risk Management</p>', unsafe_allow_html=True)
     
+    # Initialize tier calibrator
+    tier_calibrator = EnhancedTeamTierCalibrator()
+    
     # League selection
     league_options = {
         'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
@@ -506,12 +516,12 @@ def create_production_input_form():
     league_display_name = get_league_display_name(selected_league)
     st.markdown(f'<span class="production-badge {league_badge_class}">{league_display_name}</span>', unsafe_allow_html=True)
     
-    # Team selection
-    calibrator = EnhancedTeamTierCalibrator()
-    league_teams = calibrator.team_databases.get(selected_league, {})
+    # Get teams for selected league
+    available_teams = tier_calibrator.get_all_teams_for_league(selected_league)
     
-    if not league_teams:
+    if not available_teams:
         st.error(f"❌ No teams found for {league_display_name}")
+        st.info("Please select a different league or check the team database.")
         return None
     
     tab1, tab2, tab3 = st.tabs(["🏠 Team Data", "💰 Market Data", "⚙️ Risk Settings"])
@@ -525,8 +535,8 @@ def create_production_input_form():
             st.subheader("🏠 Home Team")
             home_team = st.selectbox(
                 "Team Name", 
-                options=list(league_teams.keys()),
-                index=list(league_teams.keys()).index('Charlton Athletic') if 'Charlton Athletic' in league_teams else 0,
+                options=available_teams,
+                index=available_teams.index('Charlton Athletic') if 'Charlton Athletic' in available_teams else 0,
                 key="production_home_team"
             )
             
@@ -538,8 +548,8 @@ def create_production_input_form():
             st.subheader("✈️ Away Team")
             away_team = st.selectbox(
                 "Team Name",
-                options=list(league_teams.keys()),
-                index=list(league_teams.keys()).index('West Brom') if 'West Brom' in league_teams else 1,
+                options=available_teams,
+                index=available_teams.index('West Brom') if 'West Brom' in available_teams else 1,
                 key="production_away_team"
             )
             
@@ -548,8 +558,8 @@ def create_production_input_form():
             away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=1, key="production_away_goals_away")
         
         # Show team tiers
-        home_tier = calibrator.get_team_tier(home_team, selected_league)
-        away_tier = calibrator.get_team_tier(away_team, selected_league)
+        home_tier = tier_calibrator.get_team_tier(home_team, selected_league)
+        away_tier = tier_calibrator.get_team_tier(away_team, selected_league)
         
         st.markdown(f"""
         **Team Quality Assessment:** 

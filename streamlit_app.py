@@ -1,4 +1,4 @@
-# streamlit_app.py - PRODUCTION-READY ENHANCED PREDICTOR
+# streamlit_app.py - PRODUCTION-READY WITH REFINED CONTEXTUAL MODEL
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 import json
 from datetime import datetime
 
-# Import from the production prediction engine
+# Import from the refined prediction engine
 try:
     from prediction_engine import (
         ApexProductionEngine, EnhancedTeamTierCalibrator, 
@@ -16,7 +16,7 @@ try:
     )
 except ImportError as e:
     st.error(f"❌ Import Error: {str(e)}")
-    st.info("💡 Make sure prediction_engine.py is in the same directory and all class names match")
+    st.info("💡 Make sure prediction_engine.py is in the same directory")
     st.stop()
 
 # Clear cache to ensure fresh imports
@@ -156,14 +156,6 @@ st.markdown("""
         border: 1px solid #f44336;
     }
     
-    .stake-recommendation {
-        background: #fff3e0;
-        border-left: 4px solid #FF9800;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-    }
-    
     .production-feature-badge {
         background: #e3f2fd;
         color: #1976d2;
@@ -187,6 +179,18 @@ st.markdown("""
     .tier-strong { background: #DC052D; }
     .tier-medium { background: #FF9800; }
     .tier-weak { background: #666666; }
+    
+    .refined-model-badge {
+        background: linear-gradient(135deg, #FF6B6B, #FFE66D);
+        color: black;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 0.2rem;
+        border: 2px solid #FFD700;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -269,7 +273,7 @@ def get_context_emoji(context: str) -> str:
     return context_emojis.get(context, '⚖️')
 
 def display_production_predictions(predictions: dict, match_data: dict):
-    """Display production-grade predictions"""
+    """Display production-grade predictions with refined model"""
     if not predictions:
         st.error("❌ No production predictions available")
         return
@@ -277,7 +281,7 @@ def display_production_predictions(predictions: dict, match_data: dict):
     st.markdown('<p class="production-header">🎯 Production Football Predictions</p>', unsafe_allow_html=True)
     
     # Production mode header
-    st.markdown('<div class="production-mode-active">🟢 PRODUCTION MODE ACTIVE • REFINED CONTEXTUAL MODEL • 60/40 WEIGHTING • BOOSTED HOME ADVANTAGE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="production-mode-active">🟢 REFINED CONTEXTUAL MODEL ACTIVE • 60/40 HISTORICAL WEIGHTING • BOOSTED HOME ADVANTAGE</div>', unsafe_allow_html=True)
     
     # Basic match info
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -300,10 +304,10 @@ def display_production_predictions(predictions: dict, match_data: dict):
     </div>
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="production-badge {league_badge_class}">{league_display_name}</span>
-        <span class="production-feature-badge">🎯 60/40 Weighting</span>
+        <span class="refined-model-badge">🎯 Refined 60/40 Model</span>
         <span class="production-feature-badge">📊 xG Uncertainty: ±{xg_data.get('home_uncertainty', 0):.2f}</span>
-        {f'<span class="production-feature-badge">🔗 Goal Correlation</span>' if production_metrics.get('goal_correlation_modeled') else ''}
-        {f'<span class="production-feature-badge">🏠 Boosted Home Advantage</span>' if production_metrics.get('boosted_home_advantage') else ''}
+        {f'<span class="production-feature-badge">🚀 1.20x Home Advantage</span>' if production_metrics.get('boosted_home_advantage') else ''}
+        {f'<span class="production-feature-badge">📈 Historical Weighting</span>' if production_metrics.get('60_40_historical_weighting') else ''}
     </div>
     ''', unsafe_allow_html=True)
     
@@ -473,8 +477,8 @@ def display_production_predictions(predictions: dict, match_data: dict):
         <strong>Explanation:</strong> {risk_assessment.get("explanation", "No data available")}<br>
         <strong>Recommendation:</strong> {risk_assessment.get("recommendation", "N/A")}<br>
         <strong>Certainty:</strong> {risk_assessment.get("certainty", "N/A")}<br>
-        <strong>Production Features:</strong><br>
-        {', '.join([f'✅ {feat}' for feat in production_metrics.keys() if production_metrics.get(feat)])}
+        <strong>Refined Model Features:</strong><br>
+        {', '.join([f'✅ {feat.replace("_", " ").title()}' for feat in production_metrics.keys() if production_metrics.get(feat)])}
     </div>
     ''', unsafe_allow_html=True)
     
@@ -490,9 +494,9 @@ def display_production_predictions(predictions: dict, match_data: dict):
     st.info(summary)
 
 def create_production_input_form():
-    """Create production-grade input form"""
+    """Create production-grade input form with refined model"""
     st.markdown('<p class="production-header">🎯 Production Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="production-subheader">Professional-Grade Analysis with Refined Contextual Strength Model & Risk Management</p>', unsafe_allow_html=True)
+    st.markdown('<p class="production-subheader">REFINED CONTEXTUAL STRENGTH MODEL • 60/40 HISTORICAL WEIGHTING • BOOSTED HOME ADVANTAGE</p>', unsafe_allow_html=True)
     
     # Initialize tier calibrator
     tier_calibrator = EnhancedTeamTierCalibrator()
@@ -548,7 +552,6 @@ def create_production_input_form():
             
             home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="production_home_goals")
             home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=10, key="production_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=4, key="production_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
@@ -561,7 +564,6 @@ def create_production_input_form():
             
             away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="production_away_goals")
             away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=4, key="production_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=3, key="production_away_goals_away")
         
         # Show team tiers (display only)
         home_tier = tier_calibrator.get_team_tier(home_team, selected_league)
@@ -573,7 +575,13 @@ def create_production_input_form():
         <span class="production-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
         
-        st.info("💡 **Note**: Team tiers are for contextual strength model. Predictions use 60/40 recent/historical weighting with boosted home advantage.")
+        st.info("""
+        💡 **Refined Model Features:**
+        - **60/40 Historical Weighting**: 60% recent form, 40% historical quality
+        - **Boosted Home Advantage**: 1.20x multiplier for home teams  
+        - **Stronger Away Penalty**: 0.80x multiplier for away teams
+        - **Contextual Strength**: Blends form with established team quality
+        """)
 
     with tab2:
         st.markdown("### 💰 Market Odds")
@@ -608,13 +616,13 @@ def create_production_input_form():
             st.info(f"Max stake: ${bankroll * 0.03:.2f} (3% of bankroll)")
         
         with risk_col2:
-            st.write("**Production Features**")
-            st.checkbox("60/40 Contextual Weighting", value=True, disabled=True)
-            st.checkbox("Boosted Home Advantage", value=True, disabled=True)
-            st.checkbox("xG Uncertainty Propagation", value=True, disabled=True)
-            st.checkbox("Goal Correlation Modeling", value=True, disabled=True)
+            st.write("**Refined Model Features**")
+            st.checkbox("60/40 Historical Weighting", value=True, disabled=True)
+            st.checkbox("1.20x Home Advantage", value=True, disabled=True)
+            st.checkbox("0.80x Away Penalty", value=True, disabled=True)
+            st.checkbox("Contextual Strength Model", value=True, disabled=True)
 
-    submitted = st.button("🎯 RUN PRODUCTION ANALYSIS", type="primary", use_container_width=True)
+    submitted = st.button("🎯 RUN REFINED ANALYSIS", type="primary", use_container_width=True)
     
     if submitted:
         if not home_team or not away_team:
@@ -643,8 +651,6 @@ def create_production_input_form():
             'away_goals': away_goals,
             'home_conceded': home_conceded,
             'away_conceded': away_conceded,
-            'home_goals_home': home_goals_home,
-            'away_goals_away': away_goals_away,
             'market_odds': market_odds,
             'bankroll': bankroll,
             'kelly_fraction': kelly_fraction
@@ -675,27 +681,25 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("🔄 New Production Analysis", use_container_width=True):
+            if st.button("🔄 New Refined Analysis", use_container_width=True):
                 st.session_state.production_predictions = None
                 st.session_state.match_data = None
                 st.rerun()
         
         with col2:
-            if st.button("📊 Production Metrics", use_container_width=True):
+            if st.button("📊 Model Specifications", use_container_width=True):
                 st.success("""
-                **Production System Status: OPERATIONAL** 🟢
+                **REFINED CONTEXTUAL STRENGTH MODEL** 🎯
                 
-                **Active Production Features:**
-                - ✅ 60/40 Contextual Weighting
-                - ✅ Boosted Home Advantage (1.20x)
-                - ✅ xG Uncertainty Propagation
-                - ✅ Bivariate Poisson Goal Correlation  
-                - ✅ Proper Vig Removal
-                - ✅ Risk-Managed Staking
-                - ✅ Market Edge Verification
+                **Core Features:**
+                - ✅ 60/40 Historical Weighting (60% recent, 40% historical)
+                - ✅ 1.20x Home Advantage Multiplier
+                - ✅ 0.80x Away Penalty Multiplier  
+                - ✅ Contextual Strength Blending
+                - ✅ Quality-Aware Predictions
                 
                 **Model Version:** 6.0.0_refined_contextual
-                **Calibration Level:** PRODUCTION_READY
+                **Calibration Level:** PROFESSIONAL_GRADE
                 """)
         
         return
@@ -704,7 +708,7 @@ def main():
     match_data = create_production_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running refined contextual strength analysis..."):
+        with st.spinner("🔍 Running refined contextual analysis with 60/40 historical weighting..."):
             try:
                 engine = ApexProductionEngine(match_data)
                 predictions = engine.generate_production_predictions()
@@ -730,23 +734,22 @@ def main():
                     st.session_state.production_history.append(prediction_record)
                     
                     st.success("""
-                    ✅ **REFINED CONTEXTUAL ANALYSIS COMPLETE!**
+                    ✅ **REFINED ANALYSIS COMPLETE!**
                     
-                    **Production Features Applied:**
-                    - 🎯 60/40 Recent/Historical Weighting
-                    - 🏠 Boosted Home Advantage (1.20x)
-                    - 📊 League-Aware xG Calculation
-                    - 🔗 Goal Correlation Modeling  
-                    - 💰 Proper Vig Removal
-                    - 🛡️ Risk-Managed Staking
+                    **Refined Model Features Applied:**
+                    - 🎯 60/40 Historical Weighting
+                    - 🚀 1.20x Home Advantage
+                    - 📉 0.80x Away Penalty
+                    - 📊 Contextual Strength Blending
+                    - 💰 Professional Risk Management
                     """)
                     
                     st.rerun()
                 else:
-                    st.error("❌ Failed to generate production predictions")
+                    st.error("❌ Failed to generate refined predictions")
                 
             except Exception as e:
-                st.error(f"❌ Production analysis error: {str(e)}")
+                st.error(f"❌ Refined analysis error: {str(e)}")
                 st.info("💡 Check input parameters and try again")
 
 if __name__ == "__main__":

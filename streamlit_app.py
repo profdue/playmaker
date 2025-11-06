@@ -1,4 +1,4 @@
-# streamlit_app.py - PROFESSIONAL MULTI-LEAGUE PREDICTOR
+# streamlit_app.py - PROFESSIONAL MULTI-LEAGUE PREDICTOR (FIXED IMPORT)
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -16,13 +16,13 @@ sys.path.append(os.path.dirname(__file__))
 
 try:
     from prediction_engine import (
-        MultiLeaguePredictionEngine, 
+        ProfessionalPredictionEngine,  # CHANGED: This is the correct class name
         LEAGUE_PARAMS,
         VOLATILITY_MULTIPLIERS
     )
 except ImportError as e:
     st.error(f"❌ Import Error: {str(e)}")
-    st.info("💡 Make sure prediction_engine.py is in the same directory")
+    st.info("💡 Make sure prediction_engine.py is in the same directory and contains ProfessionalPredictionEngine class")
     st.stop()
 
 # Clear cache for fresh imports
@@ -846,8 +846,8 @@ def main():
         if match_data:
             with st.spinner("🔍 Running professional multi-league analysis..."):
                 try:
-                    # Generate professional predictions
-                    engine = MultiLeaguePredictionEngine(match_data)
+                    # Generate professional predictions - USING CORRECT CLASS NAME
+                    engine = ProfessionalPredictionEngine(match_data)  # CHANGED: This is the correct class
                     results = engine.generate_predictions()
                     
                     # Store in session state

@@ -49,6 +49,41 @@ LEAGUE_PARAMS = {
         'avg_goals': 1.25,
         'home_advantage': 1.18
     },
+    'championship': {
+        'away_penalty': 0.75,
+        'min_edge': 0.15,
+        'volatility_multiplier': 0.6,
+        'avg_goals': 1.2,
+        'home_advantage': 1.25
+    },
+    'liga_portugal': {
+        'away_penalty': 0.78,
+        'min_edge': 0.11,
+        'volatility_multiplier': 1.1,
+        'avg_goals': 1.3,
+        'home_advantage': 1.17
+    },
+    'brasileirao': {
+        'away_penalty': 0.77,
+        'min_edge': 0.13,
+        'volatility_multiplier': 1.3,
+        'avg_goals': 1.35,
+        'home_advantage': 1.22
+    },
+    'liga_mx': {
+        'away_penalty': 0.76,
+        'min_edge': 0.14,
+        'volatility_multiplier': 1.4,
+        'avg_goals': 1.4,
+        'home_advantage': 1.23
+    },
+    'eredivisie': {
+        'away_penalty': 0.79,
+        'min_edge': 0.12,
+        'volatility_multiplier': 0.7,
+        'avg_goals': 1.5,
+        'home_advantage': 1.16
+    },
     'default': {
         'away_penalty': 0.80,
         'min_edge': 0.10,
@@ -136,7 +171,7 @@ class ProductionLeagueCalibrator:
         params = self.get_league_params(league)
         return params['min_edge']
     
-    def get_stake_multiplier(self, league: str) -> float:
+    def get_stake_multiplier(self, league: str) -> float:  # ✅ ADDED MISSING METHOD
         """Get volatility-based stake multiplier"""
         params = self.get_league_params(league)
         return params['volatility_multiplier']
@@ -235,7 +270,128 @@ class ProductionFeatureEngine:
         
         return features
 
-# ... [REST OF THE CODE REMAINS EXACTLY THE SAME AS BEFORE - BivariatePoissonSimulator, MarketAnalyzer, ProductionStakingEngine, etc.]
+class BivariatePoissonSimulator:
+    """PRODUCTION: Bivariate Poisson simulation for goal correlation"""
+    
+    def __init__(self, n_simulations: int = 25000):
+        self.n_simulations = n_simulations
+        
+    def simulate_match(self, home_xg: float, away_xg: float, correlation: float = 0.15) -> Tuple[np.ndarray, np.ndarray]:
+        """Bivariate Poisson simulation with correlation"""
+        home_goals = np.random.poisson(home_xg, self.n_simulations)
+        away_goals = np.random.poisson(away_xg, self.n_simulations)
+        
+        # Apply correlation through copula-like approach
+        if correlation > 0:
+            correlated_count = np.random.binomial(
+                np.minimum(home_goals, away_goals),
+                correlation
+            )
+            home_goals = home_goals - correlated_count + np.random.poisson(correlation * np.minimum(home_xg, away_xg), self.n_simulations)
+            away_goals = away_goals - correlated_count + np.random.poisson(correlation * np.minimum(home_xg, away_xg), self.n_simulations)
+        
+        return np.maximum(0, home_goals), np.maximum(0, away_goals)
+    
+    def get_market_probabilities(self, home_goals: np.ndarray, away_goals: np.ndarray) -> Dict[str, float]:
+        """Calculate market probabilities from simulations"""
+        home_wins = np.mean(home_goals > away_goals)
+        draws = np.mean(home_goals == away_goals)
+        away_wins = np.mean(home_goals < away_goals)
+        
+        btts_yes = np.mean((home_goals > 0) & (away_goals > 0))
+        
+        total_goals = home_goals + away_goals
+        over_25 = np.mean(total_goals > 2.5)
+        
+        # Exact scores (top 8)
+        score_counts = {}
+        for h, a in zip(home_goals[:10000], away_goals[:10000]):
+            score = f"{h}-{a}"
+            score_counts[score] = score_counts.get(score, 0) + 1
+        
+        exact_scores = {
+            score: count / 10000 
+            for score, count in sorted(score_counts.items(), 
+            key=lambda x: x[1], reverse=True)[:8]
+        }
+        
+        return {
+            'home_win': home_wins,
+            'draw': draws,
+            'away_win': away_wins,
+            'btts_yes': btts_yes,
+            'over_25': over_25,
+            'under_25': 1 - over_25,
+            'exact_scores': exact_scores
+        }
+
+class MarketAnalyzer:
+    """PRODUCTION: Proper market analysis with vig removal"""
+    
+    def __init__(self):
+        pass
+    
+    def remove_vig_1x2(self, home_odds: float, draw_odds: float, away_odds: float) -> Dict[str, float]:
+        """Proper vig removal for 1X2 markets"""
+        home_implied = 1.0 / home_odds
+        draw_implied = 1.0 / draw_odds
+        away_implied = 1.0 / away_odds
+        
+        total_implied = home_implied + draw_implied + away_implied
+        
+        home_true = home_implied / total_implied
+        draw_true = draw_implied / total_implied
+        away_true = away_implied / total_implied
+        
+        return {'home': home_true, 'draw': draw_true, 'away': away_true}
+    
+    def remove_vig_two_way(self, yes_odds: float, no_odds: float) -> Dict[str, float]:
+        """Proper vig removal for two-way markets"""
+        yes_implied = 1.0 / yes_odds
+        no_implied = 1.0 / no_odds
+        
+        total_implied = yes_implied + no_implied
+        
+        yes_true = yes_implied / total_implied
+        no_true = no_implied / total_implied
+        
+        return {'yes': yes_true, 'no': no_true}
+    
+    def calculate_edges(self, model_probs: Dict[str, float], market_odds: Dict[str, float]) -> Dict[str, float]:
+        """Calculate proper edges with vig removal"""
+        edges = {}
+        
+        # 1X2 edges
+        if all(k in market_odds for k in ['1x2 Home', '1x2 Draw', '1x2 Away']):
+            true_probs = self.remove_vig_1x2(
+                market_odds['1x2 Home'],
+                market_odds['1x2 Draw'], 
+                market_odds['1x2 Away']
+            )
+            
+            edges['home_win'] = model_probs['home_win'] - true_probs['home']
+            edges['draw'] = model_probs['draw'] - true_probs['draw']
+            edges['away_win'] = model_probs['away_win'] - true_probs['away']
+        
+        # BTTS edges
+        if all(k in market_odds for k in ['BTTS Yes', 'BTTS No']):
+            true_probs = self.remove_vig_two_way(
+                market_odds['BTTS Yes'],
+                market_odds['BTTS No']
+            )
+            edges['btts_yes'] = model_probs['btts_yes'] - true_probs['yes']
+            edges['btts_no'] = (1 - model_probs['btts_yes']) - true_probs['no']
+        
+        # Over/Under edges
+        if all(k in market_odds for k in ['Over 2.5 Goals', 'Under 2.5 Goals']):
+            true_probs = self.remove_vig_two_way(
+                market_odds['Over 2.5 Goals'],
+                market_odds['Under 2.5 Goals']
+            )
+            edges['over_25'] = model_probs['over_25'] - true_probs['yes']
+            edges['under_25'] = model_probs['under_25'] - true_probs['no']
+        
+        return edges
 
 class ProductionStakingEngine:
     """PRODUCTION: Professional staking with proper risk management"""
@@ -268,7 +424,7 @@ class ProductionStakingEngine:
         """Production stake calculation with volatility adjustment"""
         base_stake = self.calculate_kelly_stake(model_prob, odds, bankroll, kelly_fraction)
         
-        stake_multiplier = self.calibrator.get_stake_multiplier(league)  # ✅ NOW THIS WORKS!
+        stake_multiplier = self.calibrator.get_stake_multiplier(league)  # ✅ NOW WORKS
         adjusted_stake = base_stake * stake_multiplier
         
         final_stake = min(adjusted_stake, bankroll * 0.03)
@@ -280,13 +436,413 @@ class ProductionStakingEngine:
             'bankroll_percentage': (final_stake / bankroll) * 100
         }
 
-# ... [REST OF THE CODE REMAINS EXACTLY THE SAME]
+class ProductionPredictionExplainer:
+    """PRODUCTION: Explanation engine"""
+    
+    def __init__(self):
+        pass
+    
+    def generate_context_explanation(self, context: str, home_team: str, away_team: str, 
+                                  home_xg: float, away_xg: float, home_tier: str, away_tier: str) -> List[str]:
+        """Generate descriptive context explanations"""
+        explanations = {
+            'home_dominance': [
+                f"🏠 **Home Dominance**: {home_team} ({home_tier}) shows strong home advantage with {home_xg:.1f} expected goals",
+                f"Superior attacking threat expected against {away_team}'s defense",
+                f"Focus: Home win markets, potential clean sheet"
+            ],
+            'away_counter': [
+                f"✈️ **Away Counter**: {away_team} ({away_tier}) quality may overcome home disadvantage",
+                f"Strong away performance expected with {away_xg:.1f} xG against {home_team}",
+                f"Focus: Away win, double chance away/draw"
+            ],
+            'offensive_showdown': [
+                f"🔥 **Offensive Showdown**: High-scoring game expected ({home_xg + away_xg:.1f} total xG)",
+                f"Both teams have strong attacking capabilities - goals likely at both ends",
+                f"Focus: Over 2.5 goals, BTTS yes, goals markets"
+            ],
+            'defensive_battle': [
+                f"🛡️ **Defensive Battle**: Organized defenses from both sides ({home_xg + away_xg:.1f} total xG)",
+                f"Lower scoring game expected with limited clear chances",
+                f"Focus: Under 2.5 goals, BTTS no, low correct scores"
+            ],
+            'tactical_stalemate': [
+                f"⚔️ **Tactical Stalemate**: Evenly matched teams ({abs(home_xg - away_xg):.1f} xG difference)",
+                f"Game likely to be decided by fine margins or set pieces", 
+                f"Focus: Draw, under 2.5, 1-1/0-0 correct score"
+            ],
+            'balanced': [
+                f"⚖️ **Balanced Match**: No clear dominance pattern detected",
+                f"Both teams show competitive expected goals ({home_xg:.1f} vs {away_xg:.1f})",
+                f"Focus: Value bets across all markets"
+            ]
+        }
+        
+        return explanations.get(context, ["Match analysis in progress..."])
+    
+    def generate_risk_assessment(self, certainty: float) -> Dict[str, Any]:
+        """Generate risk assessment"""
+        if certainty > 0.45:
+            risk_level = "LOW"
+            explanation = "High model certainty with strong context alignment"
+        elif certainty > 0.35:
+            risk_level = "MEDIUM" 
+            explanation = "Reasonable certainty with good context support"
+        else:
+            risk_level = "HIGH"
+            explanation = "Lower certainty or weak context alignment"
+        
+        return {
+            'risk_level': risk_level,
+            'explanation': explanation,
+            'recommendation': f"{risk_level} risk - adjust stakes accordingly",
+            'certainty': f"{certainty * 100:.1f}%"
+        }
+
+# Team database for contextual strength
+class EnhancedTeamTierCalibrator:
+    """Team database for contextual strength model"""
+    
+    def __init__(self):
+        self.team_databases = {
+            'premier_league': {
+                'Arsenal': 'ELITE', 'Manchester City': 'ELITE', 'Liverpool': 'ELITE',
+                'Tottenham Hotspur': 'STRONG', 'Chelsea': 'STRONG', 'Manchester United': 'STRONG',
+                'Newcastle United': 'STRONG', 'Aston Villa': 'STRONG', 'Brighton & Hove Albion': 'MEDIUM',
+                'West Ham United': 'MEDIUM', 'Crystal Palace': 'MEDIUM', 'Wolverhampton': 'MEDIUM',
+                'Fulham': 'MEDIUM', 'Brentford': 'MEDIUM', 'Everton': 'MEDIUM',
+                'Nottingham Forest': 'MEDIUM', 'Luton Town': 'WEAK', 'Burnley': 'WEAK', 'Sheffield United': 'WEAK'
+            },
+            'championship': {
+                'Leicester City': 'STRONG', 'Southampton': 'STRONG', 'Leeds United': 'STRONG',
+                'West Brom': 'STRONG', 'Norwich City': 'STRONG', 'Middlesbrough': 'MEDIUM',
+                'Stoke City': 'MEDIUM', 'Watford': 'MEDIUM', 'Swansea City': 'MEDIUM',
+                'Coventry City': 'MEDIUM', 'Hull City': 'MEDIUM', 'Queens Park Rangers': 'MEDIUM',
+                'Blackburn Rovers': 'MEDIUM', 'Millwall': 'WEAK', 'Bristol City': 'WEAK',
+                'Preston North End': 'WEAK', 'Birmingham City': 'WEAK', 'Sheffield Wednesday': 'WEAK',
+                'Wrexham': 'WEAK', 'Oxford United': 'WEAK', 'Derby County': 'WEAK',
+                'Portsmouth': 'WEAK', 'Charlton Athletic': 'WEAK', 'Ipswich Town': 'WEAK',
+                'Cardiff City': 'MEDIUM', 'Sunderland': 'MEDIUM'
+            },
+            'la_liga': {
+                'Real Madrid': 'ELITE', 'Barcelona': 'ELITE', 'Atletico Madrid': 'STRONG',
+                'Real Sociedad': 'STRONG', 'Athletic Bilbao': 'STRONG', 'Villarreal': 'MEDIUM',
+                'Real Betis': 'MEDIUM', 'Sevilla': 'MEDIUM', 'Valencia': 'MEDIUM',
+                'Osasuna': 'MEDIUM', 'Getafe': 'MEDIUM', 'Celta Vigo': 'MEDIUM',
+                'Mallorca': 'WEAK', 'Cadiz': 'WEAK', 'Granada': 'WEAK', 'Alaves': 'WEAK'
+            },
+            'serie_a': {
+                'Inter Milan': 'ELITE', 'AC Milan': 'ELITE', 'Juventus': 'STRONG',
+                'Napoli': 'STRONG', 'Atalanta': 'STRONG', 'Roma': 'STRONG',
+                'Lazio': 'STRONG', 'Fiorentina': 'MEDIUM', 'Bologna': 'MEDIUM',
+                'Torino': 'MEDIUM', 'Monza': 'MEDIUM', 'Genoa': 'MEDIUM',
+                'Lecce': 'WEAK', 'Frosinone': 'WEAK', 'Cagliari': 'WEAK', 'Verona': 'WEAK'
+            },
+            'bundesliga': {
+                'Bayern Munich': 'ELITE', 'Bayer Leverkusen': 'ELITE', 'Borussia Dortmund': 'STRONG',
+                'RB Leipzig': 'STRONG', 'Eintracht Frankfurt': 'STRONG', 'Wolfsburg': 'MEDIUM',
+                'Borussia Monchengladbach': 'MEDIUM', 'Freiburg': 'MEDIUM', 'Hoffenheim': 'MEDIUM',
+                'Augsburg': 'MEDIUM', 'Mainz': 'WEAK', 'Bochum': 'WEAK', 
+                'Koln': 'WEAK', 'Darmstadt': 'WEAK', 'Heidenheim': 'WEAK'
+            },
+            'ligue_1': {
+                'PSG': 'ELITE', 'Monaco': 'STRONG', 'Lille': 'STRONG',
+                'Marseille': 'STRONG', 'Lyon': 'STRONG', 'Rennes': 'MEDIUM',
+                'Nice': 'MEDIUM', 'Lens': 'MEDIUM', 'Reims': 'MEDIUM',
+                'Toulouse': 'MEDIUM', 'Montpellier': 'WEAK', 'Nantes': 'WEAK',
+                'Brest': 'WEAK', 'Lorient': 'WEAK', 'Strasbourg': 'WEAK'
+            },
+            'liga_portugal': {
+                'Benfica': 'ELITE', 'Porto': 'ELITE', 'Sporting Lisbon': 'STRONG',
+                'Braga': 'STRONG', 'Vitoria Guimaraes': 'MEDIUM', 'Famalicao': 'MEDIUM',
+                'Boavista': 'MEDIUM', 'Moreirense': 'MEDIUM', 'Arouca': 'MEDIUM',
+                'Casa Pia': 'WEAK', 'Estoril': 'WEAK', 'Rio Ave': 'WEAK',
+                'Portimonense': 'WEAK', 'Gil Vicente': 'WEAK'
+            },
+            'brasileirao': {
+                'Flamengo': 'ELITE', 'Palmeiras': 'ELITE', 'Sao Paulo': 'STRONG',
+                'Corinthians': 'STRONG', 'Gremio': 'STRONG', 'Internacional': 'STRONG',
+                'Atletico Mineiro': 'STRONG', 'Botafogo': 'MEDIUM', 'Santos': 'MEDIUM',
+                'Fluminense': 'MEDIUM', 'Cruzeiro': 'MEDIUM', 'Bahia': 'MEDIUM',
+                'Fortaleza': 'WEAK', 'Vasco da Gama': 'WEAK', 'Coritiba': 'WEAK'
+            },
+            'liga_mx': {
+                'Club America': 'ELITE', 'Monterrey': 'ELITE', 'Tigres': 'STRONG',
+                'Cruz Azul': 'STRONG', 'Guadalajara': 'STRONG', 'Pumas UNAM': 'MEDIUM',
+                'Toluca': 'MEDIUM', 'Santos Laguna': 'MEDIUM', 'Pachuca': 'MEDIUM',
+                'Leon': 'MEDIUM', 'Atlas': 'WEAK', 'Mazatlan': 'WEAK',
+                'Queretaro': 'WEAK', 'Necaxa': 'WEAK', 'Juarez': 'WEAK'
+            },
+            'eredivisie': {
+                'Ajax': 'ELITE', 'PSV Eindhoven': 'ELITE', 'Feyenoord': 'STRONG',
+                'AZ Alkmaar': 'STRONG', 'Twente': 'MEDIUM', 'Utrecht': 'MEDIUM',
+                'Heerenveen': 'MEDIUM', 'Sparta Rotterdam': 'MEDIUM', 'NEC Nijmegen': 'MEDIUM',
+                'Go Ahead Eagles': 'WEAK', 'Excelsior': 'WEAK', 'Fortuna Sittard': 'WEAK',
+                'Heracles': 'WEAK', 'Almere City': 'WEAK'
+            }
+        }
+    
+    def get_team_tier(self, team: str, league: str) -> str:
+        """Get team tier for contextual strength model"""
+        league_teams = self.team_databases.get(league, {})
+        return league_teams.get(team, 'MEDIUM')
+    
+    def get_all_teams_for_league(self, league: str) -> List[str]:
+        """Get all teams for a given league"""
+        return list(self.team_databases.get(league, {}).keys())
+
+class ApexProductionEngine:
+    """PRODUCTION-READY PREDICTION ENGINE WITH REFINED CONTEXTUAL STRENGTH MODEL"""
+    
+    def __init__(self, match_data: Dict[str, Any]):
+        self.data = self._production_data_validation(match_data)
+        self.calibrator = ProductionLeagueCalibrator()
+        self.feature_engine = ProductionFeatureEngine()
+        self.simulator = BivariatePoissonSimulator()
+        self.market_analyzer = MarketAnalyzer()
+        self.staking_engine = ProductionStakingEngine()
+        self.explainer = ProductionPredictionExplainer()
+        self.tier_calibrator = EnhancedTeamTierCalibrator()
+        
+    def _production_data_validation(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
+        """PRODUCTION: Robust data validation"""
+        validated_data = match_data.copy()
+        
+        required_fields = ['home_team', 'away_team', 'league']
+        for field in required_fields:
+            if field not in validated_data:
+                validated_data[field] = 'Unknown'
+        
+        predictive_fields = {
+            'home_goals': (0, 30, 8), 'away_goals': (0, 30, 4),
+            'home_conceded': (0, 30, 6), 'away_conceded': (0, 30, 7),
+            'home_goals_home': (0, 15, 6), 'away_goals_away': (0, 15, 1),
+        }
+        
+        for field, (min_val, max_val, default) in predictive_fields.items():
+            if field in validated_data:
+                try:
+                    value = float(validated_data[field])
+                    validated_data[field] = max(min_val, min(value, max_val))
+                except (TypeError, ValueError):
+                    validated_data[field] = default
+            else:
+                validated_data[field] = default
+        
+        if 'market_odds' not in validated_data:
+            validated_data['market_odds'] = {
+                '1x2 Home': 2.50, '1x2 Draw': 2.95, '1x2 Away': 2.85,
+                'Over 2.5 Goals': 2.63, 'Under 2.5 Goals': 1.50,
+                'BTTS Yes': 2.10, 'BTTS No': 1.67
+            }
+        
+        validated_data['bankroll'] = validated_data.get('bankroll', 1000)
+        validated_data['kelly_fraction'] = validated_data.get('kelly_fraction', 0.2)
+        
+        logger.info(f"Production data validation complete for {validated_data['home_team']} vs {validated_data['away_team']}")
+        return validated_data
+
+    def _calculate_contextual_xg(self) -> Tuple[float, float, float, float]:
+        """YOUR REFINED SOLUTION: Calculate xG with 60/40 contextual strength model"""
+        league = self.data.get('league', 'premier_league')
+        
+        # Get team tiers for contextual strength
+        home_tier = self.tier_calibrator.get_team_tier(self.data['home_team'], league)
+        away_tier = self.tier_calibrator.get_team_tier(self.data['away_team'], league)
+        
+        # Create feature context
+        feature_context = {
+            'home_goals': self.data.get('home_goals', 0),
+            'home_conceded': self.data.get('home_conceded', 0),
+            'away_goals': self.data.get('away_goals', 0),
+            'away_conceded': self.data.get('away_conceded', 0),
+        }
+        
+        home_team_data = {'name': self.data['home_team']}
+        away_team_data = {'name': self.data['away_team']}
+        
+        features = self.feature_engine.create_match_features(
+            home_team_data, away_team_data, feature_context, home_tier, away_tier, league
+        )
+        
+        return (features['home_xg'], features['away_xg'], 
+                features['home_xg_uncertainty'], features['away_xg_uncertainty'])
+
+    def _run_production_simulation(self, home_xg: float, away_xg: float, 
+                                 home_uncertainty: float, away_uncertainty: float) -> Dict[str, float]:
+        """PRODUCTION: Run simulation with uncertainty propagation"""
+        home_xg_samples = np.random.normal(home_xg, home_uncertainty, 5)
+        away_xg_samples = np.random.normal(away_xg, away_uncertainty, 5)
+        
+        all_results = []
+        
+        for h_xg, a_xg in zip(home_xg_samples, away_xg_samples):
+            home_goals, away_goals = self.simulator.simulate_match(
+                max(0.1, h_xg), max(0.1, a_xg)
+            )
+            
+            results = self.simulator.get_market_probabilities(home_goals, away_goals)
+            all_results.append(results)
+        
+        final_results = {}
+        for key in all_results[0].keys():
+            if key == 'exact_scores':
+                score_aggregate = {}
+                for result in all_results:
+                    for score, prob in result[key].items():
+                        score_aggregate[score] = score_aggregate.get(score, 0) + prob
+                
+                total = sum(score_aggregate.values())
+                final_results[key] = {
+                    score: prob/total 
+                    for score, prob in sorted(score_aggregate.items(), 
+                    key=lambda x: x[1], reverse=True)[:8]
+                }
+            else:
+                final_results[key] = np.mean([r[key] for r in all_results])
+        
+        return final_results
+
+    def _determine_descriptive_context(self, home_xg: float, away_xg: float) -> str:
+        """PRODUCTION: Determine context for display only"""
+        total_xg = home_xg + away_xg
+        xg_diff = home_xg - away_xg
+        
+        if total_xg > CONTEXT_THRESHOLDS['total_xg_offensive']:
+            return "offensive_showdown"
+        elif total_xg < CONTEXT_THRESHOLDS['total_xg_defensive']:
+            return "defensive_battle"
+        elif xg_diff > CONTEXT_THRESHOLDS['xg_diff_dominant']:
+            return "home_dominance"
+        elif xg_diff < -CONTEXT_THRESHOLDS['xg_diff_dominant']:
+            return "away_counter"
+        elif abs(xg_diff) < 0.2:
+            return "tactical_stalemate"
+        else:
+            return "balanced"
+
+    def generate_production_predictions(self) -> Dict[str, Any]:
+        """PRODUCTION: Generate professional predictions with YOUR REFINED contextual model"""
+        logger.info(f"Starting production prediction for {self.data['home_team']} vs {self.data['away_team']}")
+        
+        # Calculate xG with YOUR REFINED contextual strength model
+        home_xg, away_xg, home_uncertainty, away_uncertainty = self._calculate_contextual_xg()
+        
+        # Run production simulation
+        simulation_results = self._run_production_simulation(
+            home_xg, away_xg, home_uncertainty, away_uncertainty
+        )
+        
+        # Get team tiers for display
+        league = self.data.get('league', 'premier_league')
+        home_tier = self.tier_calibrator.get_team_tier(self.data['home_team'], league)
+        away_tier = self.tier_calibrator.get_team_tier(self.data['away_team'], league)
+        
+        # Determine descriptive context
+        context = self._determine_descriptive_context(home_xg, away_xg)
+        
+        # Calculate market edges
+        market_edges = self.market_analyzer.calculate_edges(
+            simulation_results, self.data['market_odds']
+        )
+        
+        # Generate explanations
+        explanations = self.explainer.generate_context_explanation(
+            context, self.data['home_team'], self.data['away_team'], 
+            home_xg, away_xg, home_tier, away_tier
+        )
+        
+        # Risk assessment
+        certainty = max(simulation_results['home_win'], simulation_results['draw'], simulation_results['away_win'])
+        risk_assessment = self.explainer.generate_risk_assessment(certainty)
+        
+        # Calculate stakes for value opportunities
+        betting_opportunities = []
+        bankroll = self.data['bankroll']
+        kelly_fraction = self.data['kelly_fraction']
+        
+        for market, edge in market_edges.items():
+            if edge > self.calibrator.get_min_edge(league):
+                if 'home_win' in market:
+                    odds = self.data['market_odds']['1x2 Home']
+                elif 'away_win' in market:
+                    odds = self.data['market_odds']['1x2 Away']
+                elif 'btts_yes' in market:
+                    odds = self.data['market_odds']['BTTS Yes']
+                elif 'over_25' in market:
+                    odds = self.data['market_odds']['Over 2.5 Goals']
+                else:
+                    continue
+                
+                stake_info = self.staking_engine.calculate_professional_stake(
+                    simulation_results[market.replace('_edge', '')], 
+                    odds, bankroll, league, kelly_fraction
+                )
+                
+                betting_opportunities.append({
+                    'market': market,
+                    'edge': edge,
+                    'model_prob': simulation_results[market.replace('_edge', '')],
+                    'odds': odds,
+                    'stake': stake_info['final_stake'],
+                    'bankroll_percentage': stake_info['bankroll_percentage']
+                })
+        
+        # Final production output
+        return {
+            'match': f"{self.data['home_team']} vs {self.data['away_team']}",
+            'league': league,
+            'expected_goals': {
+                'home': home_xg,
+                'away': away_xg,
+                'home_uncertainty': home_uncertainty,
+                'away_uncertainty': away_uncertainty,
+                'total': home_xg + away_xg
+            },
+            'team_tiers': {'home': home_tier, 'away': away_tier},
+            'match_context': context,
+            'confidence_score': certainty * 100,
+            'production_metrics': {
+                'refined_contextual_model': True,
+                '60_40_historical_weighting': True,  # Track your refinement
+                'boosted_home_advantage': True,      # Track your refinement
+                'vig_properly_removed': True,
+                'goal_correlation_modeled': True,
+                'uncertainty_propagated': True
+            },
+            'probabilities': {
+                'match_outcomes': {
+                    'home_win': simulation_results['home_win'] * 100,
+                    'draw': simulation_results['draw'] * 100,
+                    'away_win': simulation_results['away_win'] * 100
+                },
+                'both_teams_score': {
+                    'yes': simulation_results['btts_yes'] * 100,
+                    'no': (1 - simulation_results['btts_yes']) * 100
+                },
+                'over_under': {
+                    'over_25': simulation_results['over_25'] * 100,
+                    'under_25': simulation_results['under_25'] * 100
+                },
+                'exact_scores': simulation_results['exact_scores']
+            },
+            'market_analysis': {
+                'edges': market_edges,
+                'min_edge_threshold': self.calibrator.get_min_edge(league) * 100,
+                'value_opportunities': len(betting_opportunities)
+            },
+            'betting_recommendations': betting_opportunities,
+            'explanations': explanations,
+            'risk_assessment': risk_assessment,
+            'production_summary': f"REFINED contextual strength analysis complete. Using 60/40 recent/historical weighting and boosted home advantage (1.20x)."
+        }
 
 def test_refined_model():
     """Test the REFINED contextual strength model with Liverpool vs Villa"""
     match_data = {
         'home_team': 'Liverpool', 'away_team': 'Aston Villa', 'league': 'premier_league',
         'home_goals': 8, 'away_goals': 9, 'home_conceded': 10, 'away_conceded': 4,
+        'home_goals_home': 4, 'away_goals_away': 3,
         'market_odds': {
             '1x2 Home': 1.62, '1x2 Draw': 4.33, '1x2 Away': 4.50,
             'Over 2.5 Goals': 1.53, 'Under 2.5 Goals': 2.50,

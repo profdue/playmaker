@@ -194,29 +194,28 @@ class ProductionFeatureEngine:
         defense_strength = (6 * league_avg_goals) / max(goals_conceded, 0.1)  # Avoid division by zero
         return attack_strength, defense_strength
     
-    def calculate_realistic_xg(self, home_goals: int, home_conceded: int, 
-                             away_goals: int, away_conceded: int, league: str) -> Tuple[float, float, float, float]:
-        """Calculate realistic xG using continuous strength model"""
-        league_avg = self.calibrator.get_league_avg_goals(league)
-        league_params = self.calibrator.get_league_params(league)
-        
-        # Calculate continuous strengths
-        home_attack, home_defense = self.calculate_team_strength(home_goals, home_conceded, league_avg)
-        away_attack, away_defense = self.calculate_team_strength(away_goals, away_conceded, league_avg)
-        
-        # Realistic xG calculation with empirical home/away modifiers
-        home_xg = league_avg * home_attack * away_defense * 1.10  # Home advantage
-        away_xg = league_avg * away_attack * home_defense * league_params['away_penalty']
-        
-        # Apply reasonable bounds and uncertainty
-        home_xg = max(0.3, min(4.0, home_xg))
-        away_xg = max(0.3, min(4.0, away_xg))
-        
-        # Uncertainty based on sample size and model confidence
-        home_uncertainty = home_xg * 0.10
-        away_uncertainty = away_xg * 0.10
-        
-        return home_xg, away_xg, home_uncertainty, away_uncertainty
+    # FIXED CALCULATION IN ProductionFeatureEngine
+def calculate_realistic_xg(self, home_goals: int, home_conceded: int, 
+                         away_goals: int, away_conceded: int, league: str) -> Tuple[float, float, float, float]:
+    """Calculate realistic xG using PROPER continuous strength model"""
+    league_avg = self.calibrator.get_league_avg_goals(league)
+    
+    # PROPER continuous strength calculation
+    home_attack = home_goals / (6 * league_avg)
+    home_defense = league_avg / (home_conceded / 6)  # FIXED: Inverse relationship
+    
+    away_attack = away_goals / (6 * league_avg) 
+    away_defense = league_avg / (away_conceded / 6)  # FIXED: Inverse relationship
+    
+    # REALISTIC xG calculation
+    home_xg = league_avg * home_attack * away_defense * 1.15  # Stronger home advantage
+    away_xg = league_avg * away_attack * home_defense * 0.85  # Stronger away penalty
+    
+    # Apply bounds
+    home_xg = max(0.4, min(3.5, home_xg))
+    away_xg = max(0.4, min(3.0, away_xg))
+    
+    return home_xg, away_xg, home_xg * 0.12, away_xg * 0.12
     
     def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, league: str) -> Dict[str, Any]:
         """PRODUCTION: Create features with continuous strength model"""

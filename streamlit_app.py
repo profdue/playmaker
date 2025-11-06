@@ -182,6 +182,11 @@ st.markdown("""
         margin: 0.8rem 0;
         font-size: 0.95rem;
     }
+    
+    .tier-elite { background: #3D195B; }
+    .tier-strong { background: #DC052D; }
+    .tier-medium { background: #FF9800; }
+    .tier-weak { background: #666666; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -272,7 +277,7 @@ def display_production_predictions(predictions: dict, match_data: dict):
     st.markdown('<p class="production-header">🎯 Production Football Predictions</p>', unsafe_allow_html=True)
     
     # Production mode header
-    st.markdown('<div class="production-mode-active">🟢 PRODUCTION MODE ACTIVE • UNCERTAINTY PROPAGATION • VIG REMOVAL • RISK-MANAGED STAKING</div>', unsafe_allow_html=True)
+    st.markdown('<div class="production-mode-active">🟢 PRODUCTION MODE ACTIVE • CONTINUOUS STRENGTH MODEL • UNCERTAINTY PROPAGATION • VIG REMOVAL</div>', unsafe_allow_html=True)
     
     # Basic match info
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -295,9 +300,10 @@ def display_production_predictions(predictions: dict, match_data: dict):
     </div>
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="production-badge {league_badge_class}">{league_display_name}</span>
-        <span class="production-feature-badge">🎯 Production Grade</span>
+        <span class="production-feature-badge">🎯 Continuous Strength Model</span>
         <span class="production-feature-badge">📊 xG Uncertainty: ±{xg_data.get('home_uncertainty', 0):.2f}</span>
         {f'<span class="production-feature-badge">🔗 Goal Correlation</span>' if production_metrics.get('goal_correlation_modeled') else ''}
+        {f'<span class="production-feature-badge">📈 League-Aware</span>' if production_metrics.get('continuous_strength_model') else ''}
     </div>
     ''', unsafe_allow_html=True)
     
@@ -486,15 +492,15 @@ def display_production_predictions(predictions: dict, match_data: dict):
 def create_production_input_form():
     """Create production-grade input form"""
     st.markdown('<p class="production-header">🎯 Production Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="production-subheader">Professional-Grade Analysis with Uncertainty Propagation & Risk Management</p>', unsafe_allow_html=True)
+    st.markdown('<p class="production-subheader">Professional-Grade Analysis with Continuous Strength Model & Risk Management</p>', unsafe_allow_html=True)
     
     # Initialize tier calibrator
     tier_calibrator = EnhancedTeamTierCalibrator()
     
     # League selection
     league_options = {
-        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
         'premier_league': 'Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        'championship': 'Championship 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
         'la_liga': 'La Liga 🇪🇸',
         'serie_a': 'Serie A 🇮🇹', 
         'bundesliga': 'Bundesliga 🇩🇪',
@@ -536,36 +542,38 @@ def create_production_input_form():
             home_team = st.selectbox(
                 "Team Name", 
                 options=available_teams,
-                index=available_teams.index('Charlton Athletic') if 'Charlton Athletic' in available_teams else 0,
+                index=available_teams.index('Liverpool') if 'Liverpool' in available_teams else 0,
                 key="production_home_team"
             )
             
             home_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=8, key="production_home_goals")
-            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=6, key="production_home_conceded")
-            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=6, key="production_home_goals_home")
+            home_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=10, key="production_home_conceded")
+            home_goals_home = st.number_input("Home Goals (Last 3 Home Games)", min_value=0, value=4, key="production_home_goals_home")
             
         with col2:
             st.subheader("✈️ Away Team")
             away_team = st.selectbox(
                 "Team Name",
                 options=available_teams,
-                index=available_teams.index('West Brom') if 'West Brom' in available_teams else 1,
+                index=available_teams.index('Aston Villa') if 'Aston Villa' in available_teams else 1,
                 key="production_away_team"
             )
             
-            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=4, key="production_away_goals")
-            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=7, key="production_away_conceded")
-            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=1, key="production_away_goals_away")
+            away_goals = st.number_input("Total Goals (Last 6 Games)", min_value=0, value=9, key="production_away_goals")
+            away_conceded = st.number_input("Total Conceded (Last 6 Games)", min_value=0, value=4, key="production_away_conceded")
+            away_goals_away = st.number_input("Away Goals (Last 3 Away Games)", min_value=0, value=3, key="production_away_goals_away")
         
-        # Show team tiers
+        # Show team tiers (display only)
         home_tier = tier_calibrator.get_team_tier(home_team, selected_league)
         away_tier = tier_calibrator.get_team_tier(away_team, selected_league)
         
         st.markdown(f"""
-        **Team Quality Assessment:** 
+        **Team Quality Assessment (Display Only):** 
         <span class="production-badge tier-{home_tier.lower() if home_tier else 'medium'}">{home_tier or 'MEDIUM'}</span> vs 
         <span class="production-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
+        
+        st.info("💡 **Note**: Team tiers are for display only. Predictions use continuous strength model based on actual performance data.")
 
     with tab2:
         st.markdown("### 💰 Market Odds")
@@ -574,19 +582,19 @@ def create_production_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=3.10, step=0.01, key="production_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.50, step=0.01, key="production_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.25, step=0.01, key="production_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=1.62, step=0.01, key="production_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=4.33, step=0.01, key="production_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=4.50, step=0.01, key="production_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01, key="production_over_25_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.53, step=0.01, key="production_over_25_odds")
             under_25_odds = st.number_input("Under 2.5 Goals", min_value=1.01, value=2.50, step=0.01, key="production_under_25_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.67, step=0.01, key="production_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=2.10, step=0.01, key="production_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.62, step=0.01, key="production_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=2.20, step=0.01, key="production_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Risk Management")
@@ -601,10 +609,10 @@ def create_production_input_form():
         
         with risk_col2:
             st.write("**Production Features**")
+            st.checkbox("Continuous Strength Model", value=True, disabled=True)
             st.checkbox("xG Uncertainty Propagation", value=True, disabled=True)
             st.checkbox("Goal Correlation Modeling", value=True, disabled=True)
             st.checkbox("Proper Vig Removal", value=True, disabled=True)
-            st.checkbox("Sensitivity Testing", value=True, disabled=True)
 
     submitted = st.button("🎯 RUN PRODUCTION ANALYSIS", type="primary", use_container_width=True)
     
@@ -678,14 +686,14 @@ def main():
                 **Production System Status: OPERATIONAL** 🟢
                 
                 **Active Production Features:**
+                - ✅ Continuous Strength Model
                 - ✅ xG Uncertainty Propagation
                 - ✅ Bivariate Poisson Goal Correlation  
                 - ✅ Proper Vig Removal
                 - ✅ Risk-Managed Staking
                 - ✅ Market Edge Verification
-                - ✅ Sensitivity Testing Framework
                 
-                **Model Version:** 4.0.0_production
+                **Model Version:** 5.0.0_continuous_strength
                 **Calibration Level:** PRODUCTION_READY
                 """)
         
@@ -695,7 +703,7 @@ def main():
     match_data = create_production_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running production analysis with uncertainty propagation..."):
+        with st.spinner("🔍 Running production analysis with continuous strength model..."):
             try:
                 engine = ApexProductionEngine(match_data)
                 predictions = engine.generate_production_predictions()
@@ -724,11 +732,11 @@ def main():
                     ✅ **PRODUCTION ANALYSIS COMPLETE!**
                     
                     **Production Features Applied:**
-                    - 🎯 xG Uncertainty Propagation
+                    - 🎯 Continuous Strength Model
+                    - 📊 League-Aware xG Calculation
                     - 🔗 Goal Correlation Modeling  
                     - 💰 Proper Vig Removal
                     - 🛡️ Risk-Managed Staking
-                    - 📊 Sensitivity Testing
                     """)
                     
                     st.rerun()

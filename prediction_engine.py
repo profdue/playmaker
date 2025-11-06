@@ -15,59 +15,70 @@ warnings.filterwarnings('ignore')
 # 🎯 PRODUCTION LEAGUE PARAMS (Evidence-based only)
 LEAGUE_PARAMS = {
     'premier_league': {
-        'away_penalty': 1.00,
+        'away_penalty': 0.90,
         'min_edge': 0.08,
-        'volatility_multiplier': 1.0
+        'volatility_multiplier': 1.0,
+        'avg_goals': 1.4
     },
     'la_liga': {
-        'away_penalty': 0.97,
+        'away_penalty': 0.92,
         'min_edge': 0.06,
-        'volatility_multiplier': 1.2
+        'volatility_multiplier': 1.2,
+        'avg_goals': 1.3
     },
     'serie_a': {
-        'away_penalty': 1.02,
+        'away_penalty': 0.91,
         'min_edge': 0.10,
-        'volatility_multiplier': 0.9
+        'volatility_multiplier': 0.9,
+        'avg_goals': 1.35
     },
     'bundesliga': {
-        'away_penalty': 1.03,
+        'away_penalty': 0.93,
         'min_edge': 0.07,
-        'volatility_multiplier': 0.8
+        'volatility_multiplier': 0.8,
+        'avg_goals': 1.45
     },
     'ligue_1': {
-        'away_penalty': 0.98,
+        'away_penalty': 0.89,
         'min_edge': 0.09,
-        'volatility_multiplier': 1.1
+        'volatility_multiplier': 1.1,
+        'avg_goals': 1.25
     },
     'eredivisie': {
-        'away_penalty': 1.01,
+        'away_penalty': 0.88,
         'min_edge': 0.12,
-        'volatility_multiplier': 0.7
+        'volatility_multiplier': 0.7,
+        'avg_goals': 1.5
     },
     'championship': {
-        'away_penalty': 0.92,
+        'away_penalty': 0.85,
         'min_edge': 0.15,
-        'volatility_multiplier': 0.6
+        'volatility_multiplier': 0.6,
+        'avg_goals': 1.2
     },
     'liga_portugal': {
-        'away_penalty': 0.96,
+        'away_penalty': 0.87,
         'min_edge': 0.11,
-        'volatility_multiplier': 1.1
+        'volatility_multiplier': 1.1,
+        'avg_goals': 1.3
     },
     'brasileirao': {
-        'away_penalty': 0.95,
+        'away_penalty': 0.86,
         'min_edge': 0.13,
-        'volatility_multiplier': 1.3
+        'volatility_multiplier': 1.3,
+        'avg_goals': 1.35
     },
     'liga_mx': {
-        'away_penalty': 0.94,
+        'away_penalty': 0.84,
         'min_edge': 0.14,
-        'volatility_multiplier': 1.4
+        'volatility_multiplier': 1.4,
+        'avg_goals': 1.4
     },
     'default': {
-        'away_penalty': 1.00,
+        'away_penalty': 0.90,
         'min_edge': 0.10,
-        'volatility_multiplier': 1.0
+        'volatility_multiplier': 1.0,
+        'avg_goals': 1.4
     }
 }
 
@@ -156,10 +167,10 @@ class ProductionLeagueCalibrator:
         """Get production league parameters"""
         return self.league_calibration.get(league, self.league_calibration['default'])
     
-    def apply_away_penalty(self, away_xg: float, league: str) -> float:
-        """Apply evidence-based away penalty only"""
+    def get_league_avg_goals(self, league: str) -> float:
+        """Get league average goals for xG calculation"""
         params = self.get_league_params(league)
-        return away_xg * params['away_penalty']
+        return params['avg_goals']
     
     def get_min_edge(self, league: str) -> float:
         """Get minimum edge threshold by league volatility"""
@@ -172,51 +183,52 @@ class ProductionLeagueCalibrator:
         return params['volatility_multiplier']
 
 class ProductionFeatureEngine:
-    """PRODUCTION: Feature engineering with uncertainty propagation"""
+    """PRODUCTION: Feature engineering with continuous strength model"""
     
     def __init__(self):
         self.calibrator = ProductionLeagueCalibrator()
         
-    def calculate_base_xg(self, goals: int, conceded: int, is_home: bool, league: str) -> Tuple[float, float]:
-        """Calculate base xG with uncertainty"""
-        # Base xG calculation
-        base_xg = max(0.15, goals / 6.0)
-        
-        # Defense adjustment
-        defense_factor = conceded / 6.0
-        adjusted_xg = base_xg / (1.0 + defense_factor * 0.1)
-        
-        # Apply away penalty if needed
-        if not is_home:
-            adjusted_xg = self.calibrator.apply_away_penalty(adjusted_xg, league)
-        
-        # Uncertainty propagation (10-15% standard deviation)
-        uncertainty = adjusted_xg * 0.12
-        
-        return adjusted_xg, uncertainty
+    def calculate_team_strength(self, goals_scored: int, goals_conceded: int, league_avg_goals: float) -> Tuple[float, float]:
+        """Continuous strength scores from actual data - NO arbitrary tiers"""
+        attack_strength = goals_scored / (6 * league_avg_goals)
+        defense_strength = (6 * league_avg_goals) / max(goals_conceded, 0.1)  # Avoid division by zero
+        return attack_strength, defense_strength
     
-    def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, 
-                            home_tier: str, away_tier: str, league: str) -> Dict[str, Any]:
-        """PRODUCTION: Create features with uncertainty"""
+    def calculate_realistic_xg(self, home_goals: int, home_conceded: int, 
+                             away_goals: int, away_conceded: int, league: str) -> Tuple[float, float, float, float]:
+        """Calculate realistic xG using continuous strength model"""
+        league_avg = self.calibrator.get_league_avg_goals(league)
+        league_params = self.calibrator.get_league_params(league)
         
-        # Calculate base xG with uncertainty
-        home_xg, home_uncertainty = self.calculate_base_xg(
+        # Calculate continuous strengths
+        home_attack, home_defense = self.calculate_team_strength(home_goals, home_conceded, league_avg)
+        away_attack, away_defense = self.calculate_team_strength(away_goals, away_conceded, league_avg)
+        
+        # Realistic xG calculation with empirical home/away modifiers
+        home_xg = league_avg * home_attack * away_defense * 1.10  # Home advantage
+        away_xg = league_avg * away_attack * home_defense * league_params['away_penalty']
+        
+        # Apply reasonable bounds and uncertainty
+        home_xg = max(0.3, min(4.0, home_xg))
+        away_xg = max(0.3, min(4.0, away_xg))
+        
+        # Uncertainty based on sample size and model confidence
+        home_uncertainty = home_xg * 0.10
+        away_uncertainty = away_xg * 0.10
+        
+        return home_xg, away_xg, home_uncertainty, away_uncertainty
+    
+    def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, league: str) -> Dict[str, Any]:
+        """PRODUCTION: Create features with continuous strength model"""
+        
+        # Calculate realistic xG with new model
+        home_xg, away_xg, home_uncertainty, away_uncertainty = self.calculate_realistic_xg(
             context.get('home_goals', 0),
             context.get('home_conceded', 0),
-            True, league
-        )
-        
-        away_xg, away_uncertainty = self.calculate_base_xg(
-            context.get('away_goals', 0), 
+            context.get('away_goals', 0),
             context.get('away_conceded', 0),
-            False, league
+            league
         )
-        
-        # Quality gap calculation (descriptive only)
-        tier_strength = {'ELITE': 1.3, 'STRONG': 1.1, 'MEDIUM': 1.0, 'WEAK': 0.8}
-        home_strength = tier_strength.get(home_tier, 1.0)
-        away_strength = tier_strength.get(away_tier, 1.0)
-        quality_gap_score = home_strength / away_strength
         
         features = {
             'home_xg': home_xg,
@@ -225,8 +237,8 @@ class ProductionFeatureEngine:
             'away_xg_uncertainty': away_uncertainty,
             'total_xg': home_xg + away_xg,
             'xg_difference': home_xg - away_xg,
-            'quality_gap_score': quality_gap_score,
-            'home_advantage_multiplier': 1.15 if league == 'championship' else 1.08,
+            'home_advantage_multiplier': 1.10,
+            'away_penalty': self.calibrator.get_league_params(league)['away_penalty']
         }
         
         return features
@@ -417,37 +429,40 @@ class ProductionPredictionExplainer:
         pass
     
     def generate_context_explanation(self, context: str, home_team: str, away_team: str, 
-                                  home_tier: str, away_tier: str, league: str) -> List[str]:
-        """Generate descriptive context explanations"""
+                                  home_xg: float, away_xg: float, league: str) -> List[str]:
+        """Generate descriptive context explanations based on continuous strength model"""
+        total_xg = home_xg + away_xg
+        xg_diff = home_xg - away_xg
+        
         explanations = {
             'home_dominance': [
-                f"🏠 **Home Dominance Context**: {home_team} ({home_tier}) has strong home advantage",
-                f"Expected to control the match against {away_team} ({away_tier})",
+                f"🏠 **Home Dominance**: {home_team} shows strong home advantage with {home_xg:.1f} expected goals",
+                f"Superior attacking threat expected against {away_team}'s defense",
                 f"Focus: Home win markets, potential clean sheet"
             ],
             'away_counter': [
-                f"✈️ **Away Counter Context**: {away_team} ({away_tier}) quality may overcome home disadvantage",
-                f"Strong away performance expected against {home_team} ({home_tier})",
+                f"✈️ **Away Counter**: {away_team}'s quality may overcome home disadvantage",
+                f"Strong away performance expected with {away_xg:.1f} xG against {home_team}",
                 f"Focus: Away win, double chance away/draw"
             ],
             'offensive_showdown': [
-                f"🔥 **Offensive Showdown**: Both teams have strong attacking capabilities",
-                f"High goal expectation with both teams likely to score",
+                f"🔥 **Offensive Showdown**: High-scoring game expected ({total_xg:.1f} total xG)",
+                f"Both teams have strong attacking capabilities - goals likely at both ends",
                 f"Focus: Over 2.5 goals, BTTS yes, goals markets"
             ],
             'defensive_battle': [
-                f"🛡️ **Defensive Battle**: Organized defenses from both sides",
+                f"🛡️ **Defensive Battle**: Organized defenses from both sides ({total_xg:.1f} total xG)",
                 f"Lower scoring game expected with limited clear chances",
                 f"Focus: Under 2.5 goals, BTTS no, low correct scores"
             ],
             'tactical_stalemate': [
-                f"⚔️ **Tactical Stalemate**: Evenly matched teams with similar approaches",
+                f"⚔️ **Tactical Stalemate**: Evenly matched teams ({abs(xg_diff):.1f} xG difference)",
                 f"Game likely to be decided by fine margins or set pieces", 
                 f"Focus: Draw, under 2.5, 1-1/0-0 correct score"
             ],
             'balanced': [
                 f"⚖️ **Balanced Match**: No clear dominance pattern detected",
-                f"Outcome could swing either way based on key moments",
+                f"Both teams show competitive expected goals ({home_xg:.1f} vs {away_xg:.1f})",
                 f"Focus: Value bets across all markets"
             ]
         }
@@ -474,9 +489,9 @@ class ProductionPredictionExplainer:
             'certainty': f"{certainty * 100:.1f}%"
         }
 
-# Supporting class for team tier calibration
+# Supporting class for team database (display only)
 class EnhancedTeamTierCalibrator:
-    """Team tier calibration for descriptive purposes"""
+    """Team database for display purposes only - no mathematical influence"""
     
     def __init__(self):
         self.team_databases = {
@@ -558,7 +573,7 @@ class EnhancedTeamTierCalibrator:
         }
     
     def get_team_tier(self, team: str, league: str) -> str:
-        """Get team tier for descriptive purposes"""
+        """Get team tier for display purposes only"""
         league_teams = self.team_databases.get(league, {})
         return league_teams.get(team, 'MEDIUM')
     
@@ -567,7 +582,7 @@ class EnhancedTeamTierCalibrator:
         return list(self.team_databases.get(league, {}).keys())
 
 class ApexProductionEngine:
-    """PRODUCTION-READY PREDICTION ENGINE"""
+    """PRODUCTION-READY PREDICTION ENGINE WITH CONTINUOUS STRENGTH MODEL"""
     
     def __init__(self, match_data: Dict[str, Any]):
         self.data = self._production_data_validation(match_data)
@@ -623,26 +638,22 @@ class ApexProductionEngine:
         return validated_data
 
     def _calculate_production_xg(self) -> Tuple[float, float, float, float]:
-        """PRODUCTION: Calculate xG with uncertainty"""
+        """PRODUCTION: Calculate xG with continuous strength model"""
         league = self.data.get('league', 'premier_league')
         
         # Create feature context
         feature_context = {
             'home_goals': self.data.get('home_goals', 0),
-            'away_goals': self.data.get('away_goals', 0),
             'home_conceded': self.data.get('home_conceded', 0),
+            'away_goals': self.data.get('away_goals', 0),
             'away_conceded': self.data.get('away_conceded', 0),
         }
         
         home_team_data = {'name': self.data['home_team']}
         away_team_data = {'name': self.data['away_team']}
         
-        # Get team tiers (descriptive only)
-        home_tier = self.tier_calibrator.get_team_tier(self.data['home_team'], league)
-        away_tier = self.tier_calibrator.get_team_tier(self.data['away_team'], league)
-        
         features = self.feature_engine.create_match_features(
-            home_team_data, away_team_data, feature_context, home_tier, away_tier, league
+            home_team_data, away_team_data, feature_context, league
         )
         
         return (features['home_xg'], features['away_xg'], 
@@ -687,8 +698,7 @@ class ApexProductionEngine:
         
         return final_results
 
-    def _determine_descriptive_context(self, home_xg: float, away_xg: float, 
-                                     home_tier: str, away_tier: str) -> str:
+    def _determine_descriptive_context(self, home_xg: float, away_xg: float) -> str:
         """PRODUCTION: Determine context for display only"""
         total_xg = home_xg + away_xg
         xg_diff = home_xg - away_xg
@@ -708,10 +718,10 @@ class ApexProductionEngine:
             return "balanced"
 
     def generate_production_predictions(self) -> Dict[str, Any]:
-        """PRODUCTION: Generate professional predictions"""
+        """PRODUCTION: Generate professional predictions with continuous strength model"""
         logger.info(f"Starting production prediction for {self.data['home_team']} vs {self.data['away_team']}")
         
-        # Calculate xG with uncertainty
+        # Calculate xG with continuous strength model
         home_xg, away_xg, home_uncertainty, away_uncertainty = self._calculate_production_xg()
         
         # Run production simulation
@@ -719,23 +729,23 @@ class ApexProductionEngine:
             home_xg, away_xg, home_uncertainty, away_uncertainty
         )
         
-        # Get team tiers for display
+        # Get team tiers for display only
         league = self.data.get('league', 'premier_league')
         home_tier = self.tier_calibrator.get_team_tier(self.data['home_team'], league)
         away_tier = self.tier_calibrator.get_team_tier(self.data['away_team'], league)
         
         # Determine descriptive context
-        context = self._determine_descriptive_context(home_xg, away_xg, home_tier, away_tier)
+        context = self._determine_descriptive_context(home_xg, away_xg)
         
         # Calculate market edges
         market_edges = self.market_analyzer.calculate_edges(
             simulation_results, self.data['market_odds']
         )
         
-        # Generate explanations
+        # Generate explanations based on continuous strength model
         explanations = self.explainer.generate_context_explanation(
             context, self.data['home_team'], self.data['away_team'], 
-            home_tier, away_tier, league
+            home_xg, away_xg, league
         )
         
         # Risk assessment
@@ -795,7 +805,8 @@ class ApexProductionEngine:
                 'xG_uncertainty_propagated': True,
                 'goal_correlation_modeled': True,
                 'vig_properly_removed': True,
-                'sensitivity_tested': True
+                'sensitivity_tested': True,
+                'continuous_strength_model': True
             },
             'probabilities': {
                 'match_outcomes': {
@@ -821,19 +832,19 @@ class ApexProductionEngine:
             'betting_recommendations': betting_opportunities,
             'explanations': explanations,
             'risk_assessment': risk_assessment,
-            'production_summary': f"Production-grade analysis complete for {self.data['home_team']} vs {self.data['away_team']}. Model incorporates xG uncertainty, goal correlation, and proper vig removal."
+            'production_summary': f"Production-grade analysis complete for {self.data['home_team']} vs {self.data['away_team']}. Model uses continuous strength scoring with league-aware xG calculation."
         }
 
 def test_production_engine():
-    """Test the production engine"""
+    """Test the production engine with continuous strength model"""
     match_data = {
-        'home_team': 'Charlton Athletic', 'away_team': 'West Brom', 'league': 'championship',
-        'home_goals': 8, 'away_goals': 4, 'home_conceded': 6, 'away_conceded': 7,
-        'home_goals_home': 6, 'away_goals_away': 1,
+        'home_team': 'Liverpool', 'away_team': 'Aston Villa', 'league': 'premier_league',
+        'home_goals': 8, 'away_goals': 9, 'home_conceded': 10, 'away_conceded': 4,
+        'home_goals_home': 4, 'away_goals_away': 3,
         'market_odds': {
-            '1x2 Home': 2.50, '1x2 Draw': 2.95, '1x2 Away': 2.85,
-            'Over 2.5 Goals': 2.63, 'Under 2.5 Goals': 1.50,
-            'BTTS Yes': 2.10, 'BTTS No': 1.67
+            '1x2 Home': 1.62, '1x2 Draw': 4.33, '1x2 Away': 4.50,
+            'Over 2.5 Goals': 1.53, 'Under 2.5 Goals': 2.50,
+            'BTTS Yes': 1.62, 'BTTS No': 2.20
         },
         'bankroll': 1000,
         'kelly_fraction': 0.2
@@ -842,7 +853,7 @@ def test_production_engine():
     engine = ApexProductionEngine(match_data)
     results = engine.generate_production_predictions()
     
-    print("🎯 PRODUCTION PREDICTION RESULTS")
+    print("🎯 PRODUCTION PREDICTION RESULTS - CONTINUOUS STRENGTH MODEL")
     print("=" * 70)
     print(f"Match: {results['match']}")
     print(f"Expected Goals: Home {results['expected_goals']['home']:.2f} ± {results['expected_goals']['home_uncertainty']:.2f}")

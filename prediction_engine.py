@@ -675,7 +675,7 @@ class MatchContextAnalyzer:
             
         return min(95.0, confidence)
 
-class MultiLeaguePredictionEngine:
+class ProfessionalPredictionEngine:
     """MAIN PROFESSIONAL PREDICTION ENGINE - 10 LEAGUE SUPPORT"""
     
     def __init__(self, match_data: Dict[str, Any]):
@@ -686,7 +686,7 @@ class MultiLeaguePredictionEngine:
         self.staking_calculator = ProfessionalStakingCalculator()
         self.context_analyzer = MatchContextAnalyzer()
         
-        logger.info(f"Initialized multi-league engine for {self.data['home_team']} vs {self.data['away_team']}")
+        logger.info(f"Initialized professional engine for {self.data['home_team']} vs {self.data['away_team']}")
     
     def _validate_data(self, match_data: Dict[str, Any]) -> Dict[str, Any]:
         """Professional data validation"""
@@ -768,7 +768,7 @@ class MultiLeaguePredictionEngine:
                 home_xg, away_xg, xg_debug
             )
             
-            logger.info("Multi-league prediction generation completed successfully")
+            logger.info("Professional prediction generation completed successfully")
             return results
             
         except Exception as e:
@@ -1030,8 +1030,8 @@ class MultiLeaguePredictionEngine:
 # PROFESSIONAL TEST FUNCTION FOR ALL LEAGUES
 # =============================================================================
 
-def test_multi_league_engine():
-    """Test the multi-league prediction engine across all leagues"""
+def test_professional_engine():
+    """Test the professional prediction engine across all leagues"""
     
     test_data = {
         'home_team': 'Tottenham Hotspur',
@@ -1068,7 +1068,7 @@ def test_multi_league_engine():
         }
     }
     
-    print("🎯 MULTI-LEAGUE PREDICTION ENGINE TEST")
+    print("🎯 PROFESSIONAL MULTI-LEAGUE PREDICTION ENGINE TEST")
     print("=" * 70)
     
     # Test across different leagues
@@ -1076,7 +1076,7 @@ def test_multi_league_engine():
     
     for league in test_leagues:
         test_data['league'] = league
-        engine = MultiLeaguePredictionEngine(test_data)
+        engine = ProfessionalPredictionEngine(test_data)
         results = engine.generate_predictions()
         
         league_display = LEAGUE_PARAMS[league]['display_name']
@@ -1092,4 +1092,4 @@ def test_multi_league_engine():
         print()
 
 if __name__ == "__main__":
-    test_multi_league_engine()
+    test_professional_engine()

@@ -1,4 +1,4 @@
-# prediction_engine.py - PRODUCTION-READY WITH CONTEXTUAL STRENGTH MODEL
+# prediction_engine.py - PRODUCTION-READY WITH REFINED CONTEXTUAL STRENGTH MODEL
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson, skellam
@@ -15,46 +15,46 @@ warnings.filterwarnings('ignore')
 # 🎯 PRODUCTION LEAGUE PARAMS (Evidence-based only)
 LEAGUE_PARAMS = {
     'premier_league': {
-        'away_penalty': 0.85,
+        'away_penalty': 0.80,  # YOUR REFINEMENT: Increased from 0.85
         'min_edge': 0.08,
         'volatility_multiplier': 1.0,
         'avg_goals': 1.4,
-        'home_advantage': 1.15
+        'home_advantage': 1.20  # YOUR REFINEMENT: Increased from 1.15
     },
     'la_liga': {
-        'away_penalty': 0.87,
+        'away_penalty': 0.82,
         'min_edge': 0.06,
         'volatility_multiplier': 1.2,
         'avg_goals': 1.3,
-        'home_advantage': 1.12
+        'home_advantage': 1.18
     },
     'serie_a': {
-        'away_penalty': 0.86,
+        'away_penalty': 0.81,
         'min_edge': 0.10,
         'volatility_multiplier': 0.9,
         'avg_goals': 1.35,
-        'home_advantage': 1.13
+        'home_advantage': 1.19
     },
     'bundesliga': {
-        'away_penalty': 0.88,
+        'away_penalty': 0.83,
         'min_edge': 0.07,
         'volatility_multiplier': 0.8,
         'avg_goals': 1.45,
-        'home_advantage': 1.14
+        'home_advantage': 1.20
     },
     'ligue_1': {
-        'away_penalty': 0.84,
+        'away_penalty': 0.79,
         'min_edge': 0.09,
         'volatility_multiplier': 1.1,
         'avg_goals': 1.25,
-        'home_advantage': 1.12
+        'home_advantage': 1.18
     },
     'default': {
-        'away_penalty': 0.85,
+        'away_penalty': 0.80,
         'min_edge': 0.10,
         'volatility_multiplier': 1.0,
         'avg_goals': 1.4,
-        'home_advantage': 1.15
+        'home_advantage': 1.20
     }
 }
 
@@ -137,7 +137,7 @@ class ProductionLeagueCalibrator:
         return params['min_edge']
 
 class ProductionFeatureEngine:
-    """PRODUCTION: Feature engineering with CONTEXTUAL strength model"""
+    """PRODUCTION: Feature engineering with REFINED contextual strength model"""
     
     def __init__(self):
         self.calibrator = ProductionLeagueCalibrator()
@@ -155,7 +155,7 @@ class ProductionFeatureEngine:
     
     def calculate_contextual_strength(self, goals: int, conceded: int, team_tier: str, 
                                     league_avg: float, games_played: int = 6) -> Tuple[float, float]:
-        """YOUR EXACT SOLUTION: Blend recent form with historical context"""
+        """YOUR EXACT REFINEMENT: 60% recent, 40% historical weighting"""
         
         # Recent form (current data)
         recent_attack = goals / (games_played * league_avg)
@@ -164,22 +164,22 @@ class ProductionFeatureEngine:
         # Historical context (your tier-based insight)
         historical_attack, historical_defense = self.get_historical_context(team_tier)
         
-        # YOUR EXACT BLENDING: 70% recent, 30% historical
-        attack_strength = (0.7 * recent_attack) + (0.3 * historical_attack)
-        defense_strength = (0.7 * recent_defense) + (0.3 * historical_defense)
+        # YOUR EXACT REFINEMENT: 60% recent, 40% historical (was 70/30)
+        attack_strength = (0.6 * recent_attack) + (0.4 * historical_attack)
+        defense_strength = (0.6 * recent_defense) + (0.4 * historical_defense)
         
         return attack_strength, defense_strength
     
     def calculate_contextual_xg(self, home_goals: int, home_conceded: int, home_tier: str,
                               away_goals: int, away_conceded: int, away_tier: str, 
                               league: str) -> Tuple[float, float, float, float]:
-        """YOUR EXACT SOLUTION: Contextual xG with proper home/away weighting"""
+        """YOUR EXACT REFINEMENT: Contextual xG with boosted home advantage"""
         
         league_avg = self.calibrator.get_league_avg_goals(league)
-        home_advantage = self.calibrator.get_home_advantage(league)
-        away_penalty = self.calibrator.get_away_penalty(league)
+        home_advantage = self.calibrator.get_home_advantage(league)  # Now 1.20 for Premier League
+        away_penalty = self.calibrator.get_away_penalty(league)      # Now 0.80 for Premier League
         
-        # Calculate contextual strengths (YOUR FORMULA)
+        # Calculate contextual strengths with YOUR REFINED 60/40 weighting
         home_attack, home_defense = self.calculate_contextual_strength(
             home_goals, home_conceded, home_tier, league_avg
         )
@@ -187,7 +187,7 @@ class ProductionFeatureEngine:
             away_goals, away_conceded, away_tier, league_avg
         )
         
-        # YOUR EXACT xG CALCULATION
+        # YOUR EXACT xG CALCULATION with boosted home advantage
         home_xg = league_avg * home_attack * away_defense * home_advantage
         away_xg = league_avg * away_attack * home_defense * away_penalty
         
@@ -203,9 +203,9 @@ class ProductionFeatureEngine:
     
     def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, 
                             home_tier: str, away_tier: str, league: str) -> Dict[str, Any]:
-        """PRODUCTION: Create features with YOUR contextual strength model"""
+        """PRODUCTION: Create features with YOUR REFINED contextual strength model"""
         
-        # Calculate contextual xG with YOUR formula
+        # Calculate contextual xG with YOUR REFINED formula
         home_xg, away_xg, home_uncertainty, away_uncertainty = self.calculate_contextual_xg(
             context.get('home_goals', 0),
             context.get('home_conceded', 0),
@@ -224,7 +224,8 @@ class ProductionFeatureEngine:
             'total_xg': home_xg + away_xg,
             'xg_difference': home_xg - away_xg,
             'home_advantage_multiplier': self.calibrator.get_home_advantage(league),
-            'away_penalty': self.calibrator.get_away_penalty(league)
+            'away_penalty': self.calibrator.get_away_penalty(league),
+            'weighting_ratio': '60/40'  # Track the refined weighting
         }
         
         return features
@@ -495,7 +496,7 @@ class EnhancedTeamTierCalibrator:
         return list(self.team_databases.get(league, {}).keys())
 
 class ApexProductionEngine:
-    """PRODUCTION-READY PREDICTION ENGINE WITH CONTEXTUAL STRENGTH MODEL"""
+    """PRODUCTION-READY PREDICTION ENGINE WITH REFINED CONTEXTUAL STRENGTH MODEL"""
     
     def __init__(self, match_data: Dict[str, Any]):
         self.data = self._production_data_validation(match_data)
@@ -545,7 +546,7 @@ class ApexProductionEngine:
         return validated_data
 
     def _calculate_contextual_xg(self) -> Tuple[float, float, float, float]:
-        """YOUR SOLUTION: Calculate xG with contextual strength model"""
+        """YOUR REFINED SOLUTION: Calculate xG with 60/40 contextual strength model"""
         league = self.data.get('league', 'premier_league')
         
         # Get team tiers for contextual strength
@@ -624,10 +625,10 @@ class ApexProductionEngine:
             return "balanced"
 
     def generate_production_predictions(self) -> Dict[str, Any]:
-        """PRODUCTION: Generate professional predictions with YOUR contextual model"""
+        """PRODUCTION: Generate professional predictions with YOUR REFINED contextual model"""
         logger.info(f"Starting production prediction for {self.data['home_team']} vs {self.data['away_team']}")
         
-        # Calculate xG with YOUR contextual strength model
+        # Calculate xG with YOUR REFINED contextual strength model
         home_xg, away_xg, home_uncertainty, away_uncertainty = self._calculate_contextual_xg()
         
         # Run production simulation
@@ -705,9 +706,9 @@ class ApexProductionEngine:
             'match_context': context,
             'confidence_score': certainty * 100,
             'production_metrics': {
-                'contextual_strength_model': True,
-                'historical_context_blending': True,
-                'home_advantage_optimized': True,
+                'refined_contextual_model': True,
+                '60_40_historical_weighting': True,  # Track your refinement
+                'boosted_home_advantage': True,      # Track your refinement
                 'vig_properly_removed': True
             },
             'probabilities': {
@@ -734,11 +735,11 @@ class ApexProductionEngine:
             'betting_recommendations': betting_opportunities,
             'explanations': explanations,
             'risk_assessment': risk_assessment,
-            'production_summary': f"Contextual strength analysis complete for {self.data['home_team']} vs {self.data['away_team']}. Model blends recent form with historical quality using 70/30 weighting."
+            'production_summary': f"REFINED contextual strength analysis complete. Using 60/40 recent/historical weighting and boosted home advantage (1.20x)."
         }
 
-def test_contextual_model():
-    """Test the contextual strength model with Liverpool vs Villa"""
+def test_refined_model():
+    """Test the REFINED contextual strength model with Liverpool vs Villa"""
     match_data = {
         'home_team': 'Liverpool', 'away_team': 'Aston Villa', 'league': 'premier_league',
         'home_goals': 8, 'away_goals': 9, 'home_conceded': 10, 'away_conceded': 4,
@@ -754,7 +755,7 @@ def test_contextual_model():
     engine = ApexProductionEngine(match_data)
     results = engine.generate_production_predictions()
     
-    print("🎯 CONTEXTUAL STRENGTH MODEL RESULTS")
+    print("🎯 REFINED CONTEXTUAL STRENGTH MODEL RESULTS")
     print("=" * 70)
     print(f"Match: {results['match']}")
     print(f"Expected Goals: Home {results['expected_goals']['home']:.2f} ± {results['expected_goals']['home_uncertainty']:.2f}")
@@ -762,8 +763,8 @@ def test_contextual_model():
     print(f"Home Win: {results['probabilities']['match_outcomes']['home_win']:.1f}%")
     print(f"Draw: {results['probabilities']['match_outcomes']['draw']:.1f}%") 
     print(f"Away Win: {results['probabilities']['match_outcomes']['away_win']:.1f}%")
-    print(f"Context: {results['match_context']}")
+    print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']:.1f}%")
     print(f"Production Features: {list(results['production_metrics'].keys())}")
 
 if __name__ == "__main__":
-    test_contextual_model()
+    test_refined_model()

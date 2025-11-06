@@ -1,4 +1,4 @@
-# prediction_engine.py - PRODUCTION-READY WITH REFINED CONTEXTUAL STRENGTH MODEL
+# prediction_engine.py - FIXED VERSION
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson, skellam
@@ -17,14 +17,14 @@ LEAGUE_PARAMS = {
     'premier_league': {
         'away_penalty': 0.80,
         'min_edge': 0.08,
-        'volatility_multiplier': 1.0,
+        'volatility_multiplier': 1.0,  # ADDED THIS
         'avg_goals': 1.4,
         'home_advantage': 1.20
     },
     'default': {
         'away_penalty': 0.80,
         'min_edge': 0.10,
-        'volatility_multiplier': 1.0,
+        'volatility_multiplier': 1.0,  # ADDED THIS
         'avg_goals': 1.4,
         'home_advantage': 1.20
     }
@@ -62,6 +62,11 @@ class ProductionLeagueCalibrator:
     def get_min_edge(self, league: str) -> float:
         params = self.get_league_params(league)
         return params['min_edge']
+    
+    # ADDED THE MISSING METHOD
+    def get_stake_multiplier(self, league: str) -> float:
+        params = self.get_league_params(league)
+        return params['volatility_multiplier']
 
 class ProductionFeatureEngine:
     def __init__(self):
@@ -247,7 +252,7 @@ class ProductionStakingEngine:
                                    league: str, kelly_fraction: float = 0.2) -> Dict[str, float]:
         base_stake = self.calculate_kelly_stake(model_prob, odds, bankroll, kelly_fraction)
         
-        stake_multiplier = self.calibrator.get_stake_multiplier(league)
+        stake_multiplier = self.calibrator.get_stake_multiplier(league)  # NOW THIS WORKS
         adjusted_stake = base_stake * stake_multiplier
         
         final_stake = min(adjusted_stake, bankroll * 0.03)
@@ -290,7 +295,7 @@ class EnhancedTeamTierCalibrator:
     def get_all_teams_for_league(self, league: str) -> List[str]:
         return list(self.team_databases.get(league, {}).keys())
 
-# MAIN ENGINE CLASS - FIXED NAME
+# MAIN ENGINE CLASS
 class ApexProductionEngine:
     def __init__(self, match_data: Dict[str, Any]):
         self.data = self._production_data_validation(match_data)

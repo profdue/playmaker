@@ -564,19 +564,19 @@ def create_production_input_form():
         
         with odds_col1:
             st.write("**1X2 Market**")
-            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=2.50, step=0.01, key="production_home_odds")
-            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=2.95, step=0.01, key="production_draw_odds")
-            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.85, step=0.01, key="production_away_odds")
+            home_odds = st.number_input("Home Win Odds", min_value=1.01, value=3.10, step=0.01, key="production_home_odds")
+            draw_odds = st.number_input("Draw Odds", min_value=1.01, value=3.50, step=0.01, key="production_draw_odds")
+            away_odds = st.number_input("Away Win Odds", min_value=1.01, value=2.25, step=0.01, key="production_away_odds")
         
         with odds_col2:
             st.write("**Over/Under Markets**")
-            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=2.63, step=0.01, key="production_over_25_odds")
-            under_25_odds = st.number_input("Under 2.5 Goals", min_value=1.01, value=1.50, step=0.01, key="production_under_25_odds")
+            over_25_odds = st.number_input("Over 2.5 Goals", min_value=1.01, value=1.80, step=0.01, key="production_over_25_odds")
+            under_25_odds = st.number_input("Under 2.5 Goals", min_value=1.01, value=2.50, step=0.01, key="production_under_25_odds")
         
         with odds_col3:
             st.write("**Both Teams to Score**")
-            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=2.10, step=0.01, key="production_btts_yes_odds")
-            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=1.67, step=0.01, key="production_btts_no_odds")
+            btts_yes_odds = st.number_input("BTTS Yes", min_value=1.01, value=1.67, step=0.01, key="production_btts_yes_odds")
+            btts_no_odds = st.number_input("BTTS No", min_value=1.01, value=2.10, step=0.01, key="production_btts_no_odds")
 
     with tab3:
         st.markdown("### ⚙️ Risk Management")

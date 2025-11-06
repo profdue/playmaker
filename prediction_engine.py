@@ -1,4 +1,4 @@
-# prediction_engine.py - ENHANCED CHAMPIONSHIP CALIBRATION
+# prediction_engine.py - COMPLETE ENHANCED CHAMPIONSHIP ENGINE
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -12,7 +12,7 @@ from enum import Enum
 import warnings
 warnings.filterwarnings('ignore')
 
-# 🎯 ENHANCED CHAMPIONSHIP PARAMS BASED ON REAL MATCH ANALYSIS
+# 🎯 ENHANCED CHAMPIONSHIP PARAMS
 LEAGUE_PARAMS = {
     'premier_league': {'xg_conversion_multiplier': 1.00, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.25, 'total_xg_offensive_threshold': 3.25, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.00},
     'serie_a': {'xg_conversion_multiplier': 0.94, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.90, 'xg_diff_threshold': 0.32, 'confidence_league_modifier': 0.10},
@@ -21,17 +21,17 @@ LEAGUE_PARAMS = {
     'ligue_1': {'xg_conversion_multiplier': 1.02, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.30, 'total_xg_offensive_threshold': 3.20, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': -0.03},
     'eredivisie': {'xg_conversion_multiplier': 1.10, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.50, 'total_xg_offensive_threshold': 3.60, 'xg_diff_threshold': 0.36, 'confidence_league_modifier': -0.05},
     
-    # 🎯 ENHANCED CHAMPIONSHIP CALIBRATION - BASED ON CHARLTON vs WEST BROM ANALYSIS
+    # 🎯 ENHANCED CHAMPIONSHIP CALIBRATION
     'championship': {
-        'xg_conversion_multiplier': 0.92,  # Increased from 0.90 - better reflects actual scoring
-        'away_penalty': 0.92,  # Increased penalty for away teams (was 0.95)
-        'total_xg_defensive_threshold': 2.15,  # Lowered - Championship more defensive than expected
-        'total_xg_offensive_threshold': 3.05,  # Lowered - fewer high-scoring games
-        'xg_diff_threshold': 0.38,  # Increased - home advantage more significant
-        'confidence_league_modifier': 0.12,  # Increased uncertainty requirement
-        'home_advantage_multiplier': 1.25,  # NEW: Enhanced home advantage
-        'away_scoring_drought_trigger': 0.8,  # NEW: BTTS No trigger for poor away scorers
-        'recent_form_weight': 0.35  # NEW: Higher weight on recent form over reputation
+        'xg_conversion_multiplier': 0.92,
+        'away_penalty': 0.92,
+        'total_xg_defensive_threshold': 2.15,
+        'total_xg_offensive_threshold': 3.05,
+        'xg_diff_threshold': 0.38,
+        'confidence_league_modifier': 0.12,
+        'home_advantage_multiplier': 1.25,
+        'away_scoring_drought_trigger': 0.8,
+        'recent_form_weight': 0.35
     },
     
     'liga_portugal': {'xg_conversion_multiplier': 0.95, 'away_penalty': 0.96, 'total_xg_defensive_threshold': 2.10, 'total_xg_offensive_threshold': 2.85, 'xg_diff_threshold': 0.34, 'confidence_league_modifier': 0.07},
@@ -52,7 +52,7 @@ class MatchContext(Enum):
     BALANCED = "balanced"
 
 class MatchNarrative:
-    """ENHANCED MATCH NARRATIVE WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED MATCH NARRATIVE WITH CHAMPIONSHIP FEATURES"""
     
     def __init__(self):
         self.dominance = "balanced"
@@ -64,8 +64,8 @@ class MatchNarrative:
         self.quality_gap = "even"
         self.expected_outcome = "balanced"
         self.betting_priority = []
-        self.home_advantage_amplified = False  # NEW: Championship home advantage flag
-        self.away_scoring_issues = False  # NEW: Away scoring drought detection
+        self.home_advantage_amplified = False
+        self.away_scoring_issues = False
         
     def to_dict(self):
         return {
@@ -120,7 +120,7 @@ class IntelligenceMetrics:
     context_confidence: float
 
 class EnhancedFeatureEngine:
-    """ENHANCED FEATURE ENGINEERING WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED FEATURE ENGINEERING WITH CHAMPIONSHIP LOGIC"""
     
     def __init__(self):
         self.feature_metadata = {}
@@ -128,10 +128,8 @@ class EnhancedFeatureEngine:
     def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, home_tier: str, away_tier: str, league: str) -> Dict[str, float]:
         features = {}
         
-        # 🎯 ENHANCED: League-specific tier adjustments
         tier_adjustments = self._calculate_enhanced_tier_adjustments(home_tier, away_tier, league, context)
         
-        # Calculate base xG from goals data with league adjustments
         home_goals = context.get('home_goals', 0)
         away_goals = context.get('away_goals', 0)
         home_conceded = context.get('home_conceded', 0)
@@ -154,10 +152,6 @@ class EnhancedFeatureEngine:
             'away_xg_against': away_conceded / 6,
         })
         
-        # 🎯 ENHANCED: Recent form with Championship weighting
-        home_recent_weight = 0.35 if league == 'championship' else 0.25
-        away_recent_weight = 0.35 if league == 'championship' else 0.25
-        
         features.update({
             'home_form_attack': home_xg,
             'away_form_attack': away_xg,
@@ -165,7 +159,6 @@ class EnhancedFeatureEngine:
             'away_form_defense': away_conceded / 6,
         })
         
-        # Enhanced matchup features
         features.update({
             'home_attack_vs_away_defense': home_xg / (away_conceded / 6 + 0.1),
             'away_attack_vs_home_defense': away_xg / (home_conceded / 6 + 0.1),
@@ -181,11 +174,11 @@ class EnhancedFeatureEngine:
         return features
     
     def _calculate_championship_xg(self, total_goals: int, recent_goals: int, is_home: bool, adjustments: Dict) -> float:
-        """Enhanced Championship xG calculation based on real match analysis"""
+        """Enhanced Championship xG calculation"""
         base_xg = total_goals / 6
         
         # 🎯 ENHANCED: Recent form has higher weight in Championship
-        recent_weight = 0.4  # 40% weight on recent home/away form
+        recent_weight = 0.4
         recent_xg = recent_goals / 3 if recent_goals > 0 else base_xg
         
         weighted_xg = (base_xg * (1 - recent_weight)) + (recent_xg * recent_weight)
@@ -212,7 +205,7 @@ class EnhancedFeatureEngine:
             'premier_league': 1.0, 'la_liga': 0.95, 'serie_a': 1.15, 
             'bundesliga': 0.9, 'ligue_1': 1.05, 'liga_portugal': 1.1,
             'brasileirao': 0.95, 'liga_mx': 1.0, 'eredivisie': 0.9,
-            'championship': 1.12  # Increased from 1.08
+            'championship': 1.12
         }
         
         impact_multiplier = league_confidence_multipliers.get(league, 1.0)
@@ -285,8 +278,8 @@ class EnhancedFeatureEngine:
         
         # 🎯 ENHANCED: Championship-specific motivation factors
         if league == 'championship':
-            home_motivation *= 1.05  # Higher motivation impact in Championship
-            away_motivation *= 0.98  # Slightly reduced away motivation
+            home_motivation *= 1.05
+            away_motivation *= 0.98
         
         features.update({
             'home_injury_factor': 1.0 - home_injury_impact,
@@ -300,17 +293,16 @@ class EnhancedFeatureEngine:
         return features
 
 class EnhancedMatchSimulator:
-    """ENHANCED MONTE CARLO SIMULATION WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED MONTE CARLO SIMULATION"""
     
     def __init__(self, n_simulations: int = 25000):
         self.n_simulations = n_simulations
         
     def simulate_match_dixon_coles(self, home_xg: float, away_xg: float, correlation: float = 0.2, league: str = 'premier_league'):
-        # 🎯 ENHANCED: League-specific correlation adjustments
         if league == 'championship':
-            correlation = 0.15  # Lower correlation - more unpredictable
+            correlation = 0.15
         elif league == 'serie_a':
-            correlation = 0.25  # Higher correlation - more predictable
+            correlation = 0.25
         
         goal_sum = home_xg + away_xg
         dynamic_correlation = correlation * min(1.0, goal_sum / 3.0)
@@ -348,11 +340,8 @@ class EnhancedMatchSimulator:
         
         # 🎯 ENHANCED: Championship-specific probability adjustments
         if league == 'championship':
-            # Slightly reduce BTTS probability for Championship
             btts_yes *= 0.96
             btts_no = 1 - btts_yes
-            
-            # Slightly reduce high-scoring probabilities
             over_25 *= 0.94
             over_35 *= 0.92
         
@@ -367,7 +356,7 @@ class EnhancedMatchSimulator:
         }
 
 class EnhancedLeagueCalibrator:
-    """ENHANCED LEAGUE CALIBRATION WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED LEAGUE CALIBRATION"""
     
     def __init__(self):
         self.league_profiles = {
@@ -381,18 +370,18 @@ class EnhancedLeagueCalibrator:
             'liga_mx': {'goal_intensity': 'medium', 'defensive_variance': 'high', 'calibration_factor': 1.01, 'home_advantage': 0.40, 'btts_baseline': 0.50, 'over_25_baseline': 0.49, 'tier_impact': 1.0, 'confidence_multiplier': 1.0},
             'eredivisie': {'goal_intensity': 'high', 'defensive_variance': 'high', 'calibration_factor': 1.03, 'home_advantage': 0.30, 'btts_baseline': 0.54, 'over_25_baseline': 0.56, 'tier_impact': 0.9, 'confidence_multiplier': 0.9},
             
-            # 🎯 ENHANCED CHAMPIONSHIP PROFILE - BASED ON REAL MATCH ANALYSIS
+            # 🎯 ENHANCED CHAMPIONSHIP PROFILE
             'championship': {
-                'goal_intensity': 'medium_low',  # Changed from medium_high
-                'defensive_variance': 'very_high',  # Increased variance
-                'calibration_factor': 1.04,  # Increased from 1.02
-                'home_advantage': 0.45,  # Increased from 0.40 - stronger home advantage
-                'btts_baseline': 0.48,  # Reduced from 0.51 - fewer BTTS
-                'over_25_baseline': 0.46,  # Reduced from 0.49 - fewer high-scoring games
-                'tier_impact': 1.15,  # Increased from 1.08 - reputation matters less
-                'confidence_multiplier': 1.12,  # Increased uncertainty
-                'home_form_boost': 1.12,  # NEW: Recent home form multiplier
-                'away_scoring_penalty': 0.88  # NEW: Penalty for poor away scorers
+                'goal_intensity': 'medium_low',
+                'defensive_variance': 'very_high',
+                'calibration_factor': 1.04,
+                'home_advantage': 0.45,
+                'btts_baseline': 0.48,
+                'over_25_baseline': 0.46,
+                'tier_impact': 1.15,
+                'confidence_multiplier': 1.12,
+                'home_form_boost': 1.12,
+                'away_scoring_penalty': 0.88
             }
         }
     
@@ -403,13 +392,13 @@ class EnhancedLeagueCalibrator:
         # 🎯 ENHANCED: Championship-specific market adjustments
         if league == 'championship':
             if market_type == 'over_25':
-                base_calibrated *= 0.94  # Reduce over probability
+                base_calibrated *= 0.94
             elif market_type == 'btts_yes':
-                base_calibrated *= 0.96  # Reduce BTTS probability
+                base_calibrated *= 0.96
             elif market_type == 'home_win':
-                base_calibrated *= 1.06  # Boost home win probability
+                base_calibrated *= 1.06
             elif market_type == 'away_win':
-                base_calibrated *= 0.94  # Reduce away win probability
+                base_calibrated *= 0.94
         else:
             if market_type == 'over_25':
                 if profile['goal_intensity'] == 'very_high':
@@ -436,7 +425,7 @@ class EnhancedLeagueCalibrator:
         return profile.get('confidence_multiplier', 1.0)
 
 class EnhancedPredictionExplainer:
-    """ENHANCED EXPLANATION ENGINE WITH CHAMPIONSHIP CONTEXT"""
+    """ENHANCED EXPLANATION ENGINE"""
     
     def __init__(self):
         self.feature_descriptions = {
@@ -506,7 +495,6 @@ class EnhancedPredictionExplainer:
         home_defense = features.get('home_xg_against', 1.0)
         away_defense = features.get('away_xg_against', 1.0)
         total_xg = features.get('total_xg_expected', 2.0)
-        quality_gap = features.get('quality_gap_metric', 1.0)
         
         btts_prob = probabilities.get('btts_yes', 0.5)
         
@@ -563,7 +551,7 @@ class EnhancedPredictionExplainer:
         return explanations
 
 class EnhancedTeamTierCalibrator:
-    """ENHANCED TEAM TIER CALIBRATION WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED TEAM TIER CALIBRATION"""
     
     def __init__(self):
         self.league_baselines = {
@@ -579,12 +567,12 @@ class EnhancedTeamTierCalibrator:
             
             # 🎯 ENHANCED CHAMPIONSHIP BASELINES
             'championship': {
-                'avg_goals': 2.5,  # Reduced from 2.6
-                'home_advantage': 0.44,  # Increased from 0.40
-                'btts_rate': 0.48,  # Reduced from 0.51
-                'home_win_rate': 0.42,  # NEW: Higher home win rate
-                'draw_rate': 0.26,  # NEW: Standard draw rate
-                'away_win_rate': 0.32  # NEW: Lower away win rate
+                'avg_goals': 2.5,
+                'home_advantage': 0.44,
+                'btts_rate': 0.48,
+                'home_win_rate': 0.42,
+                'draw_rate': 0.26,
+                'away_win_rate': 0.32
             },
         }
         
@@ -625,7 +613,7 @@ class EnhancedTeamTierCalibrator:
         return baseline.get(metric, 0.5)
 
 class EnhancedGoalModel:
-    """ENHANCED GOAL PREDICTION MODEL WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED GOAL PREDICTION MODEL"""
     
     def __init__(self):
         self.feature_engine = EnhancedFeatureEngine()
@@ -743,7 +731,7 @@ class ApexEnhancedEngine:
             'away_motivation': self.data.get('motivation', {}).get('away', 'Normal'),
         }
         
-        home_team_data = {'dummy': 1}  # Placeholder for feature engine
+        home_team_data = {'dummy': 1}
         away_team_data = {'dummy': 1}
         
         features = self.goal_model.feature_engine.create_match_features(
@@ -753,6 +741,7 @@ class ApexEnhancedEngine:
         home_xg = features.get('home_xg_for', 1.0)
         away_xg = features.get('away_xg_for', 1.0)
         
+        logger.info(f"Enhanced xG calculated: {self.data['home_team']} {home_xg:.2f} - {self.data['away_team']} {away_xg:.2f}")
         return home_xg, away_xg
 
     def _get_enhanced_tier_based_quality_gap(self) -> str:
@@ -798,7 +787,6 @@ class ApexEnhancedEngine:
         
         # 🎯 ENHANCED: Championship-specific context detection
         if league == 'championship':
-            # Enhanced home advantage detection
             home_recent_goals = self.data.get('home_goals_home', 0)
             away_recent_goals = self.data.get('away_goals_away', 0)
             
@@ -806,11 +794,13 @@ class ApexEnhancedEngine:
             if (xg_diff >= 0.35 and quality_gap in ['significant', 'extreme'] and 
                 home_recent_goals >= 5 and away_recent_goals <= 2):
                 narrative.home_advantage_amplified = True
+                logger.info("🎯 ENHANCED: Home advantage amplified with recent form support")
                 return "home_dominance"
             
             # Away scoring issues trigger defensive context
             if away_recent_goals <= 1 and total_xg < 2.8:
                 narrative.away_scoring_issues = True
+                logger.info("🎯 ENHANCED: Away scoring issues detected")
                 return "defensive_battle"
             
             # Standard context detection with Championship adjustments
@@ -851,14 +841,12 @@ class ApexEnhancedEngine:
         
         # 🎯 ENHANCED: Championship confidence factors
         if league == 'championship':
-            # Recent form contributes more to confidence
             home_recent = self.data.get('home_goals_home', 0)
             away_recent = self.data.get('away_goals_away', 0)
             
             form_confidence = min(30, (home_recent * 3) + (max(0, 3 - away_recent) * 4))
             base_confidence += form_confidence
             
-            # Quality gap contributes less in Championship
             quality_gap = self._get_enhanced_tier_based_quality_gap()
             if quality_gap == 'extreme':
                 base_confidence += 25
@@ -867,7 +855,6 @@ class ApexEnhancedEngine:
             elif quality_gap == 'moderate':
                 base_confidence += 8
                 
-            # xG factors
             if abs(xg_diff) > 0.5:
                 base_confidence += 20
             elif abs(xg_diff) > 0.3:
@@ -877,7 +864,6 @@ class ApexEnhancedEngine:
                 base_confidence += 15
                 
         else:
-            # Standard confidence calculation for other leagues
             quality_gap = self._get_enhanced_tier_based_quality_gap()
             if quality_gap == 'extreme':
                 base_confidence += 30
@@ -925,7 +911,6 @@ class ApexEnhancedEngine:
             else:
                 narrative.betting_priority = ['Value Bets', 'BTTS Yes', 'Over 2.5 Goals']
         else:
-            # Standard betting priorities for other leagues
             if narrative.expected_outcome == 'home_dominance':
                 narrative.betting_priority = ['Home Win', 'Home -1 Handicap', 'Under 3.5']
             elif narrative.expected_outcome == 'away_counter':
@@ -980,6 +965,66 @@ class ApexEnhancedEngine:
             confidence_intervals={},
             probability_volatility={}
         )
+
+    def _calculate_enhanced_data_quality(self) -> float:
+        """ENHANCED: Data quality assessment"""
+        quality_score = 80.0
+        
+        required_fields = ['home_goals', 'away_goals', 'home_goals_home', 'away_goals_away']
+        for field in required_fields:
+            if field in self.data and self.data[field] > 0:
+                quality_score += 3
+                
+        if 'home_form' in self.data and len(self.data['home_form']) >= 5:
+            quality_score += 5
+        if 'away_form' in self.data and len(self.data['away_form']) >= 5:
+            quality_score += 5
+            
+        h2h_data = self.data.get('h2h_data', {})
+        if h2h_data.get('matches', 0) >= 3:
+            quality_score += 7
+            
+        return min(100, quality_score)
+
+    def _generate_enhanced_summary(self, narrative: MatchNarrative, predictions: Dict, 
+                                home_team: str, away_team: str, home_tier: str, away_tier: str,
+                                league: str) -> str:
+        """ENHANCED: Summary with Championship context"""
+        
+        home_win = predictions.get('home_win', 0) * 100
+        draw = predictions.get('draw', 0) * 100
+        away_win = predictions.get('away_win', 0) * 100
+        
+        context = narrative.expected_outcome
+        
+        if league == 'championship':
+            base_summary = f"A Championship encounter between {home_team} ({home_tier}) and {away_team} ({away_tier}). "
+            
+            if context == 'home_dominance':
+                if narrative.home_advantage_amplified:
+                    return base_summary + f"Strong home advantage and recent form suggest {home_team} should control this match and secure victory ({home_win:.1f}% probability)."
+                else:
+                    return base_summary + f"Home advantage and quality difference should see {home_team} emerge victorious ({home_win:.1f}% probability)."
+                    
+            elif context == 'defensive_battle':
+                if narrative.away_scoring_issues:
+                    return base_summary + f"Defensive organization and {away_team}'s scoring struggles suggest a low-scoring affair, likely favoring the home side ({home_win:.1f}% probability)."
+                else:
+                    return base_summary + f"Both teams' defensive approaches should result in a tight, low-scoring match ({draw:.1f}% draw probability)."
+                    
+            elif context == 'away_counter':
+                return base_summary + f"{away_team}'s quality advantage may overcome home field disadvantage, making them favorites ({away_win:.1f}% probability)."
+                
+            elif context == 'offensive_showdown':
+                return base_summary + f"Attacking philosophies from both teams should produce an open, high-scoring game with goals at both ends."
+                
+            elif context == 'tactical_stalemate':
+                return base_summary + f"Evenly matched teams with organized approaches likely to cancel each other out, resulting in a draw ({draw:.1f}% probability)."
+                
+            else:
+                return base_summary + f"A balanced Championship match where either team could emerge victorious based on key moments."
+        else:
+            return f"A competitive match expected between {home_team} and {away_team}, with both teams having reasonable chances. The outcome will likely be decided by key moments and individual quality."
 
     def generate_enhanced_predictions(self, mc_iterations: int = 25000) -> Dict[str, Any]:
         """Generate enhanced professional-grade predictions with Championship fixes"""
@@ -1103,74 +1148,8 @@ class ApexEnhancedEngine:
             }
         }
 
-    def _calculate_enhanced_data_quality(self) -> float:
-        """ENHANCED: Data quality assessment"""
-        quality_score = 80.0  # Base score
-        
-        # Check data completeness
-        required_fields = ['home_goals', 'away_goals', 'home_goals_home', 'away_goals_away']
-        for field in required_fields:
-            if field in self.data and self.data[field] > 0:
-                quality_score += 3
-                
-        # Check form data
-        if 'home_form' in self.data and len(self.data['home_form']) >= 5:
-            quality_score += 5
-        if 'away_form' in self.data and len(self.data['away_form']) >= 5:
-            quality_score += 5
-            
-        # Check H2H data
-        h2h_data = self.data.get('h2h_data', {})
-        if h2h_data.get('matches', 0) >= 3:
-            quality_score += 7
-            
-        return min(100, quality_score)
-
-    def _generate_enhanced_summary(self, narrative: MatchNarrative, predictions: Dict, 
-                                home_team: str, away_team: str, home_tier: str, away_tier: str,
-                                league: str) -> str:
-        """ENHANCED: Summary with Championship context"""
-        
-        home_win = predictions.get('home_win', 0) * 100
-        draw = predictions.get('draw', 0) * 100
-        away_win = predictions.get('away_win', 0) * 100
-        
-        context = narrative.expected_outcome
-        
-        if league == 'championship':
-            base_summary = f"A Championship encounter between {home_team} ({home_tier}) and {away_team} ({away_tier}). "
-            
-            if context == 'home_dominance':
-                if narrative.home_advantage_amplified:
-                    return base_summary + f"Strong home advantage and recent form suggest {home_team} should control this match and secure victory ({home_win:.1f}% probability)."
-                else:
-                    return base_summary + f"Home advantage and quality difference should see {home_team} emerge victorious ({home_win:.1f}% probability)."
-                    
-            elif context == 'defensive_battle':
-                if narrative.away_scoring_issues:
-                    return base_summary + f"Defensive organization and {away_team}'s scoring struggles suggest a low-scoring affair, likely favoring the home side ({home_win:.1f}% probability)."
-                else:
-                    return base_summary + f"Both teams' defensive approaches should result in a tight, low-scoring match ({draw:.1f}% draw probability)."
-                    
-            elif context == 'away_counter':
-                return base_summary + f"{away_team}'s quality advantage may overcome home field disadvantage, making them favorites ({away_win:.1f}% probability)."
-                
-            elif context == 'offensive_showdown':
-                return base_summary + f"Attacking philosophies from both teams should produce an open, high-scoring game with goals at both ends."
-                
-            elif context == 'tactical_stalemate':
-                return base_summary + f"Evenly matched teams with organized approaches likely to cancel each other out, resulting in a draw ({draw:.1f}% probability)."
-                
-            else:
-                return base_summary + f"A balanced Championship match where either team could emerge victorious based on key moments."
-        else:
-            # Standard summary for other leagues
-            return f"A competitive match expected between {home_team} and {away_team}, with both teams having reasonable chances. The outcome will likely be decided by key moments and individual quality."
-
-# Enhanced betting engine would continue with similar Championship-specific adjustments...
-
 def test_enhanced_championship_predictor():
-    """Test the enhanced Championship predictor with Charlton vs West Brom"""
+    """Test the enhanced Championship predictor"""
     match_data = {
         'home_team': 'Charlton Athletic', 'away_team': 'West Brom', 'league': 'championship',
         'home_goals': 8, 'away_goals': 4, 'home_conceded': 6, 'away_conceded': 7,

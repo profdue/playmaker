@@ -1,4 +1,4 @@
-# prediction_engine.py - COMPLETE ENHANCED CHAMPIONSHIP ENGINE
+# prediction_engine.py - COMPLETE ENHANCED PROFESSIONAL ENGINE
 import numpy as np
 from scipy.stats import poisson, skellam
 from typing import Dict, Any, Tuple, List, Optional
@@ -12,7 +12,7 @@ from enum import Enum
 import warnings
 warnings.filterwarnings('ignore')
 
-# 🎯 ENHANCED CHAMPIONSHIP PARAMS
+# 🎯 ENHANCED PROFESSIONAL LEAGUE PARAMS
 LEAGUE_PARAMS = {
     'premier_league': {'xg_conversion_multiplier': 1.00, 'away_penalty': 1.00, 'total_xg_defensive_threshold': 2.25, 'total_xg_offensive_threshold': 3.25, 'xg_diff_threshold': 0.35, 'confidence_league_modifier': 0.00},
     'serie_a': {'xg_conversion_multiplier': 0.94, 'away_penalty': 0.98, 'total_xg_defensive_threshold': 2.05, 'total_xg_offensive_threshold': 2.90, 'xg_diff_threshold': 0.32, 'confidence_league_modifier': 0.10},
@@ -52,7 +52,7 @@ class MatchContext(Enum):
     BALANCED = "balanced"
 
 class MatchNarrative:
-    """ENHANCED MATCH NARRATIVE WITH CHAMPIONSHIP FEATURES"""
+    """ENHANCED MATCH NARRATIVE WITH PROFESSIONAL FEATURES"""
     
     def __init__(self):
         self.dominance = "balanced"
@@ -119,11 +119,107 @@ class IntelligenceMetrics:
     calibration_status: str
     context_confidence: float
 
+class ProfessionalLeagueCalibrator:
+    """PROFESSIONAL LEAGUE CALIBRATION SYSTEM"""
+    
+    def __init__(self):
+        self.league_calibration = {
+            'premier_league': {'volatility': 'medium', 'adjustment': 0.00, 'preferred_contexts': ['all'], 'min_edge': 0.08},
+            'la_liga': {'volatility': 'low', 'adjustment': 0.10, 'preferred_contexts': ['defensive_battle', 'tactical_stalemate'], 'min_edge': 0.10},
+            'serie_a': {'volatility': 'medium_low', 'adjustment': 0.15, 'preferred_contexts': ['defensive_battle', 'home_dominance'], 'min_edge': 0.12},
+            'bundesliga': {'volatility': 'high', 'adjustment': -0.10, 'preferred_contexts': ['offensive_showdown', 'home_dominance'], 'min_edge': 0.06},
+            'ligue_1': {'volatility': 'medium', 'adjustment': -0.05, 'preferred_contexts': ['home_dominance', 'offensive_showdown'], 'min_edge': 0.08},
+            'eredivisie': {'volatility': 'high', 'adjustment': -0.12, 'preferred_contexts': ['offensive_showdown'], 'min_edge': 0.05},
+            'liga_portugal': {'volatility': 'low', 'adjustment': 0.12, 'preferred_contexts': ['home_dominance', 'defensive_battle'], 'min_edge': 0.11},
+            'brasileirao': {'volatility': 'high', 'adjustment': 0.08, 'preferred_contexts': ['home_dominance', 'defensive_battle'], 'min_edge': 0.10},
+            'liga_mx': {'volatility': 'very_high', 'adjustment': -0.08, 'preferred_contexts': ['all'], 'min_edge': 0.12, 'stake_cap': 0.02},
+            'championship': {'volatility': 'very_high', 'adjustment': 0.08, 'preferred_contexts': ['home_dominance'], 'min_edge': 0.10}
+        }
+        
+        self.volatility_multipliers = {
+            'low': 1.2, 'medium_low': 1.1, 'medium': 1.0, 
+            'high': 0.8, 'very_high': 0.6
+        }
+    
+    def get_professional_confidence(self, raw_confidence: float, context: str, league: str) -> dict:
+        """Enhanced calibration with dynamic context bonuses"""
+        calibration = self.league_calibration.get(league, self.league_calibration['premier_league'])
+        
+        # Base league adjustment
+        base_adjusted = raw_confidence * (1 - calibration['adjustment'])
+        
+        # Dynamic context bonus (proportional to confidence gap)
+        context_bonus = 0.05 * (1 - raw_confidence)  # Your refinement
+        
+        if context in calibration['preferred_contexts'] or 'all' in calibration['preferred_contexts']:
+            final_confidence = base_adjusted * (1 + context_bonus)
+        else:
+            final_confidence = base_adjusted * (1 - context_bonus)
+        
+        # Professional cap
+        final_confidence = min(final_confidence, 0.85)
+        
+        return {
+            'raw_confidence': raw_confidence,
+            'league_adjusted': base_adjusted,
+            'context_bonus_used': context_bonus,
+            'final_professional': final_confidence,
+            'volatility_multiplier': self.volatility_multipliers[calibration['volatility']],
+            'preferred_contexts': calibration['preferred_contexts'],
+            'league_profile': calibration
+        }
+    
+    def calculate_professional_stake(self, professional_confidence: float, base_stake: float, 
+                                   league: str, bet_type: str) -> float:
+        """Volatility-integrated stake sizing"""
+        calibration = self.league_calibration[league]
+        volatility_multiplier = self.volatility_multipliers[calibration['volatility']]
+        
+        # Base stake adjusted for volatility
+        stake = base_stake * volatility_multiplier
+        
+        # Bet type adjustment
+        type_multipliers = {
+            'protected_single': 1.0,
+            'value_combo': 0.6,
+            'aggressive_single': 0.8
+        }
+        
+        stake *= type_multipliers.get(bet_type, 0.5)
+        
+        # League-specific cap (e.g., Liga MX)
+        if 'stake_cap' in calibration:
+            stake = min(stake, calibration['stake_cap'])
+        
+        return stake
+    
+    def should_place_bet(self, model_prob: float, market_odds: float, league: str) -> bool:
+        """League-specific edge verification"""
+        implied_prob = 1 / market_odds
+        raw_edge = model_prob - implied_prob
+        min_edge = self.league_calibration[league]['min_edge']
+        
+        return raw_edge >= min_edge
+    
+    def get_league_analysis(self, league: str) -> dict:
+        """Get comprehensive league analysis"""
+        calibration = self.league_calibration.get(league, self.league_calibration['premier_league'])
+        return {
+            'league_name': league.replace('_', ' ').title(),
+            'volatility': calibration['volatility'],
+            'adjustment': calibration['adjustment'],
+            'preferred_contexts': calibration['preferred_contexts'],
+            'min_edge': calibration['min_edge'],
+            'volatility_multiplier': self.volatility_multipliers[calibration['volatility']],
+            'stake_cap': calibration.get('stake_cap', None)
+        }
+
 class EnhancedFeatureEngine:
-    """ENHANCED FEATURE ENGINEERING WITH CHAMPIONSHIP LOGIC"""
+    """ENHANCED FEATURE ENGINEERING WITH PROFESSIONAL LOGIC"""
     
     def __init__(self):
         self.feature_metadata = {}
+        self.pro_calibrator = ProfessionalLeagueCalibrator()
         
     def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, home_tier: str, away_tier: str, league: str) -> Dict[str, float]:
         features = {}
@@ -137,7 +233,7 @@ class EnhancedFeatureEngine:
         home_goals_home = context.get('home_goals_home', 0)
         away_goals_away = context.get('away_goals_away', 0)
         
-        # 🎯 ENHANCED: Championship-specific xG calculation
+        # 🎯 ENHANCED: League-specific xG calculation
         if league == 'championship':
             home_xg = self._calculate_championship_xg(home_goals, home_goals_home, True, tier_adjustments)
             away_xg = self._calculate_championship_xg(away_goals, away_goals_away, False, tier_adjustments)
@@ -200,7 +296,7 @@ class EnhancedFeatureEngine:
         strength_ratio = home_strength / away_strength
         quality_gap_score = min(2.0, strength_ratio)
         
-        # 🎯 ENHANCED: Championship-specific adjustments
+        # 🎯 ENHANCED: League-specific adjustments
         league_confidence_multipliers = {
             'premier_league': 1.0, 'la_liga': 0.95, 'serie_a': 1.15, 
             'bundesliga': 0.9, 'ligue_1': 1.05, 'liga_portugal': 1.1,
@@ -276,7 +372,7 @@ class EnhancedFeatureEngine:
         quality_gap = tier_adjustments.get('quality_gap_score', 1.0)
         motivation_amplifier = min(1.5, 1.0 + (quality_gap - 1.0) * 0.5)
         
-        # 🎯 ENHANCED: Championship-specific motivation factors
+        # 🎯 ENHANCED: League-specific motivation factors
         if league == 'championship':
             home_motivation *= 1.05
             away_motivation *= 0.98
@@ -338,7 +434,7 @@ class EnhancedMatchSimulator:
                        for score, count in sorted(score_counts.items(), 
                        key=lambda x: x[1], reverse=True)[:8]}
         
-        # 🎯 ENHANCED: Championship-specific probability adjustments
+        # 🎯 ENHANCED: League-specific probability adjustments
         if league == 'championship':
             btts_yes *= 0.96
             btts_no = 1 - btts_yes
@@ -389,7 +485,7 @@ class EnhancedLeagueCalibrator:
         profile = self.league_profiles.get(league, self.league_profiles['premier_league'])
         base_calibrated = raw_prob * profile['calibration_factor']
         
-        # 🎯 ENHANCED: Championship-specific market adjustments
+        # 🎯 ENHANCED: League-specific market adjustments
         if league == 'championship':
             if market_type == 'over_25':
                 base_calibrated *= 0.94
@@ -476,7 +572,7 @@ class EnhancedPredictionExplainer:
         
         explanations = base_explanations.get(context, ["Context analysis in progress..."])
         
-        # 🎯 ENHANCED: Add Championship-specific context
+        # 🎯 ENHANCED: Add league-specific context
         if league == 'championship':
             if narrative.get('home_advantage_amplified'):
                 explanations.append("🎯 CHAMPIONSHIP CONTEXT: Enhanced home advantage detected - recent home form overrides reputation")
@@ -500,7 +596,7 @@ class EnhancedPredictionExplainer:
         
         context = narrative.get('expected_outcome', 'balanced')
         
-        # 🎯 ENHANCED: Championship-specific explanations
+        # 🎯 ENHANCED: League-specific explanations
         if league == 'championship':
             explanations['btts'] = [
                 f"Championship attacking analysis: Home {home_attack:.1f}, Away {away_attack:.1f} xG",
@@ -623,12 +719,13 @@ class EnhancedGoalModel:
         self.tier_calibrator = EnhancedTeamTierCalibrator()
 
 class ApexEnhancedEngine:
-    """ENHANCED PREDICTION ENGINE WITH CHAMPIONSHIP FIXES"""
+    """ENHANCED PREDICTION ENGINE WITH PROFESSIONAL LEAGUE MODE"""
     
     def __init__(self, match_data: Dict[str, Any]):
         self.data = self._enhanced_data_validation(match_data)
         self.calibrator = EnhancedTeamTierCalibrator()
         self.goal_model = EnhancedGoalModel()
+        self.pro_calibrator = ProfessionalLeagueCalibrator()  # NEW: Professional calibrator
         self.narrative = MatchNarrative()
         self.intelligence = IntelligenceMetrics(
             narrative_coherence=0.0, prediction_alignment="LOW", 
@@ -708,7 +805,7 @@ class ApexEnhancedEngine:
         }
 
     def _calculate_enhanced_xg(self) -> Tuple[float, float]:
-        """ENHANCED: Calculate xG with Championship-specific logic"""
+        """ENHANCED: Calculate xG with league-specific logic"""
         league = self.data.get('league', 'premier_league')
         
         home_goals = self.data.get('home_goals', 0)
@@ -745,7 +842,7 @@ class ApexEnhancedEngine:
         return home_xg, away_xg
 
     def _get_enhanced_tier_based_quality_gap(self) -> str:
-        """ENHANCED: Quality gap with Championship context"""
+        """ENHANCED: Quality gap with league context"""
         league = self.data.get('league', 'premier_league')
         home_tier = self.calibrator.get_team_tier(self.data['home_team'], league)
         away_tier = self.calibrator.get_team_tier(self.data['away_team'], league)
@@ -756,7 +853,7 @@ class ApexEnhancedEngine:
         
         strength_diff = abs(home_strength - away_strength)
         
-        # 🎯 ENHANCED: Championship quality gap considers recent form
+        # 🎯 ENHANCED: League-specific quality gap considerations
         if league == 'championship':
             home_recent = self.data.get('home_goals_home', 0)
             away_recent = self.data.get('away_goals_away', 0)
@@ -778,14 +875,14 @@ class ApexEnhancedEngine:
             return "even"
 
     def _determine_enhanced_context(self, home_xg: float, away_xg: float, narrative: MatchNarrative) -> str:
-        """ENHANCED: Context detection with Championship fixes"""
+        """ENHANCED: Context detection with league fixes"""
         league = self.data.get('league', 'premier_league')
         total_xg = home_xg + away_xg
         xg_diff = home_xg - away_xg
         
         quality_gap = self._get_enhanced_tier_based_quality_gap()
         
-        # 🎯 ENHANCED: Championship-specific context detection
+        # 🎯 ENHANCED: League-specific context detection
         if league == 'championship':
             home_recent_goals = self.data.get('home_goals_home', 0)
             away_recent_goals = self.data.get('away_goals_away', 0)
@@ -803,7 +900,7 @@ class ApexEnhancedEngine:
                 logger.info("🎯 ENHANCED: Away scoring issues detected")
                 return "defensive_battle"
             
-            # Standard context detection with Championship adjustments
+            # Standard context detection with league adjustments
             if xg_diff >= 0.38 and quality_gap in ['significant', 'extreme']:
                 return "home_dominance"
             elif xg_diff <= -0.38 and quality_gap in ['significant', 'extreme']:
@@ -832,14 +929,14 @@ class ApexEnhancedEngine:
                 return "balanced"
 
     def _calculate_enhanced_context_confidence(self, narrative: MatchNarrative, home_xg: float, away_xg: float) -> float:
-        """ENHANCED: Context confidence with Championship adjustments"""
+        """ENHANCED: Context confidence with league adjustments"""
         league = self.data.get('league', 'premier_league')
         total_xg = home_xg + away_xg
         xg_diff = home_xg - away_xg
         
         base_confidence = 0.0
         
-        # 🎯 ENHANCED: Championship confidence factors
+        # 🎯 ENHANCED: League confidence factors
         if league == 'championship':
             home_recent = self.data.get('home_goals_home', 0)
             away_recent = self.data.get('away_goals_away', 0)
@@ -889,14 +986,14 @@ class ApexEnhancedEngine:
         return min(95, base_confidence)
 
     def _determine_enhanced_narrative(self, home_xg: float, away_xg: float) -> MatchNarrative:
-        """ENHANCED: Narrative with Championship context"""
+        """ENHANCED: Narrative with league context"""
         narrative = MatchNarrative()
         league = self.data.get('league', 'premier_league')
         
         narrative.quality_gap = self._get_enhanced_tier_based_quality_gap()
         narrative.expected_outcome = self._determine_enhanced_context(home_xg, away_xg, narrative)
         
-        # 🎯 ENHANCED: Championship-specific betting priorities
+        # 🎯 ENHANCED: League-specific betting priorities
         if league == 'championship':
             if narrative.expected_outcome == 'home_dominance':
                 narrative.betting_priority = ['Home Win', 'Under 2.5 Goals', 'BTTS No']
@@ -927,7 +1024,7 @@ class ApexEnhancedEngine:
         return narrative
 
     def _run_enhanced_monte_carlo(self, home_xg: float, away_xg: float, iterations: int = 25000) -> MonteCarloResults:
-        """ENHANCED: Monte Carlo with Championship adjustments"""
+        """ENHANCED: Monte Carlo with league adjustments"""
         league = self.data.get('league', 'premier_league')
         
         home_goals, away_goals = self.goal_model.simulator.simulate_match_dixon_coles(
@@ -989,7 +1086,7 @@ class ApexEnhancedEngine:
     def _generate_enhanced_summary(self, narrative: MatchNarrative, predictions: Dict, 
                                 home_team: str, away_team: str, home_tier: str, away_tier: str,
                                 league: str) -> str:
-        """ENHANCED: Summary with Championship context"""
+        """ENHANCED: Summary with league context"""
         
         home_win = predictions.get('home_win', 0) * 100
         draw = predictions.get('draw', 0) * 100
@@ -1026,8 +1123,12 @@ class ApexEnhancedEngine:
         else:
             return f"A competitive match expected between {home_team} and {away_team}, with both teams having reasonable chances. The outcome will likely be decided by key moments and individual quality."
 
+    def generate_professional_calibration(self, raw_confidence: float, context: str, league: str) -> dict:
+        """NEW: Professional league calibration"""
+        return self.pro_calibrator.get_professional_confidence(raw_confidence, context, league)
+
     def generate_enhanced_predictions(self, mc_iterations: int = 25000) -> Dict[str, Any]:
-        """Generate enhanced professional-grade predictions with Championship fixes"""
+        """Generate enhanced professional-grade predictions with league fixes"""
         logger.info(f"Starting enhanced prediction for {self.data['home_team']} vs {self.data['away_team']}")
         
         home_xg, away_xg = self._calculate_enhanced_xg()
@@ -1075,6 +1176,12 @@ class ApexEnhancedEngine:
         
         risk_level = "LOW" if certainty > 0.45 and context_confidence > 60 else "MEDIUM" if certainty > 0.35 else "HIGH"
         
+        # NEW: Professional calibration
+        raw_confidence = certainty
+        pro_calibration = self.generate_professional_calibration(
+            raw_confidence, self.narrative.expected_outcome, league
+        )
+        
         self.intelligence = IntelligenceMetrics(
             narrative_coherence=95.0,
             prediction_alignment="HIGH",
@@ -1116,6 +1223,7 @@ class ApexEnhancedEngine:
                 'form_stability_bonus': 1.5,
                 'context_confidence': context_confidence
             },
+            'professional_calibration': pro_calibration,  # NEW: Professional calibration data
             'probabilities': {
                 'match_outcomes': {
                     'home_win': mc_results.home_win_prob * 100,
@@ -1148,8 +1256,8 @@ class ApexEnhancedEngine:
             }
         }
 
-def test_enhanced_championship_predictor():
-    """Test the enhanced Championship predictor"""
+def test_enhanced_professional_predictor():
+    """Test the enhanced professional predictor"""
     match_data = {
         'home_team': 'Charlton Athletic', 'away_team': 'West Brom', 'league': 'championship',
         'home_goals': 8, 'away_goals': 4, 'home_conceded': 6, 'away_conceded': 7,
@@ -1170,7 +1278,7 @@ def test_enhanced_championship_predictor():
     predictor = ApexEnhancedEngine(match_data)
     results = predictor.generate_enhanced_predictions()
     
-    print("🎯 ENHANCED CHAMPIONSHIP PREDICTION RESULTS")
+    print("🎯 ENHANCED PROFESSIONAL PREDICTION RESULTS")
     print("=" * 70)
     print(f"Match: {results['match']}")
     print(f"Expected Goals: Home {results['expected_goals']['home']:.2f} - Away {results['expected_goals']['away']:.2f}")
@@ -1183,8 +1291,9 @@ def test_enhanced_championship_predictor():
     print(f"Risk Level: {results['risk_assessment']['risk_level']}")
     print(f"Context: {results['match_context']}")
     print(f"Context Confidence: {results['enhanced_intelligence']['context_confidence']:.1f}%")
+    print(f"Professional Confidence: {results['professional_calibration']['final_professional']*100:.1f}%")
+    print(f"Volatility Multiplier: {results['professional_calibration']['volatility_multiplier']:.1f}x")
     print(f"Recommended: {results['betting_context']['recommended_markets']}")
-    print(f"Narrative Features: Home Advantage: {results['match_narrative'].get('home_advantage_amplified', False)}, Away Scoring Issues: {results['match_narrative'].get('away_scoring_issues', False)}")
 
 if __name__ == "__main__":
-    test_enhanced_championship_predictor()
+    test_enhanced_professional_predictor()

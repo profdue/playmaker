@@ -539,7 +539,7 @@ def display_professional_league_calibration(predictions: dict, match_data: dict)
     
     st.plotly_chart(fig, use_container_width=True)
 
-def display_enhanced_predictions(predictions):
+def display_enhanced_predictions(predictions: dict, match_data: dict):
     """Display enhanced predictions with professional features"""
     if not predictions:
         st.error("❌ No enhanced predictions available")
@@ -1236,8 +1236,8 @@ def main():
         st.session_state.match_data = None
     
     # Display existing predictions if available
-    if st.session_state.enhanced_predictions:
-        display_enhanced_predictions(st.session_state.enhanced_predictions)
+    if st.session_state.enhanced_predictions and st.session_state.match_data:
+        display_enhanced_predictions(st.session_state.enhanced_predictions, st.session_state.match_data)
         
         # Professional betting analysis
         predictions = st.session_state.enhanced_predictions
@@ -1267,7 +1267,7 @@ def main():
                     """)
                 
                 # Professional stake calculation
-                base_bankroll = st.session_state.match_data.get('bankroll', 1000) if st.session_state.match_data else 1000
+                base_bankroll = st.session_state.match_data.get('bankroll', 1000)
                 base_stake = base_bankroll * 0.02
                 
                 calibrator = ProfessionalLeagueCalibrator()

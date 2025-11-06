@@ -49,41 +49,6 @@ LEAGUE_PARAMS = {
         'avg_goals': 1.25,
         'home_advantage': 1.18
     },
-    'championship': {
-        'away_penalty': 0.75,
-        'min_edge': 0.15,
-        'volatility_multiplier': 0.6,
-        'avg_goals': 1.2,
-        'home_advantage': 1.25
-    },
-    'liga_portugal': {
-        'away_penalty': 0.78,
-        'min_edge': 0.11,
-        'volatility_multiplier': 1.1,
-        'avg_goals': 1.3,
-        'home_advantage': 1.17
-    },
-    'brasileirao': {
-        'away_penalty': 0.77,
-        'min_edge': 0.13,
-        'volatility_multiplier': 1.3,
-        'avg_goals': 1.35,
-        'home_advantage': 1.22
-    },
-    'liga_mx': {
-        'away_penalty': 0.76,
-        'min_edge': 0.14,
-        'volatility_multiplier': 1.4,
-        'avg_goals': 1.4,
-        'home_advantage': 1.23
-    },
-    'eredivisie': {
-        'away_penalty': 0.79,
-        'min_edge': 0.12,
-        'volatility_multiplier': 0.7,
-        'avg_goals': 1.5,
-        'home_advantage': 1.16
-    },
     'default': {
         'away_penalty': 0.80,
         'min_edge': 0.10,
@@ -523,62 +488,6 @@ class EnhancedTeamTierCalibrator:
                 'Wrexham': 'WEAK', 'Oxford United': 'WEAK', 'Derby County': 'WEAK',
                 'Portsmouth': 'WEAK', 'Charlton Athletic': 'WEAK', 'Ipswich Town': 'WEAK',
                 'Cardiff City': 'MEDIUM', 'Sunderland': 'MEDIUM'
-            },
-            'la_liga': {
-                'Real Madrid': 'ELITE', 'Barcelona': 'ELITE', 'Atletico Madrid': 'STRONG',
-                'Real Sociedad': 'STRONG', 'Athletic Bilbao': 'STRONG', 'Villarreal': 'MEDIUM',
-                'Real Betis': 'MEDIUM', 'Sevilla': 'MEDIUM', 'Valencia': 'MEDIUM',
-                'Osasuna': 'MEDIUM', 'Getafe': 'MEDIUM', 'Celta Vigo': 'MEDIUM',
-                'Mallorca': 'WEAK', 'Cadiz': 'WEAK', 'Granada': 'WEAK', 'Alaves': 'WEAK'
-            },
-            'serie_a': {
-                'Inter Milan': 'ELITE', 'AC Milan': 'ELITE', 'Juventus': 'STRONG',
-                'Napoli': 'STRONG', 'Atalanta': 'STRONG', 'Roma': 'STRONG',
-                'Lazio': 'STRONG', 'Fiorentina': 'MEDIUM', 'Bologna': 'MEDIUM',
-                'Torino': 'MEDIUM', 'Monza': 'MEDIUM', 'Genoa': 'MEDIUM',
-                'Lecce': 'WEAK', 'Frosinone': 'WEAK', 'Cagliari': 'WEAK', 'Verona': 'WEAK'
-            },
-            'bundesliga': {
-                'Bayern Munich': 'ELITE', 'Bayer Leverkusen': 'ELITE', 'Borussia Dortmund': 'STRONG',
-                'RB Leipzig': 'STRONG', 'Eintracht Frankfurt': 'STRONG', 'Wolfsburg': 'MEDIUM',
-                'Borussia Monchengladbach': 'MEDIUM', 'Freiburg': 'MEDIUM', 'Hoffenheim': 'MEDIUM',
-                'Augsburg': 'MEDIUM', 'Mainz': 'WEAK', 'Bochum': 'WEAK', 
-                'Koln': 'WEAK', 'Darmstadt': 'WEAK', 'Heidenheim': 'WEAK'
-            },
-            'ligue_1': {
-                'PSG': 'ELITE', 'Monaco': 'STRONG', 'Lille': 'STRONG',
-                'Marseille': 'STRONG', 'Lyon': 'STRONG', 'Rennes': 'MEDIUM',
-                'Nice': 'MEDIUM', 'Lens': 'MEDIUM', 'Reims': 'MEDIUM',
-                'Toulouse': 'MEDIUM', 'Montpellier': 'WEAK', 'Nantes': 'WEAK',
-                'Brest': 'WEAK', 'Lorient': 'WEAK', 'Strasbourg': 'WEAK'
-            },
-            'liga_portugal': {
-                'Benfica': 'ELITE', 'Porto': 'ELITE', 'Sporting Lisbon': 'STRONG',
-                'Braga': 'STRONG', 'Vitoria Guimaraes': 'MEDIUM', 'Famalicao': 'MEDIUM',
-                'Boavista': 'MEDIUM', 'Moreirense': 'MEDIUM', 'Arouca': 'MEDIUM',
-                'Casa Pia': 'WEAK', 'Estoril': 'WEAK', 'Rio Ave': 'WEAK',
-                'Portimonense': 'WEAK', 'Gil Vicente': 'WEAK'
-            },
-            'brasileirao': {
-                'Flamengo': 'ELITE', 'Palmeiras': 'ELITE', 'Sao Paulo': 'STRONG',
-                'Corinthians': 'STRONG', 'Gremio': 'STRONG', 'Internacional': 'STRONG',
-                'Atletico Mineiro': 'STRONG', 'Botafogo': 'MEDIUM', 'Santos': 'MEDIUM',
-                'Fluminense': 'MEDIUM', 'Cruzeiro': 'MEDIUM', 'Bahia': 'MEDIUM',
-                'Fortaleza': 'WEAK', 'Vasco da Gama': 'WEAK', 'Coritiba': 'WEAK'
-            },
-            'liga_mx': {
-                'Club America': 'ELITE', 'Monterrey': 'ELITE', 'Tigres': 'STRONG',
-                'Cruz Azul': 'STRONG', 'Guadalajara': 'STRONG', 'Pumas UNAM': 'MEDIUM',
-                'Toluca': 'MEDIUM', 'Santos Laguna': 'MEDIUM', 'Pachuca': 'MEDIUM',
-                'Leon': 'MEDIUM', 'Atlas': 'WEAK', 'Mazatlan': 'WEAK',
-                'Queretaro': 'WEAK', 'Necaxa': 'WEAK', 'Juarez': 'WEAK'
-            },
-            'eredivisie': {
-                'Ajax': 'ELITE', 'PSV Eindhoven': 'ELITE', 'Feyenoord': 'STRONG',
-                'AZ Alkmaar': 'STRONG', 'Twente': 'MEDIUM', 'Utrecht': 'MEDIUM',
-                'Heerenveen': 'MEDIUM', 'Sparta Rotterdam': 'MEDIUM', 'NEC Nijmegen': 'MEDIUM',
-                'Go Ahead Eagles': 'WEAK', 'Excelsior': 'WEAK', 'Fortuna Sittard': 'WEAK',
-                'Heracles': 'WEAK', 'Almere City': 'WEAK'
             }
         }
     
@@ -616,7 +525,6 @@ class ApexProductionEngine:
         predictive_fields = {
             'home_goals': (0, 30, 8), 'away_goals': (0, 30, 4),
             'home_conceded': (0, 30, 6), 'away_conceded': (0, 30, 7),
-            'home_goals_home': (0, 15, 6), 'away_goals_away': (0, 15, 1),
         }
         
         for field, (min_val, max_val, default) in predictive_fields.items():
@@ -806,9 +714,7 @@ class ApexProductionEngine:
                 'refined_contextual_model': True,
                 '60_40_historical_weighting': True,  # Track your refinement
                 'boosted_home_advantage': True,      # Track your refinement
-                'vig_properly_removed': True,
-                'goal_correlation_modeled': True,
-                'uncertainty_propagated': True
+                'vig_properly_removed': True
             },
             'probabilities': {
                 'match_outcomes': {
@@ -842,7 +748,6 @@ def test_refined_model():
     match_data = {
         'home_team': 'Liverpool', 'away_team': 'Aston Villa', 'league': 'premier_league',
         'home_goals': 8, 'away_goals': 9, 'home_conceded': 10, 'away_conceded': 4,
-        'home_goals_home': 4, 'away_goals_away': 3,
         'market_odds': {
             '1x2 Home': 1.62, '1x2 Draw': 4.33, '1x2 Away': 4.50,
             'Over 2.5 Goals': 1.53, 'Under 2.5 Goals': 2.50,

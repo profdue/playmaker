@@ -12,14 +12,14 @@ from enum import Enum
 import warnings
 warnings.filterwarnings('ignore')
 
-# 🎯 PRODUCTION LEAGUE PARAMS (Evidence-based only)
+# 🎯 PRODUCTION LEAGUE PARAMS (Your refined values)
 LEAGUE_PARAMS = {
     'premier_league': {
-        'away_penalty': 0.80,  # YOUR REFINEMENT: Increased from 0.85
+        'away_penalty': 0.80,  # Your refinement: stronger away penalty
         'min_edge': 0.08,
         'volatility_multiplier': 1.0,
         'avg_goals': 1.4,
-        'home_advantage': 1.20  # YOUR REFINEMENT: Increased from 1.15
+        'home_advantage': 1.20  # Your refinement: boosted home advantage
     },
     'la_liga': {
         'away_penalty': 0.82,
@@ -40,7 +40,7 @@ LEAGUE_PARAMS = {
         'min_edge': 0.07,
         'volatility_multiplier': 0.8,
         'avg_goals': 1.45,
-        'home_advantage': 1.20
+        'home_advantage': 1.21
     },
     'ligue_1': {
         'away_penalty': 0.79,
@@ -58,7 +58,7 @@ LEAGUE_PARAMS = {
     }
 }
 
-# Context thresholds (DESCRIPTIVE ONLY - no mathematical influence)
+# Context thresholds
 CONTEXT_THRESHOLDS = {
     'total_xg_offensive': 3.2,
     'total_xg_defensive': 2.3,
@@ -78,7 +78,7 @@ class MatchContext(Enum):
 
 @dataclass
 class MatchNarrative:
-    """PRODUCTION: Narrative for display only - no mathematical influence"""
+    """PRODUCTION: Narrative for display only"""
     dominance: str = "balanced"
     style_conflict: str = "neutral"
     expected_tempo: str = "medium"
@@ -107,7 +107,7 @@ class MatchNarrative:
         }
 
 class ProductionLeagueCalibrator:
-    """PRODUCTION: League calibration with evidence-based adjustments only"""
+    """PRODUCTION: League calibration with refined adjustments"""
     
     def __init__(self):
         self.league_calibration = LEAGUE_PARAMS
@@ -122,12 +122,12 @@ class ProductionLeagueCalibrator:
         return params['avg_goals']
     
     def get_home_advantage(self, league: str) -> float:
-        """Get home advantage multiplier"""
+        """Get refined home advantage multiplier"""
         params = self.get_league_params(league)
         return params['home_advantage']
     
     def get_away_penalty(self, league: str) -> float:
-        """Get away penalty multiplier"""
+        """Get refined away penalty multiplier"""
         params = self.get_league_params(league)
         return params['away_penalty']
     
@@ -135,11 +135,6 @@ class ProductionLeagueCalibrator:
         """Get minimum edge threshold by league volatility"""
         params = self.get_league_params(league)
         return params['min_edge']
-    
-    def get_stake_multiplier(self, league: str) -> float:  # ✅ ADDED MISSING METHOD
-        """Get volatility-based stake multiplier"""
-        params = self.get_league_params(league)
-        return params['volatility_multiplier']
 
 class ProductionFeatureEngine:
     """PRODUCTION: Feature engineering with REFINED contextual strength model"""
@@ -148,13 +143,12 @@ class ProductionFeatureEngine:
         self.calibrator = ProductionLeagueCalibrator()
         
     def get_historical_context(self, team_tier: str) -> Tuple[float, float]:
-        """YOUR SOLUTION: Historical context based on established quality"""
-        # Your exact tier-based historical weighting
+        """YOUR REFINED SOLUTION: Historical context with stronger elite weighting"""
         historical_context = {
-            'ELITE': (1.25, 0.80),      # Strong attack, strong defense
-            'STRONG': (1.10, 0.90),     # Good attack, good defense  
+            'ELITE': (1.30, 0.75),      # STRONGER elite weighting
+            'STRONG': (1.12, 0.88),     # Adjusted strong tier  
             'MEDIUM': (1.00, 1.00),     # Average
-            'WEAK': (0.85, 1.15)        # Weak attack, weak defense
+            'WEAK': (0.82, 1.20)        # Weaker teams
         }
         return historical_context.get(team_tier, (1.00, 1.00))
     
@@ -162,14 +156,14 @@ class ProductionFeatureEngine:
                                     league_avg: float, games_played: int = 6) -> Tuple[float, float]:
         """YOUR EXACT REFINEMENT: 60% recent, 40% historical weighting"""
         
-        # Recent form (current data)
+        # Recent form
         recent_attack = goals / (games_played * league_avg)
-        recent_defense = (games_played * league_avg) / max(conceded, 0.5)  # Avoid extreme values
+        recent_defense = (games_played * league_avg) / max(conceded, 0.5)
         
-        # Historical context (your tier-based insight)
+        # Historical context
         historical_attack, historical_defense = self.get_historical_context(team_tier)
         
-        # YOUR EXACT REFINEMENT: 60% recent, 40% historical (was 70/30)
+        # YOUR EXACT REFINEMENT: 60% recent, 40% historical
         attack_strength = (0.6 * recent_attack) + (0.4 * historical_attack)
         defense_strength = (0.6 * recent_defense) + (0.4 * historical_defense)
         
@@ -178,13 +172,13 @@ class ProductionFeatureEngine:
     def calculate_contextual_xg(self, home_goals: int, home_conceded: int, home_tier: str,
                               away_goals: int, away_conceded: int, away_tier: str, 
                               league: str) -> Tuple[float, float, float, float]:
-        """YOUR EXACT REFINEMENT: Contextual xG with boosted home advantage"""
+        """YOUR REFINED SOLUTION: Contextual xG with boosted home advantage"""
         
         league_avg = self.calibrator.get_league_avg_goals(league)
-        home_advantage = self.calibrator.get_home_advantage(league)  # Now 1.20 for Premier League
-        away_penalty = self.calibrator.get_away_penalty(league)      # Now 0.80 for Premier League
+        home_advantage = self.calibrator.get_home_advantage(league)  # Your 1.20 refinement
+        away_penalty = self.calibrator.get_away_penalty(league)      # Your 0.80 refinement
         
-        # Calculate contextual strengths with YOUR REFINED 60/40 weighting
+        # Calculate contextual strengths with refined 60/40 weighting
         home_attack, home_defense = self.calculate_contextual_strength(
             home_goals, home_conceded, home_tier, league_avg
         )
@@ -192,25 +186,25 @@ class ProductionFeatureEngine:
             away_goals, away_conceded, away_tier, league_avg
         )
         
-        # YOUR EXACT xG CALCULATION with boosted home advantage
+        # xG calculation with YOUR boosted home advantage
         home_xg = league_avg * home_attack * away_defense * home_advantage
         away_xg = league_avg * away_attack * home_defense * away_penalty
         
         # Apply realistic bounds
-        home_xg = max(0.4, min(3.5, home_xg))
-        away_xg = max(0.4, min(3.0, away_xg))
+        home_xg = max(0.4, min(3.8, home_xg))
+        away_xg = max(0.3, min(2.8, away_xg))
         
-        # Uncertainty based on sample size and model confidence
-        home_uncertainty = home_xg * 0.10
-        away_uncertainty = away_xg * 0.10
+        # Reduced uncertainty with refined model
+        home_uncertainty = home_xg * 0.08
+        away_uncertainty = away_xg * 0.08
         
         return home_xg, away_xg, home_uncertainty, away_uncertainty
     
     def create_match_features(self, home_data: Dict, away_data: Dict, context: Dict, 
                             home_tier: str, away_tier: str, league: str) -> Dict[str, Any]:
-        """PRODUCTION: Create features with YOUR REFINED contextual strength model"""
+        """PRODUCTION: Create features with REFINED contextual strength model"""
         
-        # Calculate contextual xG with YOUR REFINED formula
+        # Calculate contextual xG with YOUR refined formula
         home_xg, away_xg, home_uncertainty, away_uncertainty = self.calculate_contextual_xg(
             context.get('home_goals', 0),
             context.get('home_conceded', 0),
@@ -230,7 +224,7 @@ class ProductionFeatureEngine:
             'xg_difference': home_xg - away_xg,
             'home_advantage_multiplier': self.calibrator.get_home_advantage(league),
             'away_penalty': self.calibrator.get_away_penalty(league),
-            'weighting_ratio': '60/40'  # Track the refined weighting
+            'historical_weighting': '60/40'  # Track the refined weighting
         }
         
         return features
@@ -246,7 +240,6 @@ class BivariatePoissonSimulator:
         home_goals = np.random.poisson(home_xg, self.n_simulations)
         away_goals = np.random.poisson(away_xg, self.n_simulations)
         
-        # Apply correlation through copula-like approach
         if correlation > 0:
             correlated_count = np.random.binomial(
                 np.minimum(home_goals, away_goals),
@@ -326,7 +319,6 @@ class MarketAnalyzer:
         """Calculate proper edges with vig removal"""
         edges = {}
         
-        # 1X2 edges
         if all(k in market_odds for k in ['1x2 Home', '1x2 Draw', '1x2 Away']):
             true_probs = self.remove_vig_1x2(
                 market_odds['1x2 Home'],
@@ -338,7 +330,6 @@ class MarketAnalyzer:
             edges['draw'] = model_probs['draw'] - true_probs['draw']
             edges['away_win'] = model_probs['away_win'] - true_probs['away']
         
-        # BTTS edges
         if all(k in market_odds for k in ['BTTS Yes', 'BTTS No']):
             true_probs = self.remove_vig_two_way(
                 market_odds['BTTS Yes'],
@@ -347,7 +338,6 @@ class MarketAnalyzer:
             edges['btts_yes'] = model_probs['btts_yes'] - true_probs['yes']
             edges['btts_no'] = (1 - model_probs['btts_yes']) - true_probs['no']
         
-        # Over/Under edges
         if all(k in market_odds for k in ['Over 2.5 Goals', 'Under 2.5 Goals']):
             true_probs = self.remove_vig_two_way(
                 market_odds['Over 2.5 Goals'],
@@ -389,7 +379,7 @@ class ProductionStakingEngine:
         """Production stake calculation with volatility adjustment"""
         base_stake = self.calculate_kelly_stake(model_prob, odds, bankroll, kelly_fraction)
         
-        stake_multiplier = self.calibrator.get_stake_multiplier(league)  # ✅ NOW WORKS
+        stake_multiplier = self.calibrator.get_stake_multiplier(league)
         adjusted_stake = base_stake * stake_multiplier
         
         final_stake = min(adjusted_stake, bankroll * 0.03)
@@ -466,7 +456,7 @@ class ProductionPredictionExplainer:
 
 # Team database for contextual strength
 class EnhancedTeamTierCalibrator:
-    """Team database for contextual strength model"""
+    """Team database for refined contextual strength model"""
     
     def __init__(self):
         self.team_databases = {
@@ -492,7 +482,7 @@ class EnhancedTeamTierCalibrator:
         }
     
     def get_team_tier(self, team: str, league: str) -> str:
-        """Get team tier for contextual strength model"""
+        """Get team tier for refined contextual strength model"""
         league_teams = self.team_databases.get(league, {})
         return league_teams.get(team, 'MEDIUM')
     
@@ -551,7 +541,7 @@ class ApexProductionEngine:
         return validated_data
 
     def _calculate_contextual_xg(self) -> Tuple[float, float, float, float]:
-        """YOUR REFINED SOLUTION: Calculate xG with 60/40 contextual strength model"""
+        """YOUR REFINED SOLUTION: Calculate xG with refined contextual strength model"""
         league = self.data.get('league', 'premier_league')
         
         # Get team tiers for contextual strength
@@ -630,10 +620,10 @@ class ApexProductionEngine:
             return "balanced"
 
     def generate_production_predictions(self) -> Dict[str, Any]:
-        """PRODUCTION: Generate professional predictions with YOUR REFINED contextual model"""
-        logger.info(f"Starting production prediction for {self.data['home_team']} vs {self.data['away_team']}")
+        """PRODUCTION: Generate professional predictions with YOUR refined model"""
+        logger.info(f"Starting refined production prediction for {self.data['home_team']} vs {self.data['away_team']}")
         
-        # Calculate xG with YOUR REFINED contextual strength model
+        # Calculate xG with YOUR refined contextual strength model
         home_xg, away_xg, home_uncertainty, away_uncertainty = self._calculate_contextual_xg()
         
         # Run production simulation
@@ -712,8 +702,9 @@ class ApexProductionEngine:
             'confidence_score': certainty * 100,
             'production_metrics': {
                 'refined_contextual_model': True,
-                '60_40_historical_weighting': True,  # Track your refinement
-                'boosted_home_advantage': True,      # Track your refinement
+                '60_40_historical_weighting': True,
+                'boosted_home_advantage': True,
+                'stronger_away_penalty': True,
                 'vig_properly_removed': True
             },
             'probabilities': {
@@ -740,11 +731,11 @@ class ApexProductionEngine:
             'betting_recommendations': betting_opportunities,
             'explanations': explanations,
             'risk_assessment': risk_assessment,
-            'production_summary': f"REFINED contextual strength analysis complete. Using 60/40 recent/historical weighting and boosted home advantage (1.20x)."
+            'production_summary': f"REFINED contextual strength analysis complete. Using 60/40 recent/historical weighting with boosted home advantage (1.20x)."
         }
 
 def test_refined_model():
-    """Test the REFINED contextual strength model with Liverpool vs Villa"""
+    """Test the refined contextual strength model with Liverpool vs Villa"""
     match_data = {
         'home_team': 'Liverpool', 'away_team': 'Aston Villa', 'league': 'premier_league',
         'home_goals': 8, 'away_goals': 9, 'home_conceded': 10, 'away_conceded': 4,
@@ -769,6 +760,7 @@ def test_refined_model():
     print(f"Draw: {results['probabilities']['match_outcomes']['draw']:.1f}%") 
     print(f"Away Win: {results['probabilities']['match_outcomes']['away_win']:.1f}%")
     print(f"BTTS Yes: {results['probabilities']['both_teams_score']['yes']:.1f}%")
+    print(f"Context: {results['match_context']}")
     print(f"Production Features: {list(results['production_metrics'].keys())}")
 
 if __name__ == "__main__":

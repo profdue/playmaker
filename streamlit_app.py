@@ -277,7 +277,7 @@ def display_production_predictions(predictions: dict, match_data: dict):
     st.markdown('<p class="production-header">🎯 Production Football Predictions</p>', unsafe_allow_html=True)
     
     # Production mode header
-    st.markdown('<div class="production-mode-active">🟢 PRODUCTION MODE ACTIVE • CONTINUOUS STRENGTH MODEL • UNCERTAINTY PROPAGATION • VIG REMOVAL</div>', unsafe_allow_html=True)
+    st.markdown('<div class="production-mode-active">🟢 PRODUCTION MODE ACTIVE • REFINED CONTEXTUAL MODEL • 60/40 WEIGHTING • BOOSTED HOME ADVANTAGE</div>', unsafe_allow_html=True)
     
     # Basic match info
     team_tiers = safe_get(predictions, 'team_tiers') or {}
@@ -300,10 +300,10 @@ def display_production_predictions(predictions: dict, match_data: dict):
     </div>
     <div style="text-align: center; margin-top: 0.5rem;">
         <span class="production-badge {league_badge_class}">{league_display_name}</span>
-        <span class="production-feature-badge">🎯 Continuous Strength Model</span>
+        <span class="production-feature-badge">🎯 60/40 Weighting</span>
         <span class="production-feature-badge">📊 xG Uncertainty: ±{xg_data.get('home_uncertainty', 0):.2f}</span>
         {f'<span class="production-feature-badge">🔗 Goal Correlation</span>' if production_metrics.get('goal_correlation_modeled') else ''}
-        {f'<span class="production-feature-badge">📈 League-Aware</span>' if production_metrics.get('continuous_strength_model') else ''}
+        {f'<span class="production-feature-badge">🏠 Boosted Home Advantage</span>' if production_metrics.get('boosted_home_advantage') else ''}
     </div>
     ''', unsafe_allow_html=True)
     
@@ -492,7 +492,7 @@ def display_production_predictions(predictions: dict, match_data: dict):
 def create_production_input_form():
     """Create production-grade input form"""
     st.markdown('<p class="production-header">🎯 Production Football Predictor</p>', unsafe_allow_html=True)
-    st.markdown('<p class="production-subheader">Professional-Grade Analysis with Continuous Strength Model & Risk Management</p>', unsafe_allow_html=True)
+    st.markdown('<p class="production-subheader">Professional-Grade Analysis with Refined Contextual Strength Model & Risk Management</p>', unsafe_allow_html=True)
     
     # Initialize tier calibrator
     tier_calibrator = EnhancedTeamTierCalibrator()
@@ -573,7 +573,7 @@ def create_production_input_form():
         <span class="production-badge tier-{away_tier.lower() if away_tier else 'medium'}">{away_tier or 'MEDIUM'}</span>
         """, unsafe_allow_html=True)
         
-        st.info("💡 **Note**: Team tiers are for display only. Predictions use continuous strength model based on actual performance data.")
+        st.info("💡 **Note**: Team tiers are for contextual strength model. Predictions use 60/40 recent/historical weighting with boosted home advantage.")
 
     with tab2:
         st.markdown("### 💰 Market Odds")
@@ -609,10 +609,10 @@ def create_production_input_form():
         
         with risk_col2:
             st.write("**Production Features**")
-            st.checkbox("Continuous Strength Model", value=True, disabled=True)
+            st.checkbox("60/40 Contextual Weighting", value=True, disabled=True)
+            st.checkbox("Boosted Home Advantage", value=True, disabled=True)
             st.checkbox("xG Uncertainty Propagation", value=True, disabled=True)
             st.checkbox("Goal Correlation Modeling", value=True, disabled=True)
-            st.checkbox("Proper Vig Removal", value=True, disabled=True)
 
     submitted = st.button("🎯 RUN PRODUCTION ANALYSIS", type="primary", use_container_width=True)
     
@@ -686,14 +686,15 @@ def main():
                 **Production System Status: OPERATIONAL** 🟢
                 
                 **Active Production Features:**
-                - ✅ Continuous Strength Model
+                - ✅ 60/40 Contextual Weighting
+                - ✅ Boosted Home Advantage (1.20x)
                 - ✅ xG Uncertainty Propagation
                 - ✅ Bivariate Poisson Goal Correlation  
                 - ✅ Proper Vig Removal
                 - ✅ Risk-Managed Staking
                 - ✅ Market Edge Verification
                 
-                **Model Version:** 5.0.0_continuous_strength
+                **Model Version:** 6.0.0_refined_contextual
                 **Calibration Level:** PRODUCTION_READY
                 """)
         
@@ -703,7 +704,7 @@ def main():
     match_data = create_production_input_form()
     
     if match_data:
-        with st.spinner("🔍 Running production analysis with continuous strength model..."):
+        with st.spinner("🔍 Running refined contextual strength analysis..."):
             try:
                 engine = ApexProductionEngine(match_data)
                 predictions = engine.generate_production_predictions()
@@ -729,10 +730,11 @@ def main():
                     st.session_state.production_history.append(prediction_record)
                     
                     st.success("""
-                    ✅ **PRODUCTION ANALYSIS COMPLETE!**
+                    ✅ **REFINED CONTEXTUAL ANALYSIS COMPLETE!**
                     
                     **Production Features Applied:**
-                    - 🎯 Continuous Strength Model
+                    - 🎯 60/40 Recent/Historical Weighting
+                    - 🏠 Boosted Home Advantage (1.20x)
                     - 📊 League-Aware xG Calculation
                     - 🔗 Goal Correlation Modeling  
                     - 💰 Proper Vig Removal
